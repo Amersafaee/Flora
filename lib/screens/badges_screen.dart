@@ -54,6 +54,14 @@ class _BadgesScreenState extends State<BadgesScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    if (currentUserId != null) {
+      _badgesService.checkAndAwardBadges(currentUserId!);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF154212);
     const Color backgroundColor = Color(0xFFF8FAF8);
@@ -246,7 +254,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                     radius: 30,
                     backgroundColor: isEarned ? primaryColor : Colors.grey.shade200,
                     child: Icon(
-                      Icons.eco,
+                      isEarned ? Icons.check : Icons.lock,
                       color: isEarned ? Colors.white : Colors.grey.shade400,
                       size: 32,
                     ),

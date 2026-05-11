@@ -8,17 +8,22 @@ class MemorialGardenScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const sepiaBg = Color(0xFFFAF8F5);
+    const sepiaCard = Color(0xFFF3EFE9);
+    const sepiaText = Color(0xFF5D4037);
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: sepiaBg,
       appBar: AppBar(
         title: const Text('Memorial Garden'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
-        titleTextStyle: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
+        iconTheme: const IconThemeData(color: sepiaText),
+        titleTextStyle: const TextStyle(
+          color: sepiaText,
           fontSize: 20,
           fontWeight: FontWeight.bold,
+          fontFamily: 'serif',
         ),
       ),
       body: SafeArea(
@@ -35,7 +40,16 @@ class MemorialGardenScreen extends StatelessWidget {
             final deceasedPlants = (snapshot.data ?? []).where((p) => p.isDeceased).toList();
             
             if (deceasedPlants.isEmpty) {
-              return const Center(child: Text('Your memorial garden is empty.', style: TextStyle(color: Colors.grey)));
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Text(
+                    'No plants in the memorial garden yet — every plant lives a full life here first 🌿',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Color(0xFF8D6E63), fontSize: 16, fontStyle: FontStyle.italic),
+                  ),
+                ),
+              );
             }
 
             // Sort by deceasedDate descending
@@ -51,54 +65,83 @@ class MemorialGardenScreen extends StatelessWidget {
               itemCount: deceasedPlants.length,
               itemBuilder: (context, index) {
                 final plant = deceasedPlants[index];
-                final dateStr = plant.deceasedDate != null 
+                final dateJoinedStr = DateFormat.yMMMMd().format(plant.dateAdded);
+                final datePassedStr = plant.deceasedDate != null 
                     ? DateFormat.yMMMMd().format(plant.deceasedDate!)
                     : 'Unknown date';
+                
+                final note = plant.memorialNote?.isNotEmpty == true ? plant.memorialNote! : (plant.eulogy?.isNotEmpty == true ? plant.eulogy! : 'May this plant rest peacefully in the soil.');
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark 
-                        ? const Color(0xFF2A2A2A) 
-                        : const Color(0xFFF0F0F0),
+                    color: sepiaCard,
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE8DCC4)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.local_florist, color: Colors.grey),
+                          const Icon(Icons.local_florist, color: Color(0xFF8D6E63)),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               plant.name,
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 22,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'serif',
+                                color: Color(0xFF5D4037),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Rested on $dateStr',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontStyle: FontStyle.italic,
-                          fontSize: 12,
-                        ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Joined: $dateJoinedStr',
+                            style: const TextStyle(
+                              color: Color(0xFF8D6E63),
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            'Passed: $datePassedStr',
+                            style: const TextStyle(
+                              color: Color(0xFF8D6E63),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
-                      Text(
-                        plant.eulogy ?? 'May this plant rest peacefully in the soil.',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          height: 1.5,
-                          fontStyle: FontStyle.italic,
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFAF8F5).withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '"$note"',
+                          style: const TextStyle(
+                            color: Color(0xFF5D4037),
+                            height: 1.5,
+                            fontStyle: FontStyle.italic,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ],

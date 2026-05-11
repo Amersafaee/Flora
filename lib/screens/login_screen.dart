@@ -59,7 +59,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (!mounted) return;
-      setState(() => _isLoading = false);
 
       if (result == 'Success') return; // AuthStateChanges handles navigation.
 
@@ -70,12 +69,14 @@ class _LoginScreenState extends State<LoginScreen> {
       _showError(message);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
       _showError(_mapFirebaseError(e.code, e.message ?? 'Sign in failed.'));
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
       _showError('An unexpected error occurred. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

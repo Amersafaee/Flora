@@ -18,16 +18,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   
   String? _selectedTaskType;
   DateTime _selectedDate = DateTime.now();
-  String _repeatType = 'Does Not Repeat';
-  List<String> _repeatDays = [];
+  String _repeatType = 'none';
   
   bool _isLoading = false;
   bool _showNameError = false;
   bool _showTypeError = false;
+  String _selectedPlantId = '';
   
   final FirestoreService _firestoreService = FirestoreService();
-  final List<String> _weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  final List<String> _fullDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   @override
   void initState() {
@@ -36,14 +34,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     _notesController = TextEditingController(text: widget.task?.notes ?? '');
     
     if (widget.task != null) {
+      _selectedPlantId = widget.task!.plantId;
       _selectedTaskType = widget.task!.taskType;
       _selectedDate = widget.task!.dueDate;
-      if (widget.task!.repeatType != null) {
-        _repeatType = widget.task!.repeatType!;
-      }
-      if (widget.task!.repeatDays != null) {
-        _repeatDays = List.from(widget.task!.repeatDays!);
-      }
+      _repeatType = widget.task!.repeatType;
+
     }
   }
 
@@ -67,15 +62,29 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     try {
       final taskId = widget.task?.id ?? FirebaseFirestore.instance.collection('dummy').doc().id;
 
+      String lookedUpPlantId = _selectedPlantId;
+      if (lookedUpPlantId.isEmpty && _plantNameController.text.trim().isNotEmpty) {
+        final uid = _firestoreService.currentUserId;
+        if (uid != null) {
+          final query = await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants')
+              .where('name', isEqualTo: _plantNameController.text.trim()).limit(1).get();
+          if (query.docs.isNotEmpty) {
+            lookedUpPlantId = query.docs.first.id;
+            _selectedPlantId = lookedUpPlantId;
+          }
+        }
+      }
+
       final task = Task(
         id: taskId,
+        plantId: lookedUpPlantId,
         plantName: _plantNameController.text.trim(),
         taskType: _selectedTaskType!,
         dueDate: _selectedDate,
         isCompleted: widget.task?.isCompleted ?? false,
         notes: _notesController.text.trim(),
-        repeatType: _repeatType == 'Does Not Repeat' ? null : _repeatType,
-        repeatDays: _repeatType == 'Custom Days' ? _repeatDays : null,
+        repeatType: _repeatType,
+        repeatDays: 0,
       );
       
       if (widget.task != null) {
@@ -232,57 +241,20 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildRepeatTypeChip('Does Not Repeat'),
+                    _buildRepeatTypeChip('Does Not Repeat', 'none'),
                     const SizedBox(width: 8),
-                    _buildRepeatTypeChip('Daily'),
+                    _buildRepeatTypeChip('Daily', 'daily'),
                     const SizedBox(width: 8),
-                    _buildRepeatTypeChip('Weekly'),
+                    _buildRepeatTypeChip('Every 2 days', 'every2days'),
                     const SizedBox(width: 8),
-                    _buildRepeatTypeChip('Monthly'),
+                    _buildRepeatTypeChip('Weekly', 'weekly'),
                     const SizedBox(width: 8),
-                    _buildRepeatTypeChip('Custom Days'),
+                    _buildRepeatTypeChip('Every 2 weeks', 'biweekly'),
+                    const SizedBox(width: 8),
+                    _buildRepeatTypeChip('Monthly', 'monthly'),
                   ],
                 ),
               ),
-              if (_repeatType == 'Custom Days') ...[
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(7, (index) {
-                    final day = _fullDays[index];
-                    final isSelected = _repeatDays.contains(day);
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (isSelected) {
-                            _repeatDays.remove(day);
-                          } else {
-                            _repeatDays.add(day);
-                          }
-                        });
-                      },
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isSelected ? primaryColor : Theme.of(context).cardColor,
-                          border: Border.all(color: isSelected ? primaryColor : Colors.grey.shade300),
-                        ),
-                        child: Center(
-                          child: Text(
-                            _weekDays[index],
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ],
               const SizedBox(height: 24),
               
               Text('Notes', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
@@ -352,12 +324,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
   }
   
-  Widget _buildRepeatTypeChip(String label) {
-    final bool isSelected = _repeatType == label;
+  Widget _buildRepeatTypeChip(String label, String value) {
+    final bool isSelected = _repeatType == value;
     return GestureDetector(
       onTap: () {
         setState(() {
-          _repeatType = label;
+          _repeatType = value;
         });
       },
       child: Container(

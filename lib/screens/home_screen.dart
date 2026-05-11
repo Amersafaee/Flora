@@ -10,6 +10,8 @@ import 'identify_screen.dart';
 import 'plant_detail_screen.dart';
 import 'post_comments_screen.dart';
 import 'wiki_screen.dart';
+import 'flora_chats_list_screen.dart';
+import 'all_plants_screen.dart';
 import '../services/firestore_service.dart';
 import '../models/plant_model.dart';
 import '../models/task_model.dart';
@@ -28,7 +30,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
@@ -61,47 +63,55 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Widget _buildSmallStatCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color primaryColor,
-    required BuildContext context,
-  }) {
+  Widget _buildCompactStatCard(BuildContext context, String title, String value, IconData icon, Color iconColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
         children: [
-          Icon(icon, color: primaryColor, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
+          Icon(icon, color: iconColor, size: 28),
+          if (value.isNotEmpty) const SizedBox(height: 8),
+          if (value.isNotEmpty)
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-          ),
           const SizedBox(height: 4),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 10,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickAction(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Theme.of(context).primaryColor, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -170,258 +180,256 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
               
-              // Greeting
-              Text(
-                () {
-                  final hour = DateTime.now().hour;
-                  if (hour < 12) return 'Good Morning.';
-                  if (hour < 17) return 'Good Afternoon.';
-                  return 'Good Evening.';
-                }(),
-                style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.onSurface : primaryColor,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              StreamBuilder<List<Plant>>(
-                stream: firestoreService.getPlants(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Text('Loading observations...', style: TextStyle(color: Colors.grey, fontSize: 14));
-                  }
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Text('Add your first plant to get observations.', style: TextStyle(color: Colors.grey, fontSize: 14));
-                  }
-                  
-                  final plants = snapshot.data!.where((p) => !p.isDeceased).toList();
-                  Plant? needsAttention;
-                  for (var p in plants) {
-                    if (p.healthStatus != 'Healthy' || p.healthScore < 70) {
-                      needsAttention = p;
-                      break;
+              // Greeting & Flora Observation
+              StreamBuilder<DocumentSnapshot>(
+                stream: userId != null ? FirebaseFirestore.instance.collection('users').doc(userId).snapshots() : const Stream.empty(),
+                builder: (context, userSnapshot) {
+                  String name = '';
+                  int careStreak = 0;
+                  if (userSnapshot.hasData && userSnapshot.data!.exists) {
+                    final data = userSnapshot.data!.data() as Map<String, dynamic>?;
+                    if (data != null) {
+                      name = data['displayName'] ?? data['fullName'] ?? '';
+                      careStreak = (data['careStreak'] as num?)?.toInt() ?? 0;
+                      if (name.contains(' ')) {
+                        name = name.split(' ')[0];
+                      }
                     }
                   }
-                  
-                  if (needsAttention != null) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => PlantDetailScreen(plantId: needsAttention!.id)));
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F3EA),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.energy_savings_leaf, color: primaryColor, size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Your ${needsAttention.name} needs attention — health score dropped to ${needsAttention.healthScore}',
-                                style: TextStyle(color: primaryColor, fontWeight: FontWeight.w500, fontSize: 13),
-                              ),
-                            ),
-                            Icon(Icons.arrow_forward_ios, size: 12, color: primaryColor),
-                          ],
+
+                  final greeting = () {
+                    final hour = DateTime.now().hour;
+                    final timeStr = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+                    return name.isNotEmpty ? '$timeStr, $name' : timeStr;
+                  }();
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        greeting,
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.onSurface : primaryColor,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  }
-                  
-                  return Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F3EA),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: primaryColor.withValues(alpha: 0.1)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.eco, color: primaryColor, size: 20),
-                        const SizedBox(width: 12),
-                        Text(
-                          'All your plants are looking great today 🌿',
-                          style: TextStyle(color: primaryColor, fontWeight: FontWeight.w500, fontSize: 13),
-                        ),
-                      ],
-                    ),
+                      const SizedBox(height: 16),
+                      
+                      // Flora Observation Card
+                      FutureBuilder(
+                        future: Future.wait([
+                          FirebaseFirestore.instance.collection('users').doc(userId).collection('plants').get(),
+                          FirebaseFirestore.instance.collection('users').doc(userId).collection('tasks').get(),
+                        ]),
+                        builder: (context, AsyncSnapshot<List<QuerySnapshot>> snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                ShimmerBox(width: double.infinity, height: 80, borderRadius: 16),
+                                SizedBox(height: 12),
+                                ShimmerBox(width: double.infinity, height: 70, borderRadius: 16),
+                              ],
+                            );
+                          }
+                          
+                          if (snapshot.hasError || !snapshot.hasData) {
+                            return const SizedBox.shrink();
+                          }
+
+                          final plants = snapshot.data![0].docs.map((d) {
+                            try { return Plant.fromMap(d.data() as Map<String, dynamic>); } catch (_) { return null; }
+                          }).whereType<Plant>().where((p) => !p.isDeceased).toList();
+                          
+                          final tasks = snapshot.data![1].docs.map((d) {
+                            try { return Task.fromMap(d.data() as Map<String, dynamic>); } catch (_) { return null; }
+                          }).whereType<Task>().toList();
+                          
+                          final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+                          
+                          // Priority 1: Watering overdue > 2 days
+                          Task? overdueWatering;
+                          for (var t in tasks) {
+                            if (!t.isCompleted && t.taskType.toLowerCase().contains('water')) {
+                              final due = DateTime(t.dueDate.year, t.dueDate.month, t.dueDate.day);
+                              if (today.difference(due).inDays > 2) {
+                                overdueWatering = t;
+                                break;
+                              }
+                            }
+                          }
+                          
+                          // Priority 2: Plant healthScore < 60 and has lastAssessment
+                          Plant? urgentPlant;
+                          for (var d in snapshot.data![0].docs) {
+                            final data = d.data() as Map<String, dynamic>;
+                            final p = Plant.fromMap(data);
+                            if (!p.isDeceased && p.healthScore < 60 && data.containsKey('lastAssessment')) {
+                              urgentPlant = p;
+                              break;
+                            }
+                          }
+                          
+                          // Priority 3: Tasks due today
+                          int tasksToday = 0;
+                          for (var t in tasks) {
+                            if (!t.isCompleted) {
+                              final due = DateTime(t.dueDate.year, t.dueDate.month, t.dueDate.day);
+                              if (due.isAtSameMomentAs(today) || due.isBefore(today)) {
+                                tasksToday++;
+                              }
+                            }
+                          }
+
+                          Widget card;
+                          if (overdueWatering != null) {
+                            final daysOverdue = today.difference(DateTime(overdueWatering.dueDate.year, overdueWatering.dueDate.month, overdueWatering.dueDate.day)).inDays;
+                            card = GestureDetector(
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareScreen())),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade50,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.blue.shade200),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.water_drop, color: Colors.blue.shade700, size: 24),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        '💧 ${overdueWatering.plantName} is thirsty — watering overdue by $daysOverdue days',
+                                        style: TextStyle(color: Colors.blue.shade900, fontWeight: FontWeight.w600, fontSize: 14),
+                                      ),
+                                    ),
+                                    Icon(Icons.arrow_forward_ios, size: 14, color: Colors.blue.shade700),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else if (urgentPlant != null) {
+                            card = GestureDetector(
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlantDetailScreen(plantId: urgentPlant!.id))),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.red.shade200),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 24),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        '🚨 ${urgentPlant.name} needs urgent attention',
+                                        style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.w600, fontSize: 14),
+                                      ),
+                                    ),
+                                    Icon(Icons.arrow_forward_ios, size: 14, color: Colors.red.shade700),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else if (tasksToday > 0) {
+                            card = GestureDetector(
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareScreen())),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F3EA),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.checklist, color: primaryColor, size: 24),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        '📋 You have $tasksToday care task${tasksToday == 1 ? '' : 's'} today',
+                                        style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 14),
+                                      ),
+                                    ),
+                                    Icon(Icons.arrow_forward_ios, size: 14, color: primaryColor),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else {
+                            card = GestureDetector(
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VitalsDashboardScreen())),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F3EA),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.eco, color: primaryColor, size: 24),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        '🌿 All ${plants.length} plants are thriving today',
+                                        style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 14),
+                                      ),
+                                    ),
+                                    Icon(Icons.arrow_forward_ios, size: 14, color: primaryColor),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Column(
+                            children: [
+                              card,
+                              const SizedBox(height: 12),
+                              // Care Streak Card
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF3ED),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: const Color(0xFFFF6B35).withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.local_fire_department, color: Color(0xFFFF6B35), size: 36),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '$careStreak day care streak',
+                                            style: const TextStyle(color: Color(0xFF8D3A15), fontWeight: FontWeight.bold, fontSize: 18),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            careStreak == 0 
+                                              ? 'Start your streak — complete a care task today'
+                                              : (tasksToday > 0 ? 'Keep it going — you have tasks today' : 'Perfect — nothing due today'),
+                                            style: const TextStyle(color: Color(0xFFB55730), fontSize: 13),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
                   );
                 },
-              ),
-              const SizedBox(height: 16),
-
-              // Stats Cards
-              Row(
-                children: [
-                  Expanded(
-                    child: StreamBuilder<List<Task>>(
-                      stream: firestoreService.getTasksForToday(),
-                      builder: (context, snapshot) {
-                        int taskCount = 0;
-                        if (snapshot.hasData) {
-                          taskCount = snapshot.data!.where((t) => !t.isCompleted).length;
-                        }
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const CareScreen()));
-                          },
-                          child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E211E) : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: const BoxDecoration(
-                                  color: softGreen,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.water_drop, color: primaryColor),
-                              ),
-                              const SizedBox(height: 12),
-                              if (snapshot.connectionState == ConnectionState.waiting)
-                                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                              else if (snapshot.hasError)
-                                const Text('Something went wrong', style: TextStyle(color: Colors.grey, fontSize: 12))
-                              else
-                                Text(
-                                  "$taskCount",
-                                  style: const TextStyle(
-                                    color: Color(0xFF154212),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 28,
-                                  ),
-                                ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Tasks today',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        );
-                      }
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: StreamBuilder<List<Plant>>(
-                      stream: firestoreService.getPlants(),
-                      builder: (context, snapshot) {
-                        int plantCount = snapshot.hasData ? snapshot.data!.length : 0;
-                        int totalScore = 0;
-                        if (snapshot.hasData) {
-                          for (var p in snapshot.data!) { totalScore += p.healthScore; }
-                        }
-                        int avgScore = plantCount > 0 ? (totalScore / plantCount).round() : 0;
-                        Color barColor = Colors.grey;
-                        if (plantCount > 0) {
-                          if (avgScore > 70) { barColor = const Color(0xFF154212); }
-                          else if (avgScore >= 40) { barColor = Colors.orange.shade600; }
-                          else { barColor = Colors.red.shade600; }
-                        }
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const VitalsDashboardScreen()));
-                          },
-                          child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E211E) : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: const BoxDecoration(
-                                  color: softGreen,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.eco, color: primaryColor),
-                              ),
-                              const SizedBox(height: 12),
-                              if (snapshot.connectionState == ConnectionState.waiting)
-                                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                              else if (snapshot.hasError)
-                                const Text('Something went wrong', style: TextStyle(color: Colors.grey, fontSize: 12))
-                              else
-                                Text(
-                                  "$plantCount",
-                                  style: const TextStyle(
-                                    color: Color(0xFF154212),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 28,
-                                  ),
-                                ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Total Plants',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              if (plantCount > 0)
-                                Container(
-                                  height: 4,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade200,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                  child: LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      return Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Container(
-                                          width: constraints.maxWidth * (avgScore / 100),
-                                          decoration: BoxDecoration(
-                                            color: barColor,
-                                            borderRadius: BorderRadius.circular(2),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        );
-                      }
-                    ),
-                  ),
-                ],
               ),
               const SizedBox(height: 8),
 
@@ -453,13 +461,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 stream: firestoreService.getTasksForYesterdayAndToday(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: ShimmerBox(width: double.infinity, height: 80, borderRadius: 16),
+                    );
                   }
                   if (snapshot.hasError) {
-                    return const Center(
-                      child: Text(
-                        'Something went wrong',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(8),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.cloud_off, color: Colors.amber.shade800, size: 16),
+                          const SizedBox(width: 8),
+                          Text('You are offline — showing cached data', style: TextStyle(color: Colors.amber.shade800, fontSize: 12)),
+                        ],
                       ),
                     );
                   }
@@ -604,103 +626,65 @@ class _HomeScreenState extends State<HomeScreen> {
                         .where('dueDate', isGreaterThanOrEqualTo: DateTime.now().subtract(const Duration(days: 7)))
                         .get(),
                       builder: (context, snapshot) {
-                        final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                        return _buildSmallStatCard(
-                          title: 'Done This Week',
-                          value: '$count',
-                          icon: Icons.check_circle_outline,
-                          primaryColor: primaryColor,
-                          context: context,
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: FutureBuilder<int>(
-                      future: firestoreService.getTotalJournalEntriesCount(),
-                      builder: (context, snapshot) {
-                        final count = snapshot.data ?? 0;
-                        return _buildSmallStatCard(
-                          title: 'Journal Entries',
-                          value: '$count',
-                          icon: Icons.book_outlined,
-                          primaryColor: primaryColor,
-                          context: context,
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: StreamBuilder<List<Plant>>(
-                      stream: firestoreService.getPlants(),
-                      builder: (context, snapshot) {
-                        int avgHealth = 0;
-                        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                          final plants = snapshot.data!;
-                          int sum = 0;
-                          for (var p in plants) { sum += p.healthScore; }
-                          avgHealth = (sum / plants.length).round();
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const ShimmerBox(width: double.infinity, height: 60, borderRadius: 12);
                         }
-                        return _buildSmallStatCard(
-                          title: 'Avg Health',
-                          value: '$avgHealth',
-                          icon: Icons.favorite_outline,
-                          primaryColor: primaryColor,
-                          context: context,
-                        );
+                        final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                        return _buildCompactStatCard(context, 'Tasks Done', '$count', Icons.check_circle_outline, Colors.green);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: StreamBuilder<List<Map<String, dynamic>>>(
+                      stream: firestoreService.getLightweightPlants(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const ShimmerBox(width: double.infinity, height: 60, borderRadius: 12);
+                        }
+                        final plants = snapshot.data?.where((p) => p['isDeceased'] != true).toList() ?? [];
+                        final count = plants.length;
+                        return _buildCompactStatCard(context, 'Plants', '$count', Icons.energy_savings_leaf, primaryColor);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: StreamBuilder<List<Map<String, dynamic>>>(
+                      stream: firestoreService.getLightweightPlants(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const ShimmerBox(width: double.infinity, height: 60, borderRadius: 12);
+                        }
+                        final plantsData = snapshot.data ?? [];
+                        final assessed = plantsData.where((p) => p['isDeceased'] != true && p.containsKey('lastAssessmentDate')).toList();
+                        if (assessed.isEmpty) {
+                          return GestureDetector(
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen())),
+                            child: _buildCompactStatCard(context, 'Assess a plant', '', Icons.camera_alt, Colors.grey),
+                          );
+                        }
+                        int sum = 0;
+                        for (var p in assessed) { sum += (p['healthScore'] as num?)?.toInt() ?? 100; }
+                        final avgHealth = assessed.isNotEmpty ? (sum / assessed.length).round() : 0;
+                        return _buildCompactStatCard(context, 'Avg Health', '$avgHealth', Icons.favorite, Colors.red);
                       },
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-
-              // Identify Plant Card
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const IdentifyScreen()),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(20.0),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E3A1E) : const Color(0xFF154212),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.camera_alt, color: Colors.white, size: 32),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Identify Plant',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Scan and add to collection',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+              const SizedBox(height: 24),
+              // Quick Actions Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildQuickAction(context, Icons.water_drop, 'Water', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareScreen()))),
+                  _buildQuickAction(context, Icons.search, 'Identify', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()))),
+                  _buildQuickAction(context, Icons.book, 'Journal', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllPlantsScreen()))),
+                  _buildQuickAction(context, Icons.chat_bubble_outline, 'Ask Flora', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()))),
+                ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               
               // My Plants Section
               Text(
@@ -720,10 +704,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
-                    return const Center(
-                      child: Text(
-                        'Something went wrong',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(8),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.cloud_off, color: Colors.amber.shade800, size: 16),
+                          const SizedBox(width: 8),
+                          Text('You are offline — showing cached data', style: TextStyle(color: Colors.amber.shade800, fontSize: 12)),
+                        ],
                       ),
                     );
                   }
@@ -731,26 +726,67 @@ class _HomeScreenState extends State<HomeScreen> {
                   final plants = allPlants.where((p) => !p.isDeceased).toList();
                   
                   if (plants.isEmpty) {
-                    return Column(
-                      children: [
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40),
-                            child: Text(
-                              'No active plants yet. Tap Identify to add your first plant.',
-                              style: TextStyle(color: Colors.grey),
-                              textAlign: TextAlign.center,
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF154212).withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.eco, color: Color(0xFF154212), size: 80),
                             ),
-                          ),
+                            const SizedBox(height: 24),
+                            Text(
+                              'Your conservatory is empty',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Add your first plant and Flora will build a personalised care plan for it automatically',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                            ),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen()));
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF154212),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: const Text('Add Your First Plant 🌱', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()));
+                              },
+                              child: const Text('Or identify a plant with your camera', style: TextStyle(color: Color(0xFF154212))),
+                            ),
+                            if (allPlants.any((p) => p.isDeceased))
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MemorialGardenScreen()));
+                                },
+                                child: const Text('Memorial Garden', style: TextStyle(color: Colors.grey, fontSize: 12, fontStyle: FontStyle.italic)),
+                              ),
+                          ],
                         ),
-                        if (allPlants.any((p) => p.isDeceased))
-                          TextButton(
-                            onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const MemorialGardenScreen()));
-                            },
-                            child: const Text('Memorial Garden', style: TextStyle(color: Colors.grey, fontSize: 12, fontStyle: FontStyle.italic)),
-                          ),
-                      ],
+                      ),
                     );
                   }
 
@@ -1136,12 +1172,59 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class ShimmerBox extends StatefulWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
 
+  const ShimmerBox({
+    super.key,
+    required this.width,
+    required this.height,
+    this.borderRadius = 8.0,
+  });
 
+  @override
+  State<ShimmerBox> createState() => _ShimmerBoxState();
+}
 
+class _ShimmerBoxState extends State<ShimmerBox> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
 
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.3, end: 0.7).animate(_controller);
+  }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
 
 
 

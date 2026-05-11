@@ -19,12 +19,28 @@ class FloraChatsListScreen extends StatelessWidget {
     final uid = _uid();
     if (uid.isEmpty) return;
 
+    final existingChats = await _chatsRef().limit(1).get();
+    final isFirstConversation = existingChats.docs.isEmpty;
+
+    String initialLastMessage = '';
+    if (isFirstConversation) {
+      initialLastMessage = "Hi there! 🌿 I'm Flora — your personal plant care companion...";
+    }
+
     final docRef = await _chatsRef().add({
       'title': 'New Conversation',
       'createdAt': FieldValue.serverTimestamp(),
-      'lastMessage': '',
+      'lastMessage': initialLastMessage,
       'lastMessageAt': FieldValue.serverTimestamp(),
     });
+
+    if (isFirstConversation) {
+      await docRef.collection('messages').add({
+        'role': 'model',
+        'text': "Hi there! 🌿 I'm Flora — your personal plant care companion inside Digital Conservatory. I've been waiting to meet you! I can help you identify plants, diagnose health issues, build care schedules, and answer any plant question you can think of. I know your entire collection and I pay close attention to every plant's journey. So — do you have any plants already, or are we starting fresh today? 🪴",
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
 
     if (context.mounted) {
       Navigator.push(

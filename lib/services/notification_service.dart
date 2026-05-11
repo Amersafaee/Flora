@@ -150,5 +150,52 @@ class NotificationService {
   Future<void> cancelAllNotifications() async {
     await _flutterLocalNotificationsPlugin.cancelAll();
   }
+
+  Future<void> scheduleDailyFloraInsight() async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'daily_insight_channel',
+      'Daily Flora Insights',
+      channelDescription: 'Daily check-in reminders for your plants',
+      importance: Importance.defaultImportance,
+    );
+
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(),
+    );
+
+    var scheduledDate = tz.TZDateTime.local(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+      9,
+      0,
+    );
+
+    if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    try {
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        999,
+        'Flora has an update for you 🌿',
+        'Check in on your plants — your care calendar has updates waiting',
+        scheduledDate,
+        platformDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e) {
+      await _flutterLocalNotificationsPlugin.periodicallyShow(
+        999,
+        'Flora has an update for you 🌿',
+        'Check in on your plants — your care calendar has updates waiting',
+        RepeatInterval.daily,
+        platformDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+    }
+  }
 }
 

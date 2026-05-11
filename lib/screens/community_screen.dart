@@ -27,6 +27,24 @@ class _CommunityScreenState extends State<CommunityScreen> {
   void initState() {
     super.initState();
     _checkUnansweredQuestions();
+    _checkAndSeedChallenge();
+  }
+
+  Future<void> _checkAndSeedChallenge() async {
+    try {
+      final qs = await FirebaseFirestore.instance.collection('challenges').limit(1).get();
+      if (qs.docs.isEmpty) {
+        await FirebaseFirestore.instance.collection('challenges').add({
+          'title': 'This Week: Show Your Best Growth 🌱',
+          'description': 'Share a before and after photo of your most dramatic plant transformation this week',
+          'endDate': Timestamp.fromDate(DateTime.now().add(const Duration(days: 7))),
+          'participantCount': 0,
+          'isActive': true,
+        });
+      }
+    } catch (e) {
+      debugPrint('Error seeding challenge: $e');
+    }
   }
 
   Future<void> _checkUnansweredQuestions() async {
@@ -179,6 +197,76 @@ class _CommunityScreenState extends State<CommunityScreen> {
               ),
               const SizedBox(height: 10),
 
+              // Challenge Banner
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('challenges').where('isActive', isEqualTo: true).limit(1).snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const SizedBox();
+                  final challengeData = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+                  final title = challengeData['title'] ?? '';
+                  final description = challengeData['description'] ?? '';
+                  final endDate = (challengeData['endDate'] as Timestamp?)?.toDate() ?? DateTime.now();
+                  final daysLeft = endDate.difference(DateTime.now()).inDays;
+                  
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF154212), Color(0xFF2D5A27)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.emoji_events, color: Colors.amber, size: 24),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  title,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                              ),
+                              Text(
+                                '$daysLeft days left',
+                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            description,
+                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => CreatePostScreen(initialCategory: 'Showcase', initialTitle: title)));
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF154212),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('Join Challenge', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+
               // Swap Market Banner
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
@@ -327,10 +415,40 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     }).toList();
 
                     if (allDocs.isEmpty) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(40.0),
-                          child: Text('No posts yet. Be the first to share!', style: TextStyle(color: Colors.grey)),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.people, size: 60, color: Color(0xFF154212)),
+                            const SizedBox(height: 20),
+                            Text(
+                              'Be the first to share',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'The community is waiting for your plant story. Share a tip, ask a question, or show off your collection.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'General')));
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF154212),
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('Start a Discussion', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
                         ),
                       );
                     }
@@ -486,7 +604,37 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             title: const Text('Report Post'),
                             onTap: () {
                               Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF2D5A27), behavior: SnackBarBehavior.floating));
+                              showModalBottomSheet(
+                                context: context,
+                                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                                builder: (context) => SafeArea(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.all(16.0),
+                                        child: Text('Report this post', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                      ),
+                                      ...['Spam', 'Misinformation', 'Inappropriate content', 'Off topic', 'Other'].map((reason) => ListTile(
+                                        title: Text(reason),
+                                        onTap: () async {
+                                          Navigator.pop(context);
+                                          await FirebaseFirestore.instance.collection('reports').add({
+                                            'postId': postDoc.id,
+                                            'reportedByUid': currentUserId,
+                                            'reason': reason,
+                                            'timestamp': FieldValue.serverTimestamp(),
+                                            'status': 'pending',
+                                          });
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report submitted. Thank you for keeping the community safe.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating));
+                                          }
+                                        },
+                                      )),
+                                    ],
+                                  ),
+                                ),
+                              );
                             },
                           ),
                           if (currentUserId == authorUid)

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'add_plant_screen.dart';
 import 'flora_screen.dart';
+import 'wiki_plant_detail_screen.dart';
 
 class IdentifyResultScreen extends StatefulWidget {
   final File imageFile;
@@ -318,7 +319,68 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 16),
+                    FutureBuilder<QuerySnapshot>(
+                      future: FirebaseFirestore.instance.collection('species').get(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return const SizedBox.shrink();
+                        final docs = snapshot.data!.docs;
+                        final pName = _extractPlantName().toLowerCase();
+                        
+                        Map<String, dynamic>? match;
+                        for (var d in docs) {
+                          final data = d.data() as Map<String, dynamic>;
+                          final sName = (data['name'] as String? ?? '').toLowerCase();
+                          final cName = (data['commonName'] as String? ?? '').toLowerCase();
+                          if (sName.isNotEmpty && (pName.contains(sName) || sName.contains(pName))) {
+                            match = data; break;
+                          }
+                          if (cName.isNotEmpty && (pName.contains(cName) || cName.contains(pName))) {
+                            match = data; break;
+                          }
+                        }
+                        
+                        if (match == null) return const SizedBox.shrink();
+                        
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => WikiPlantDetailScreen(plantData: match!)));
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4))],
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE8F5E9),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(Icons.menu_book, color: Color(0xFF2E7D32)),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      'Read the full care guide for ${match['commonName'] ?? match['name'] ?? 'this plant'}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                    ),
+                                  ),
+                                  const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
 
                     // ── Action buttons ───────────────────────────────────
                     // Add to My Collection

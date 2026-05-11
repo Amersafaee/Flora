@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'global_search_screen.dart';
@@ -52,12 +52,14 @@ class _ClimateScreenState extends State<ClimateScreen> {
        .listen((snap) {
          if (!mounted) return;
          final docs = snap.docs;
-         if (docs.isNotEmpty) {
-           setState(() {
+         setState(() {
+           if (docs.isNotEmpty) {
              _currentTemp = docs.first['value'].toString();
-             _tempReadings = docs.map((d) => d.data()).toList().reversed.toList();
-           });
-         }
+           } else {
+             _currentTemp = '--';
+           }
+           _tempReadings = docs.map((d) => d.data()).toList().reversed.toList();
+         });
        });
 
     // Listen to humidity
@@ -68,12 +70,14 @@ class _ClimateScreenState extends State<ClimateScreen> {
        .listen((snap) {
          if (!mounted) return;
          final docs = snap.docs;
-         if (docs.isNotEmpty) {
-           setState(() {
+         setState(() {
+           if (docs.isNotEmpty) {
              _currentHum = docs.first['value'].toString();
-             _humReadings = docs.map((d) => d.data()).toList().reversed.toList();
-           });
-         }
+           } else {
+             _currentHum = '--';
+           }
+           _humReadings = docs.map((d) => d.data()).toList().reversed.toList();
+         });
        });
   }
 
@@ -94,7 +98,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
         .set({
       'type': type,
       'value': value,
-      'timestamp': FieldValue.serverTimestamp(),
+      'timestamp': Timestamp.now(),
     });
     
     if (mounted) {
@@ -463,7 +467,9 @@ class RealChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant RealChartPainter oldDelegate) {
+    return oldDelegate.tempReadings != tempReadings || oldDelegate.humReadings != humReadings;
+  }
 }
 
 

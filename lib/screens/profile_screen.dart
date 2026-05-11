@@ -29,11 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final AuthService _authService = AuthService();
 
-  int _plantsCount = 0;
-  int _tasksCount = 0;
-  int _journalCount = 0;
   bool _isDarkMode = false;
-  bool _isLoading = true;
   bool _isUploadingPhoto = false;
   String? _profilePhotoUrl;
 
@@ -45,9 +41,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadStats() async {
     try {
-      final plants = await _firestoreService.getTotalPlantsCount();
-      final tasks = await _firestoreService.getCompletedTasksCount();
-      final journals = await _firestoreService.getTotalJournalEntriesCount();
       final isDark = await ThemeService().loadThemeMode();
 
       // Load saved profile photo URL from Firestore
@@ -60,20 +53,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (mounted) {
         setState(() {
-          _plantsCount = plants;
-          _tasksCount = tasks;
-          _journalCount = journals;
           _isDarkMode = isDark;
-          _isLoading = false;
           if (savedPhotoUrl != null && savedPhotoUrl.isNotEmpty) {
             _profilePhotoUrl = savedPhotoUrl;
           }
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      debugPrint('Error loading stats: $e');
     }
   }
 
@@ -228,7 +215,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 24), // Balance header
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('users').doc(_auth.currentUser?.uid).collection('notifications').where('isRead', isEqualTo: false).snapshots(),
+                    builder: (context, snapshot) {
+                      final count = snapshot.data?.docs.length ?? 0;
+                      return Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.notifications_outlined, color: Theme.of(context).colorScheme.onSurface),
+                            onPressed: () {
+                              _showNotificationsSheet(context);
+                            },
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          if (count > 0)
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 32),
@@ -244,7 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           CircleAvatar(
                             radius: 48,
-                            backgroundColor: primaryColor,
+                            backgroundColor: (_profilePhotoUrl == null && user?.photoURL == null) ? Colors.grey : primaryColor,
                             backgroundImage: _profilePhotoUrl != null
                                 ? NetworkImage(_profilePhotoUrl!)
                                 : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
@@ -336,34 +347,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
-                      offset: Offset(0, 4),
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: _isLoading 
-                  ? Center(child: CircularProgressIndicator(color: primaryColor))
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildStatColumn(
-                          count: _plantsCount.toString(),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    FutureBuilder<int>(
+                      future: _firestoreService.getTotalPlantsCount(),
+                      builder: (context, snapshot) {
+                        return _buildStatColumn(
+                          count: snapshot.hasData ? snapshot.data.toString() : '...',
                           label: 'Plants',
                           primaryColor: primaryColor,
-                        ),
-                        Container(width: 1, height: 40, color: Colors.grey.shade200),
-                        _buildStatColumn(
-                          count: _tasksCount.toString(),
+                        );
+                      },
+                    ),
+                    Container(width: 1, height: 40, color: Colors.grey.shade200),
+                    FutureBuilder<int>(
+                      future: _firestoreService.getCompletedTasksCount(),
+                      builder: (context, snapshot) {
+                        return _buildStatColumn(
+                          count: snapshot.hasData ? snapshot.data.toString() : '...',
                           label: 'Tasks Done',
                           primaryColor: primaryColor,
-                        ),
-                        Container(width: 1, height: 40, color: Colors.grey.shade200),
-                        _buildStatColumn(
-                          count: _journalCount.toString(),
+                        );
+                      },
+                    ),
+                    Container(width: 1, height: 40, color: Colors.grey.shade200),
+                    FutureBuilder<int>(
+                      future: _firestoreService.getTotalJournalEntriesCount(),
+                      builder: (context, snapshot) {
+                        return _buildStatColumn(
+                          count: snapshot.hasData ? snapshot.data.toString() : '...',
                           label: 'Journal Entries',
                           primaryColor: primaryColor,
-                        ),
-                      ],
+                        );
+                      },
                     ),
+                  ],
+                ),
               ),
               const SizedBox(height: 32),
               
@@ -455,6 +479,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                 },
               ),
+              const SizedBox(height: 32),
+              
+              // About Title
+              const Text(
+                'ABOUT',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              _buildSettingsRow(
+                icon: Icons.info_outline,
+                title: 'Digital Conservatory v1.0.0',
+                softGreen: softGreen,
+                primaryColor: primaryColor,
+                isInfo: true,
+              ),
+              const SizedBox(height: 12),
+              _buildSettingsRow(
+                icon: Icons.email_outlined,
+                title: 'Send Feedback',
+                softGreen: softGreen,
+                primaryColor: primaryColor,
+                onTap: () async {
+                  final url = Uri.parse('mailto:feedback@digitalconservatory.app?subject=App Feedback');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url);
+                  }
+                },
+              ),
               const SizedBox(height: 12),
               _buildSettingsRow(
                 icon: Icons.shield_outlined,
@@ -462,7 +520,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 softGreen: softGreen,
                 primaryColor: primaryColor,
                 onTap: () async {
-                  final url = Uri.parse('https://www.termsfeed.com/live/digital-conservatory-privacy');
+                  final url = Uri.parse('https://digitalconservatory.app/privacy');
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url);
                   }
@@ -534,6 +592,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required Color primaryColor,
     bool isToggle = false,
     bool toggleValue = false,
+    bool isInfo = false,
     ValueChanged<bool>? onToggle,
     VoidCallback? onTap,
   }) {
@@ -579,12 +638,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onChanged: onToggle,
               activeColor: primaryColor,
             )
-          else
+          else if (!isInfo)
             const Icon(Icons.chevron_right, color: Colors.grey),
         ],
       ),
       ),
     );
+  }
+
+  void _showNotificationsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        final uid = _auth.currentUser?.uid;
+        if (uid == null) return const SizedBox();
+        return SafeArea(
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    TextButton(
+                      onPressed: () async {
+                        final qs = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').where('isRead', isEqualTo: false).get();
+                        final batch = FirebaseFirestore.instance.batch();
+                        for (var doc in qs.docs) {
+                          batch.update(doc.reference, {'isRead': true});
+                        }
+                        await batch.commit();
+                      },
+                      child: const Text('Mark all as read'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').orderBy('timestamp', descending: true).snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      final docs = snapshot.data!.docs;
+                      if (docs.isEmpty) {
+                        return const Center(child: Text('No new notifications 🌿', style: TextStyle(color: Colors.grey)));
+                      }
+                      return ListView.builder(
+                        itemCount: docs.length,
+                        itemBuilder: (context, index) {
+                          final data = docs[index].data() as Map<String, dynamic>;
+                          final isRead = data['isRead'] == true;
+                          final message = data['message'] ?? '';
+                          final timestamp = data['timestamp'] as Timestamp?;
+                          final timeAgo = timestamp != null ? _formatTimestampForNotification(timestamp.toDate()) : 'Just now';
+                          return ListTile(
+                            leading: Icon(Icons.notifications, color: isRead ? Colors.grey : Theme.of(context).primaryColor),
+                            title: Text(message, style: TextStyle(fontWeight: isRead ? FontWeight.normal : FontWeight.bold)),
+                            subtitle: Text(timeAgo),
+                            onTap: () {
+                              docs[index].reference.update({'isRead': true});
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatTimestampForNotification(DateTime date) {
+    final difference = DateTime.now().difference(date);
+    if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
+    if (difference.inHours < 24) return '${difference.inHours}h ago';
+    if (difference.inDays < 2) return 'Yesterday';
+    return '${difference.inDays}d ago';
   }
 }
 

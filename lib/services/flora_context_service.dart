@@ -183,7 +183,10 @@ class FloraContextService {
         buffer.writeln();
       }
 
-      final result = buffer.toString().trim();
+      var result = buffer.toString().trim();
+      if (result.length > 1500) {
+        result = '${result.substring(0, 1500)}... [context truncated for performance]';
+      }
 
       // ── Store in cache ───────────────────────────────────────────────────
       _cache[cacheKey] = (DateTime.now(), result);
@@ -237,7 +240,7 @@ class FloraContextService {
   Future<Map<String, int>> _fetchPlantTaskSummary(
       String uid, String plantName) async {
     final since = Timestamp.fromDate(
-        DateTime.now().subtract(const Duration(days: 30)));
+        DateTime.now().subtract(const Duration(days: 14)));
 
     final snap = await _db
         .collection('users')

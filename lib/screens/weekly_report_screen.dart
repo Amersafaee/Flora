@@ -29,6 +29,13 @@ class WeeklyReportScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
               // Drag handle
               Container(
                 width: 40,

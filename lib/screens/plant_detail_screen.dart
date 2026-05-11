@@ -12,6 +12,10 @@ import 'shareable_card_screen.dart';
 import 'plant_passport_screen.dart';
 import '../models/plant_model.dart';
 import '../models/treatment_case_model.dart';
+import '../models/task_model.dart';
+import 'wiki_plant_detail_screen.dart';
+import 'post_comments_screen.dart';
+import 'community_screen.dart';
 
 // ignore_for_file: avoid_dynamic_calls
 
@@ -218,7 +222,7 @@ class PlantDetailScreen extends StatelessWidget {
                       .collection('users')
                       .doc(uid)
                       .collection('tasks')
-                      .where('plantName', isEqualTo: plantData['name'] as String? ?? plantName)
+                      .where('plantId', isEqualTo: plantId)
                       .snapshots(),
                   builder: (context, taskSnap) {
                     DateTime? lastWateredDate;
@@ -254,46 +258,105 @@ class PlantDetailScreen extends StatelessWidget {
                         children: [
                           // Left Box (Health Score)
                           Expanded(
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).cardColor,
-                                    shape: BoxShape.circle,
+                            child: (lastAssessment == null || lastAssessmentTs == null)
+                                ? Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).cardColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(Icons.favorite_border, color: Colors.grey.shade400),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Health Score',
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    'Analyze with Flora to get health score',
+                                                    style: TextStyle(
+                                                      color: Colors.grey.shade600,
+                                                      fontSize: 10,
+                                                      fontStyle: FontStyle.italic,
+                                                    ),
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  icon: Icon(Icons.camera_alt, size: 16, color: primaryColor),
+                                                  padding: EdgeInsets.zero,
+                                                  constraints: const BoxConstraints(),
+                                                  onPressed: () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) => AddGrowthEntryScreen(
+                                                          plantName: plantData['name'] as String? ?? plantName,
+                                                          plantId: plantId,
+                                                          healthStatus: currentHealthStatus,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).cardColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(Icons.favorite, color: primaryColor), // heart
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Health Score',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          Text(
+                                            '$healthScore/100',
+                                            style: TextStyle(
+                                              color: primaryColor,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Vitals',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade500,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                  child: Icon(Icons.favorite, color: primaryColor), // heart
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Health Score',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    Text(
-                                      '$healthScore/100',
-                                      style: TextStyle(
-                                        color: primaryColor,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Vitals',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade500,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
                           ),
                           
                           // Divider
@@ -533,9 +596,241 @@ class PlantDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               
+              // Upcoming Tasks
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text(
+                  'Upcoming Tasks',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: StreamBuilder<List<Task>>(
+                  stream: FirestoreService().getTasksForPlant(plantId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final tasks = snapshot.data ?? [];
+                    final incompleteTasks = tasks.where((t) => !t.isCompleted).toList();
+                    if (incompleteTasks.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Center(child: Text('No upcoming tasks.', style: TextStyle(color: Colors.grey))),
+                      );
+                    }
+                    return Column(
+                      children: incompleteTasks.map((task) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.radio_button_unchecked, color: Colors.grey.shade400),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(task.taskType, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                    const SizedBox(height: 2),
+                                    Text(DateFormat('MMM d, yyyy').format(task.dueDate), style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ),
+              // ── Care Guide from Wiki ─────────────────────────────────────
+              FutureBuilder<QuerySnapshot>(
+                future: FirebaseFirestore.instance.collection('species').get(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return const SizedBox.shrink();
+                  final docs = snapshot.data!.docs;
+                  final pName = (plantData['name'] as String? ?? plantName).toLowerCase();
+                  
+                  Map<String, dynamic>? match;
+                  for (var d in docs) {
+                    final data = d.data() as Map<String, dynamic>;
+                    final sName = (data['name'] as String? ?? '').toLowerCase();
+                    final cName = (data['commonName'] as String? ?? '').toLowerCase();
+                    if (sName.isNotEmpty && (pName.contains(sName) || sName.contains(pName))) {
+                      match = data; break;
+                    }
+                    if (cName.isNotEmpty && (pName.contains(cName) || cName.contains(pName))) {
+                      match = data; break;
+                    }
+                  }
+                  
+                  if (match == null) return const SizedBox.shrink();
+                  
+                  final difficulty = match['difficulty'] ?? 'Moderate';
+                  Color diffColor = Colors.orange;
+                  if (difficulty.toString().toLowerCase().contains('easy')) diffColor = Colors.green;
+                  if (difficulty.toString().toLowerCase().contains('hard')) diffColor = Colors.red;
+                  
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Care Guide from Wiki',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => WikiPlantDetailScreen(plantData: match!)));
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE8F5E9),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(Icons.menu_book, color: Color(0xFF2E7D32)),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(match['commonName'] ?? match['name'] ?? 'Species', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                      const SizedBox(height: 4),
+                                      Text(match['watering'] ?? 'Moderate watering', style: const TextStyle(color: Colors.grey, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: diffColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(difficulty.toString(), style: TextStyle(color: diffColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
+              // ── Community Discussions ────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Community Discussions',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FutureBuilder<QuerySnapshot>(
+                      future: FirebaseFirestore.instance.collection('posts').orderBy('timestamp', descending: true).limit(3).get(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return const SizedBox.shrink();
+                        final docs = snapshot.data!.docs;
+                        if (docs.isEmpty) return const SizedBox.shrink();
+                        
+                        return Column(
+                          children: [
+                            ...docs.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final title = data['title'] as String? ?? 'Discussion';
+                              final author = data['authorName'] as String? ?? 'A';
+                              final authorInitial = author.isNotEmpty ? author[0].toUpperCase() : 'A';
+                              final truncatedTitle = title.length > 50 ? '${title.substring(0, 47)}...' : title;
+                              
+                              final ts = data['timestamp'] as Timestamp?;
+                              String timeAgo = '';
+                              if (ts != null) {
+                                final diff = DateTime.now().difference(ts.toDate());
+                                if (diff.inHours < 24) {
+                                  timeAgo = '${diff.inHours}h ago';
+                                } else if (diff.inDays < 7) {
+                                  timeAgo = '${diff.inDays}d ago';
+                                } else {
+                                  timeAgo = DateFormat.yMMMd().format(ts.toDate());
+                                }
+                              }
+                              
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: CircleAvatar(
+                                  backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                                  child: Text(authorInitial, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+                                ),
+                                title: Text(truncatedTitle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                trailing: Text(timeAgo, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                onTap: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => PostCommentsScreen(postId: doc.id, postTitle: title)));
+                                },
+                              );
+                            }),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()));
+                                },
+                                child: Text('See all discussions', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              
               // Growth History Title
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
                   'Growth History',
                   style: TextStyle(

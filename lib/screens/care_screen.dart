@@ -10,9 +10,10 @@ import '../services/notification_service.dart';
 import '../models/task_model.dart';
 import 'care_insights_screen.dart';
 import '../services/care_intelligence_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'batch_care_screen.dart';
+import 'add_plant_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CareScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -29,7 +30,7 @@ class _CareScreenState extends State<CareScreen> {
   final FirestoreService _firestoreService = FirestoreService();
 
   // Cache task dates for dots
-  Set<String> _taskDates = {};
+  Map<String, List<Color>> _taskDots = {};
 
   @override
   void initState() {
@@ -38,48 +39,52 @@ class _CareScreenState extends State<CareScreen> {
     // Find Monday of current week
     currentWeekStart = now.subtract(Duration(days: now.weekday - 1));
     currentWeekStart = DateTime(currentWeekStart.year, currentWeekStart.month, currentWeekStart.day);
-    _loadAllTaskDates();
+    _loadTasksForWeek();
   }
 
-  Future<void> _loadAllTaskDates() async {
+  Future<void> _loadTasksForWeek() async {
     final uid = _firestoreService.currentUserId;
     if (uid == null) return;
+    final endOfWeek = currentWeekStart.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
     final snap = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
         .collection('tasks')
+        .where('dueDate', isGreaterThanOrEqualTo: Timestamp.fromDate(currentWeekStart))
+        .where('dueDate', isLessThanOrEqualTo: Timestamp.fromDate(endOfWeek))
         .get();
-    final dates = <String>{};
+    
+    final dots = <String, List<Color>>{};
     for (var doc in snap.docs) {
-      final data = doc.data();
-      final ts = data['dueDate'];
-      if (ts is Timestamp) {
-        final d = ts.toDate();
-        dates.add('${d.year}-${d.month}-${d.day}');
-      }
+      final task = Task.fromMap(doc.data());
+      final d = task.dueDate;
+      final key = '${d.year}-${d.month}-${d.day}';
+      final color = _taskTypeColors(task.taskType).$2;
+      dots.putIfAbsent(key, () => []);
+      if (!dots[key]!.contains(color)) dots[key]!.add(color);
     }
-    if (mounted) setState(() => _taskDates = dates);
+    if (mounted) setState(() => _taskDots = dots);
   }
 
   void _prevWeek() {
     setState(() {
       currentWeekStart = currentWeekStart.subtract(const Duration(days: 7));
     });
-    _loadAllTaskDates();
+    _loadTasksForWeek();
   }
 
   void _nextWeek() {
     setState(() {
       currentWeekStart = currentWeekStart.add(const Duration(days: 7));
     });
-    _loadAllTaskDates();
+    _loadTasksForWeek();
   }
 
   List<DateTime> get _weekDays =>
       List.generate(7, (i) => currentWeekStart.add(Duration(days: i)));
 
-  bool _hasTaskOnDate(DateTime date) {
-    return _taskDates.contains('${date.year}-${date.month}-${date.day}');
+  List<Color> _getDotsForDate(DateTime date) {
+    return _taskDots['${date.year}-${date.month}-${date.day}'] ?? [];
   }
 
 
@@ -232,7 +237,7 @@ class _CareScreenState extends State<CareScreen> {
                                           ..addAll(updated);
                                       });
                                       // Refresh dot cache
-                                      _loadAllTaskDates();
+                                      _loadTasksForWeek();
                                     },
                                     child: Icon(
                                       Icons.radio_button_unchecked,
@@ -380,7 +385,7 @@ class _CareScreenState extends State<CareScreen> {
                     final isSelected = _selectedDate != null &&
                         DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day) ==
                             DateTime(day.year, day.month, day.day);
-                    final hasDot = _hasTaskOnDate(day);
+                    final dotColors = _getDotsForDate(day);
                     return GestureDetector(
                       onTap: () => _showTasksForDate(day),
                       child: _buildDayColumn(
@@ -388,7 +393,7 @@ class _CareScreenState extends State<CareScreen> {
                         '${day.day}',
                         isToday: isToday,
                         isSelected: isSelected,
-                        hasDot: hasDot,
+                        dotColors: dotColors,
                       ),
                     );
                   }),
@@ -396,11 +401,11 @@ class _CareScreenState extends State<CareScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Today's Tasks
+              // Tasks Title
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
-                  "Today's Tasks",
+                  "Tasks for the Week",
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF191C1B)),
                 ),
               ),
@@ -413,7 +418,7 @@ class _CareScreenState extends State<CareScreen> {
                     child: Column(
                       children: [
                         StreamBuilder<List<Task>>(
-                          stream: _firestoreService.getTasksForToday(),
+                          stream: _firestoreService.getTasksForWeek(currentWeekStart),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return const Padding(
@@ -429,9 +434,41 @@ class _CareScreenState extends State<CareScreen> {
                             }
                             final tasks = snapshot.data ?? [];
                             if (tasks.isEmpty) {
-                              return const Padding(
-                                padding: EdgeInsets.all(30.0),
-                                child: Center(child: Text('All caught up for today.', style: TextStyle(color: Colors.grey))),
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.calendar_today, size: 60, color: Color(0xFF154212)),
+                                    const SizedBox(height: 20),
+                                    Text(
+                                      'No care tasks yet',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                      'Add a plant to get a care schedule built automatically by Flora',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen()));
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF154212),
+                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      child: const Text('Add a Plant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
                               );
                             }
                             return Column(
@@ -472,6 +509,7 @@ class _CareScreenState extends State<CareScreen> {
                                   ),
                                 ...tasks.map((task) {
                                   final colors = _taskTypeColors(task.taskType);
+                                  final isOverdue = !task.isCompleted && task.dueDate.isBefore(DateTime(today.year, today.month, today.day));
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 16),
                                     child: _buildTaskCard(
@@ -481,7 +519,8 @@ class _CareScreenState extends State<CareScreen> {
                                       iconBgColor: colors.$2.withValues(alpha: 0.15),
                                       iconColor: colors.$2,
                                       title: task.taskType,
-                                      subtitle: '${task.plantName}${task.notes.isNotEmpty ? ' (${task.notes})' : ''}',
+                                      subtitle: '${task.plantName}${task.notes.isNotEmpty ? ' (${task.notes})' : ''}${isOverdue ? ' • Overdue' : ''}',
+                                      isOverdue: isOverdue,
                                     ),
                                   );
                                 }),
@@ -672,7 +711,7 @@ class _CareScreenState extends State<CareScreen> {
     );
   }
 
-  Widget _buildDayColumn(String dayName, String date, {bool isToday = false, bool isSelected = false, bool hasDot = false}) {
+  Widget _buildDayColumn(String dayName, String date, {bool isToday = false, bool isSelected = false, List<Color> dotColors = const []}) {
     final bool highlight = isToday || isSelected;
     final Color bgColor = isToday
         ? const Color(0xFF154212)
@@ -708,11 +747,13 @@ class _CareScreenState extends State<CareScreen> {
         const SizedBox(height: 4),
         SizedBox(
           height: 6,
-          child: hasDot
-              ? Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(color: Color(0xFF154212), shape: BoxShape.circle),
+          child: dotColors.isNotEmpty
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: dotColors.take(3).map((c) => Container(
+                    width: 6, height: 6, margin: const EdgeInsets.symmetric(horizontal: 1),
+                    decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+                  )).toList(),
                 )
               : const SizedBox.shrink(),
         ),
@@ -752,6 +793,7 @@ class _CareScreenState extends State<CareScreen> {
     required Color iconColor,
     required String title,
     required String subtitle,
+    bool isOverdue = false,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -772,9 +814,9 @@ class _CareScreenState extends State<CareScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF191C1B))),
+                Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isOverdue ? Colors.red : const Color(0xFF191C1B))),
                 const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                Text(subtitle, style: TextStyle(color: isOverdue ? Colors.red.shade300 : Colors.grey.shade600, fontSize: 13)),
               ],
             ),
           ),

@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
 import '../services/gemini_service.dart';
-import '../services/notification_service.dart';
 import '../models/treatment_case_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -85,83 +84,81 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        Navigator.pop(context);
       }
 
-      // Fire-and-forget background health assessment when an image is present
       if (imageUrl.isNotEmpty) {
-        final capturedPlantId = widget.plantId;
-        final capturedPlantName = widget.plantName;
-        final capturedHealthStatus = widget.healthStatus;
-        final capturedImageUrl = imageUrl;
-        Future(() async {
-          try {
-            final assessment = await GeminiService().analyzeGrowthPhoto(
-              imageUrl: capturedImageUrl,
-              plantName: capturedPlantName,
-              previousHealthStatus: capturedHealthStatus,
+        final assessment = await GeminiService().analyzeGrowthPhoto(
+          imageUrl: imageUrl,
+          plantName: widget.plantName,
+          previousHealthStatus: widget.healthStatus,
+        );
+        await FirestoreService().saveHealthAssessment(widget.plantId, assessment);
+        
+        final condition = assessment['condition']?.toString() ?? 'Healthy';
+        final issuesDetected = (assessment['issuesDetected'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+        
+        if (issuesDetected.isNotEmpty || condition == 'Needs Attention' || condition == 'Critical') {
+          if (mounted) {
+            final diagnosis = issuesDetected.isNotEmpty ? issuesDetected.first : condition;
+            final createCase = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Flora detected an issue 🌿'),
+                content: Text('Flora noticed $diagnosis. Would you like to create a treatment case to track recovery?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Not now'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Yes, create case'),
+                  ),
+                ],
+              ),
             );
-            await FirestoreService()
-                .saveHealthAssessment(capturedPlantId, assessment);
 
-            // Create treatment case if needed
-            final condition = assessment['condition']?.toString() ?? 'Healthy';
-            if (condition == 'Needs Attention' || condition == 'Critical') {
-              final existingCases = await FirestoreService()
-                  .getTreatmentCases(capturedPlantId)
-                  .first;
-
-              final hasActive =
-                  existingCases.any((c) => c.status == 'Active' || c.status == 'Monitoring');
-
-              if (!hasActive) {
-                final diagnosis = assessment['observations']?.toString() ??
-                    'Health issue detected';
-                final recs = assessment['recommendations']?.toString() ?? '';
-                final steps = recs.isNotEmpty
-                    ? recs.split(RegExp(r'\. |\n')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
-                    : ['Follow general care guidelines'];
-
-                final severity =
-                    condition == 'Critical' ? 'Severe' : 'Moderate';
-
-                final dates = [
-                  DateTime.now().add(const Duration(days: 3)),
-                  DateTime.now().add(const Duration(days: 7)),
-                  DateTime.now().add(const Duration(days: 14)),
-                ];
-
-                final tCase = TreatmentCase(
-                  id: '',
-                  plantId: capturedPlantId,
-                  plantName: capturedPlantName,
-                  diagnosis: diagnosis,
-                  severity: severity,
-                  detectedDate: DateTime.now(),
-                  status: 'Active',
-                  treatmentSteps: steps,
-                  followUpDates: dates,
-                  progressNotes: [],
-                  initialPhotoUrl: capturedImageUrl,
-                  latestPhotoUrl: capturedImageUrl,
+            if (createCase == true) {
+              final severity = condition == 'Critical' ? 'Critical' : 'Moderate';
+              final steps = ["Follow Flora's recommendations for $diagnosis"];
+              
+              final tCase = TreatmentCase(
+                id: '',
+                plantId: widget.plantId,
+                plantName: widget.plantName,
+                diagnosis: diagnosis,
+                severity: severity,
+                detectedDate: DateTime.now(),
+                status: 'Active',
+                treatmentSteps: steps,
+                followUpDates: [],
+                progressNotes: [],
+                initialPhotoUrl: '',
+                latestPhotoUrl: '',
+              );
+              
+              await FirestoreService().createTreatmentCase(tCase);
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Treatment case created — track recovery in Plant Detail'),
+                    backgroundColor: Color(0xFF154212),
+                    behavior: SnackBarBehavior.floating,
+                  ),
                 );
-
-                final newId = await FirestoreService().createTreatmentCase(tCase);
-
-                // Schedule notifications
-                for (var i = 0; i < dates.length; i++) {
-                  await NotificationService().scheduleHealthCheckNotification(
-                    '${newId}_$i',
-                    capturedPlantName,
-                    dates[i],
-                  );
-                }
               }
             }
-          } catch (e) {
-            debugPrint('Background health assessment error: $e');
           }
-        });
+        }
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {

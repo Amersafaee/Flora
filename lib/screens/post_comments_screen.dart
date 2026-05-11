@@ -58,6 +58,21 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
         'commentsCount': FieldValue.increment(1),
       });
 
+      final postDoc = await postRef.get();
+      final postAuthorUid = postDoc.data()?['authorUid'];
+      if (postAuthorUid != null && postAuthorUid != user.uid) {
+        String truncatedTitle = widget.postTitle;
+        if (truncatedTitle.length > 40) truncatedTitle = '${truncatedTitle.substring(0, 37)}...';
+        await FirebaseFirestore.instance.collection('users').doc(postAuthorUid).collection('notifications').add({
+          'type': 'comment',
+          'message': '${user.displayName ?? 'Anonymous'} commented on your post: $truncatedTitle',
+          'timestamp': FieldValue.serverTimestamp(),
+          'isRead': false,
+          'postId': widget.postId,
+          'fromUid': user.uid,
+        });
+      }
+
       _commentController.clear();
       if (mounted) FocusScope.of(context).unfocus();
     } catch (e) {

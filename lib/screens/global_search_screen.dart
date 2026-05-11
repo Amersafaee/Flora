@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'plant_detail_screen.dart';
 import 'post_comments_screen.dart';
+import 'wiki_plant_detail_screen.dart';
 
 class GlobalSearchScreen extends StatefulWidget {
   const GlobalSearchScreen({super.key});
@@ -14,6 +16,7 @@ class GlobalSearchScreen extends StatefulWidget {
 class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  Timer? _debounce;
   
   List<DocumentSnapshot> _wikiResults = [];
   List<DocumentSnapshot> _myPlantsResults = [];
@@ -34,7 +37,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     super.dispose();
   }
 
-  void _onSearchChanged(String value) async {
+  void _onSearchChanged(String value) {
     setState(() => _query = value);
     if (value.length < 2) {
       setState(() {
@@ -45,50 +48,55 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
       return;
     }
     
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
     setState(() => _isLoading = true);
     
-    try {
-      final queryLower = value.toLowerCase();
-      final user = FirebaseAuth.instance.currentUser;
-      
-      final speciesTask = FirebaseFirestore.instance.collection('species').get();
-      final postsTask = FirebaseFirestore.instance.collection('posts').get();
-      Future<QuerySnapshot>? plantsTask;
-      if (user != null) {
-        plantsTask = FirebaseFirestore.instance.collection('users').doc(user.uid).collection('plants').get();
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        final queryLower = value.toLowerCase();
+        final user = FirebaseAuth.instance.currentUser;
+        
+        final speciesTask = FirebaseFirestore.instance.collection('species').get();
+        final postsTask = FirebaseFirestore.instance.collection('posts').get();
+        Future<QuerySnapshot>? plantsTask;
+        if (user != null) {
+          plantsTask = FirebaseFirestore.instance.collection('users').doc(user.uid).collection('plants').get();
+        }
+        
+        final speciesSnapshot = await speciesTask;
+        final postsSnapshot = await postsTask;
+        final plantsSnapshot = plantsTask != null ? await plantsTask : null;
+        
+        if (!mounted) return;
+
+        setState(() {
+          _wikiResults = speciesSnapshot.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>? ?? {};
+            final name = (data['name'] ?? '').toString().toLowerCase();
+            final commonName = (data['commonName'] ?? '').toString().toLowerCase();
+            return name.contains(queryLower) || commonName.contains(queryLower);
+          }).toList();
+          
+          _myPlantsResults = plantsSnapshot?.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>? ?? {};
+            final name = (data['name'] ?? '').toString().toLowerCase();
+            return name.contains(queryLower);
+          }).toList() ?? [];
+          
+          _communityResults = postsSnapshot.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>? ?? {};
+            final title = (data['title'] ?? '').toString().toLowerCase();
+            final body = (data['body'] ?? '').toString().toLowerCase();
+            return title.contains(queryLower) || body.contains(queryLower);
+          }).toList();
+          
+          _isLoading = false;
+        });
+      } catch (e) {
+        if (mounted) setState(() => _isLoading = false);
       }
-      
-      final speciesSnapshot = await speciesTask;
-      final postsSnapshot = await postsTask;
-      final plantsSnapshot = plantsTask != null ? await plantsTask : null;
-      
-      _wikiResults = speciesSnapshot.docs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>? ?? {};
-        final name = (data['name'] ?? '').toString().toLowerCase();
-        final commonName = (data['commonName'] ?? '').toString().toLowerCase();
-        return name.contains(queryLower) || commonName.contains(queryLower);
-      }).toList();
-      
-      _myPlantsResults = plantsSnapshot?.docs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>? ?? {};
-        final name = (data['name'] ?? '').toString().toLowerCase();
-        return name.contains(queryLower);
-      }).toList() ?? [];
-      
-      _communityResults = postsSnapshot.docs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>? ?? {};
-        final title = (data['title'] ?? '').toString().toLowerCase();
-        final body = (data['body'] ?? '').toString().toLowerCase();
-        return title.contains(queryLower) || body.contains(queryLower);
-      }).toList();
-      
-    } catch (e) {
-      // ignore
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    });
   }
 
   @override
@@ -169,12 +177,41 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                     ),
                   )
                 : _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: 5,
+                        itemBuilder: (context, index) => Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Row(
+                            children: [
+                              Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.grey.shade200, shape: BoxShape.circle)),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(width: double.infinity, height: 16, color: Colors.grey.shade200),
+                                    const SizedBox(height: 8),
+                                    Container(width: 100, height: 14, color: Colors.grey.shade200),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
                     : isEmpty
                         ? Center(
-                            child: Text(
-                              'No results found',
-                              style: TextStyle(color: Colors.grey.shade600),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.search, size: 64, color: Colors.grey.shade400),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No results for "$_query"',
+                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                                ),
+                              ],
                             ),
                           )
                         : ListView(
@@ -227,8 +264,9 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(commonName),
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Coming soon', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF2D5A27), behavior: SnackBarBehavior.floating),
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => WikiPlantDetailScreen(plantData: data)),
         );
       },
     );

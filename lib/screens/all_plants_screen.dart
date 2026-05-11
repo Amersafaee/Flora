@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/plant_model.dart';
+import '../services/firestore_service.dart';
 import 'plant_detail_screen.dart';
 import 'add_plant_screen.dart';
 
@@ -34,41 +35,36 @@ class AllPlantsScreen extends StatelessWidget {
       ),
       body: user == null
           ? const Center(child: Text('Not logged in'))
-          : StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(user.uid)
-                  .collection('plants')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
+            : StreamBuilder<List<Plant>>(
+              stream: FirestoreService().getPlants(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('No plants yet. Add one!'));
                 }
                 
-                final docs = snapshot.data!.docs;
+                final plants = snapshot.data!;
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: docs.length,
+                  itemCount: plants.length,
                   itemBuilder: (context, index) {
-                    final data = docs[index].data() as Map<String, dynamic>;
-                    final name = data['name'] ?? 'Unknown';
-                    final category = data['category'] ?? 'General';
-                    final health = data['healthStatus'] ?? 'Healthy';
+                    final plant = plants[index];
+                    final name = plant.name;
+                    final category = plant.category;
+                    final health = plant.healthStatus;
                     
                     Color healthColor = Colors.green;
-                    if (health.toString().toLowerCase() == 'sick') healthColor = Colors.red;
-                    if (health.toString().toLowerCase() == 'recovering') healthColor = Colors.orange;
+                    if (health.toLowerCase() == 'sick') healthColor = Colors.red;
+                    if (health.toLowerCase() == 'recovering') healthColor = Colors.orange;
 
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PlantDetailScreen(plantId: docs[index].id),
+                            builder: (_) => PlantDetailScreen(plantId: plant.id, plantName: plant.name),
                           ),
                         );
                       },

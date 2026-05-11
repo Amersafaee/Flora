@@ -7,7 +7,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 import '../models/task_model.dart';
-import 'care_plan_screen.dart';
 
 class VacationModeScreen extends StatefulWidget {
   const VacationModeScreen({super.key});
@@ -147,6 +146,15 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
       );
       return;
     }
+    
+    final sitterEmail = _emailController.text.trim();
+    if (sitterEmail.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a sitter\'s email address.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     if (_startDate == null || _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select start and end dates.'), backgroundColor: Colors.red),
@@ -170,33 +178,73 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
     for (var doc in snapshot.docs) {
       final data = doc.data();
       final name = data['name'] ?? 'Unknown Plant';
-      final category = data['category']?.toString().toLowerCase() ?? '';
       
-      buffer.write('$name: ');
-      
-      if (category.contains('tropical')) {
-        buffer.writeln('Water every 7 days and keep in bright indirect light.');
-      } else if (category.contains('succulent')) {
-        buffer.writeln('Water every 14 days and keep in direct sunlight.');
-      } else if (category.contains('fern')) {
-        buffer.writeln('Water every 3 days and keep away from direct sun.');
-      } else if (category.contains('herb')) {
-        buffer.writeln('Water when soil feels dry and keep in a sunny spot.');
+      final tasksSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('tasks')
+          .where('plantName', isEqualTo: name)
+          .get();
+
+      if (tasksSnapshot.docs.isEmpty) {
+        buffer.writeln('No specific schedule set for $name — water when soil feels dry\n');
       } else {
-        buffer.writeln('Check soil before watering and keep in a suitable light spot.');
+        final tasks = tasksSnapshot.docs.map((d) => d.data()).toList();
+        final taskTypes = tasks.map((t) => t['taskType'] as String).toSet();
+        
+        for (final type in taskTypes) {
+          final typeTasks = tasks.where((t) => t['taskType'] == type).toList();
+          final pending = typeTasks.where((t) => t['isCompleted'] == false).toList();
+          final completed = typeTasks.where((t) => t['isCompleted'] == true).toList();
+          
+          completed.sort((a, b) {
+            final tA = a['dueDate'] as Timestamp?;
+            final tB = b['dueDate'] as Timestamp?;
+            if (tA == null || tB == null) return 0;
+            return tB.compareTo(tA);
+          });
+          
+          final scheduleTask = pending.isNotEmpty ? pending.first : typeTasks.first;
+          final repeatType = scheduleTask['repeatType'] as String? ?? 'none';
+          
+          String repeatStr = '';
+          if (repeatType == 'daily') {
+            repeatStr = 'every day';
+          } else if (repeatType == 'every2days') {
+            repeatStr = 'every 2 days';
+          } else if (repeatType == 'weekly') {
+            repeatStr = 'every 7 days';
+          } else if (repeatType == 'biweekly') {
+            repeatStr = 'every 14 days';
+          } else if (repeatType == 'monthly') {
+            repeatStr = 'monthly';
+          } else if (repeatType == 'custom' || repeatType == '') {
+            final days = (scheduleTask['repeatDays'] as num?)?.toInt() ?? 0;
+            repeatStr = days > 0 ? 'every $days days' : 'as needed';
+          } else {
+            repeatStr = repeatType;
+          }
+          
+          if (type == 'Watering') {
+            String lastDateStr = 'never';
+            if (completed.isNotEmpty) {
+              final lastDate = (completed.first['dueDate'] as Timestamp?)?.toDate();
+              if (lastDate != null) {
+                lastDateStr = DateFormat('MMM d').format(lastDate);
+              }
+            }
+            buffer.writeln('Water $name $repeatStr — last watered $lastDateStr');
+          } else if (type == 'Fertilizing') {
+            buffer.writeln('Fertilize $name $repeatStr');
+          } else {
+            buffer.writeln('$type $name $repeatStr');
+          }
+        }
+        buffer.writeln('');
       }
     }
 
-    if (mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => CarePlanScreen(carePlanText: buffer.toString()),
-        ),
-      );
-    }
-
     // Send email to sitter if email is provided
-    final sitterEmail = _emailController.text.trim();
     if (sitterEmail.isNotEmpty) {
       await _sendEmailToSitter(sitterEmail, buffer.toString());
     }
@@ -205,17 +253,28 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
   Future<void> _sendEmailToSitter(String email, String carePlanText) async {
     final user = FirebaseAuth.instance.currentUser;
     final displayName = user?.displayName ?? 'Your Plant Parent';
+    final userEmail = user?.email ?? '';
     final subject = Uri.encodeComponent('Plant Care Guide from $displayName');
     final body = Uri.encodeComponent(carePlanText);
-    final mailtoUri = Uri.parse('mailto:$email?subject=$subject&body=$body');
+    final from = Uri.encodeComponent(userEmail);
+    final mailtoUri = Uri.parse('mailto:$email?from=$from&subject=$subject&body=$body');
     if (await canLaunchUrl(mailtoUri)) {
       await launchUrl(mailtoUri);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open email app.'),
-            backgroundColor: Colors.orange,
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Copy Care Plan'),
+            content: SingleChildScrollView(
+              child: SelectableText(carePlanText),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close', style: TextStyle(color: Color(0xFF154212))),
+              ),
+            ],
           ),
         );
       }
@@ -460,7 +519,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                       const SizedBox(height: 16),
                       // Sitter Email
                       Text(
-                        'Sitter Email', style: TextStyle(color: textColor,
+                        'Sitter\'s Email Address', style: TextStyle(color: textColor,
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),

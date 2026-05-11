@@ -71,17 +71,19 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                                     child: StreamBuilder<QuerySnapshot>(
                                       stream: FirebaseFirestore.instance
                                           .collection('swap_listings')
-                                          .where('isAvailable', isEqualTo: true)
                                           .orderBy('timestamp', descending: true)
                                           .snapshots(),
                                       builder: (context, snapshot) {
                                         if (snapshot.connectionState == ConnectionState.waiting) {
                                           return const Center(child: CircularProgressIndicator());
                                         }
-                                        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                                        if (snapshot.hasError || !snapshot.hasData) {
                                           return const Center(child: Text('No listings available', style: TextStyle(color: Colors.grey)));
                                         }
-                                        final docs = snapshot.data!.docs;
+                                        final docs = snapshot.data!.docs.where((d) => (d.data() as Map<String, dynamic>)['isAvailable'] == true).toList();
+                                        if (docs.isEmpty) {
+                                          return const Center(child: Text('No listings available', style: TextStyle(color: Colors.grey)));
+                                        }
                                         return ListView.builder(
                                           itemCount: docs.length,
                                           itemBuilder: (context, index) {
@@ -163,7 +165,6 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                 child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('swap_listings')
-                      .where('isAvailable', isEqualTo: true)
                       .orderBy('timestamp', descending: true)
                       .snapshots(),
                   builder: (context, snapshot) {
@@ -174,7 +175,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       return const Center(child: Padding(padding: EdgeInsets.all(40.0), child: CircularProgressIndicator()));
                     }
 
-                    final allDocs = snapshot.data?.docs ?? [];
+                    final allDocs = snapshot.data?.docs.where((d) => (d.data() as Map<String, dynamic>)['isAvailable'] == true).toList() ?? [];
                     if (allDocs.isEmpty) {
                       return const Center(
                         child: Padding(

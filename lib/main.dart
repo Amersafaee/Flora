@@ -19,6 +19,8 @@ import 'screens/community_screen.dart';
 import 'screens/wiki_screen.dart';
 import 'screens/flora_chats_list_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,12 +37,17 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true, 
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
   debugPrint('Firebase ready');
   // Health score refresh is deferred to after sign-in (see _DigitalConservatoryAppState)
 
   // Init local notifications safely
   try {
     await NotificationService().initialize();
+    await NotificationService().scheduleDailyFloraInsight();
   } catch (e) {
     debugPrint('Warning: Notification initialization failed: $e');
   }
@@ -62,11 +69,20 @@ class DigitalConservatoryApp extends StatefulWidget {
 class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
   ThemeMode _themeMode = ThemeMode.light;
   bool _healthRefreshDone = false;
+  bool? _onboardingComplete;
 
   @override
   void initState() {
     super.initState();
     _loadTheme();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+    });
   }
 
   Future<void> _loadTheme() async {
@@ -131,7 +147,12 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
             }
             return MainTabScreen(onThemeChanged: _onThemeChanged);
           }
-          return const LoginScreen();
+          if (_onboardingComplete == null) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return _onboardingComplete! ? const LoginScreen() : const OnboardingScreen();
         },
       ),
     );
@@ -148,33 +169,35 @@ class MainTabScreen extends StatefulWidget {
 
 class _MainTabScreenState extends State<MainTabScreen> {
   int _currentIndex = 0;
+  final Set<int> _visitedTabs = {0};
+  final Map<int, Widget> _builtScreens = {};
 
-  // Screens are defined once but rendered via IndexedStack to avoid
-  // rebuilding on every tab switch (reduces UI-thread pressure).
-  late final List<Widget> _screens;
+  Widget _buildScreen(int index) {
+    switch (index) {
+      case 0: return HomeScreen(onThemeChanged: widget.onThemeChanged);
+      case 1: return const FloraChatsListScreen();
+      case 2: return const IdentifyScreen();
+      case 3: return CareScreen(onThemeChanged: widget.onThemeChanged);
+      case 4: return const CommunityScreen();
+      case 5: return const WikiScreen();
+      default: return const SizedBox.shrink();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _screens = [
-      HomeScreen(onThemeChanged: widget.onThemeChanged),
-      const FloraChatsListScreen(),
-      const IdentifyScreen(),
-      CareScreen(onThemeChanged: widget.onThemeChanged),
-      const CommunityScreen(),
-      const WikiScreen(),
-    ];
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_builtScreens.containsKey(_currentIndex)) {
+      _builtScreens[_currentIndex] = _buildScreen(_currentIndex);
+      _visitedTabs.add(_currentIndex);
+    }
+
     return Scaffold(
-      // IndexedStack keeps all tab states alive and avoids repeated init/dispose
-      // cycles that contribute to slow onPause / long-message warnings.
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: _builtScreens[_currentIndex]!,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,

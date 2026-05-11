@@ -83,31 +83,27 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
       }
 
       final plants = snap.docs.map((d) => d.data()).toList();
-      final planText = await _geminiService.generatePersonalizedWeeklyPlan(plants);
+      final String planTextRaw = await _geminiService.generatePersonalizedWeeklyPlan(plants);
+      final String planText = (planTextRaw.trim().isEmpty)
+          ? "Unable to generate plan. Make sure you have plants added to your collection."
+          : planTextRaw;
 
       if (mounted) {
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
-          backgroundColor: Colors.transparent,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          showDragHandle: true,
           builder: (ctx) {
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               decoration: BoxDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
+                color: Theme.of(context).cardColor,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
               child: Column(
                 children: [
-                  Container(
-                    width: 40, height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -132,10 +128,10 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                         padding: const EdgeInsets.only(bottom: 24),
                         child: Text(
                           planText,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             height: 1.5,
-                            color: Color(0xFF2D2D2D),
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),

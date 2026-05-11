@@ -40,7 +40,9 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
     
     final doc = await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(widget.plantId).get();
     if (doc.exists && doc.data() != null) {
-      _plant = Plant.fromMap(doc.data()!);
+      final data = doc.data()!;
+      data['id'] = widget.plantId;
+      _plant = Plant.fromMap(data);
       _nameController.text = _plant!.name;
       _commonNameController.text = _plant!.commonName;
       _categoryController.text = _plant!.category;
@@ -82,6 +84,11 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
         imageUrl: _plant!.imageUrl,
         healthStatus: _healthStatusController.text.trim(),
         dateAdded: _plant!.dateAdded,
+        healthScore: _plant!.healthScore,
+        isDeceased: _plant!.isDeceased,
+        deceasedDate: _plant!.deceasedDate,
+        memorialNote: _plant!.memorialNote,
+        eulogy: _plant!.eulogy,
       );
 
       await FirestoreService().updatePlant(updatedPlant);

@@ -7,6 +7,7 @@ import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
 import '../models/plant_model.dart';
 import '../models/task_model.dart';
+import 'flora_chats_list_screen.dart';
 
 class AddPlantScreen extends StatefulWidget {
   final String? initialPlantName;
@@ -99,46 +100,8 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
       
       await _firestoreService.addPlant(plant);
       
-      final now = DateTime.now();
-      await _firestoreService.addTask(Task(
-        id: '',
-        plantName: plant.name,
-        taskType: 'Watering',
-        dueDate: now.add(const Duration(days: 1)),
-        isCompleted: false,
-        notes: '',
-        repeatType: 'weekly',
-      ));
-      
-      await _firestoreService.addTask(Task(
-        id: '',
-        plantName: plant.name,
-        taskType: 'Fertilizing',
-        dueDate: now.add(const Duration(days: 14)),
-        isCompleted: false,
-        notes: '',
-        repeatType: 'monthly',
-      ));
-      
-      await _firestoreService.addTask(Task(
-        id: '',
-        plantName: plant.name,
-        taskType: 'Inspection',
-        dueDate: now.add(const Duration(days: 7)),
-        isCompleted: false,
-        notes: '',
-        repeatType: 'weekly',
-      ));
-      
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Plant added with care tasks created automatically'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        Navigator.pop(context); // Go back after success
+        _showCareScheduleBottomSheet(plant.name, plantId);
       }
     } catch (e) {
       if (mounted) {
@@ -433,6 +396,233 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         ),
       ),
     );
+  }
+  void _showCareScheduleBottomSheet(String plantName, String plantId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        String wateringVal = 'Weekly';
+        String fertilizingVal = 'Monthly';
+        String mistingVal = 'Skip';
+
+        final List<String> options = [
+          'Every day', 'Every 2 days', 'Weekly', 'Every 2 weeks', 'Monthly', 'Skip'
+        ];
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 5,
+                        margin: const EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Set up care for $plantName 🌿',
+                      style: const TextStyle(
+                        fontFamily: 'serif',
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'How often does this plant need care? We will add it to your calendar automatically.',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    
+                    _buildCareRow('Watering', Icons.water_drop, Colors.blue, wateringVal, options, (val) {
+                      setState(() => wateringVal = val!);
+                    }),
+                    const SizedBox(height: 16),
+                    _buildCareRow('Fertilizing', Icons.science, Colors.green, fertilizingVal, options, (val) {
+                      setState(() => fertilizingVal = val!);
+                    }),
+                    const SizedBox(height: 16),
+                    _buildCareRow('Misting', Icons.air, Colors.cyan, mistingVal, options, (val) {
+                      setState(() => mistingVal = val!);
+                    }),
+                    
+                    const SizedBox(height: 32),
+                    
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()));
+                      },
+                      icon: const Icon(Icons.psychology, color: Color(0xFF154212)),
+                      label: const Text(
+                        'Ask Flora for advice 🌿',
+                        style: TextStyle(color: Color(0xFF154212), fontWeight: FontWeight.bold),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: Color(0xFF154212)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    ElevatedButton(
+                      onPressed: () async {
+                        await _saveSchedules(plantName, plantId, wateringVal, fertilizingVal, mistingVal);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF154212),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text(
+                        'Save Care Schedule',
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context); // close bottom sheet
+                        Navigator.pop(context); // close add plant screen
+                      },
+                      child: Text(
+                        'Skip for now',
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCareRow(String title, IconData icon, Color color, String value, List<String> options, ValueChanged<String?> onChanged) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: value,
+              items: options.map((String opt) => DropdownMenuItem(value: opt, child: Text(opt))).toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveSchedules(String plantName, String plantId, String watering, String fertilizing, String misting) async {
+    final now = DateTime.now();
+
+    String getRepeatType(String val) {
+      switch (val) {
+        case 'Every day': return 'daily';
+        case 'Every 2 days': return 'every2days';
+        case 'Weekly': return 'weekly';
+        case 'Every 2 weeks': return 'biweekly';
+        case 'Monthly': return 'monthly';
+        default: return 'none';
+      }
+    }
+
+    if (watering != 'Skip') {
+      await _firestoreService.addTask(Task(
+        id: '',
+        plantId: plantId,
+        plantName: plantName,
+        taskType: 'Watering',
+        dueDate: now.add(const Duration(days: 1)),
+        isCompleted: false,
+        notes: '',
+        repeatType: getRepeatType(watering),
+      ));
+    }
+    
+    if (fertilizing != 'Skip') {
+      await _firestoreService.addTask(Task(
+        id: '',
+        plantId: plantId,
+        plantName: plantName,
+        taskType: 'Fertilizing',
+        dueDate: now.add(const Duration(days: 14)),
+        isCompleted: false,
+        notes: '',
+        repeatType: getRepeatType(fertilizing),
+      ));
+    }
+
+    if (misting != 'Skip') {
+      await _firestoreService.addTask(Task(
+        id: '',
+        plantId: plantId,
+        plantName: plantName,
+        taskType: 'Misting',
+        dueDate: now.add(const Duration(days: 3)),
+        isCompleted: false,
+        notes: '',
+        repeatType: getRepeatType(misting),
+      ));
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Care schedule saved — tasks added to your calendar 🌿'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.pop(context); // close sheet
+      Navigator.pop(context); // close screen
+    }
   }
 }
 

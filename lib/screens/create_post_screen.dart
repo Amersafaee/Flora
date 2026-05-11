@@ -6,8 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/storage_service.dart';
 class CreatePostScreen extends StatefulWidget {
   final String initialCategory;
+  final String? initialTitle;
 
-  const CreatePostScreen({super.key, this.initialCategory = 'General'});
+  const CreatePostScreen({super.key, this.initialCategory = 'General', this.initialTitle});
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -30,6 +31,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void initState() {
     super.initState();
     _selectedCategory = widget.initialCategory;
+    if (widget.initialTitle != null) {
+      _titleController.text = widget.initialTitle!;
+    }
   }
 
   Future<void> _pickImage() async {

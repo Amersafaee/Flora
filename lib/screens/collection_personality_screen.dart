@@ -174,7 +174,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Collection Breakdown',
+                                'Top Categories',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -182,7 +182,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                                 ),
                               ),
                               const SizedBox(height: 24),
-                              ...sortedCategories.map((entry) {
+                              ...sortedCategories.take(3).map((entry) {
                                 final ratio = entry.value / _totalPlants;
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 16.0),
