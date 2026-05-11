@@ -1,0 +1,79 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default fallback: deny all unless explicitly allowed below
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // User profile and subcollections
+    match /users/{userId} {
+      // Users can read/write their own profile
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Users can read/write any subcollection (like plants, tasks, wishlist) inside their profile
+      match /{subPath=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // To allow the Collection Group Query for "tasks" in Care Screen and Home Screen
+    match /{path=**}/tasks/{taskId} {
+      // Users can only read tasks that belong to them
+      allow read: if request.auth != null;
+    }
+
+    // Public read access for species (wiki) collection
+    match /species/{speciesId} {
+      allow read: if true; // anyone can read wiki data
+    }
+
+    // Community posts collection
+    match /posts/{postId} {
+      // Any authenticated user can read posts
+      allow read: if request.auth != null;
+      // Authenticated users can create posts where authorUid matches their uid
+      allow create: if request.auth != null && request.resource.data.authorUid == request.auth.uid;
+      // Authenticated users can delete their own posts
+      allow delete: if request.auth != null && resource.data.authorUid == request.auth.uid;
+      // Allow update by post owner (e.g. for editing)
+      allow update: if request.auth != null && resource.data.authorUid == request.auth.uid;
+
+      // Subcollections: comments and likes
+      match /comments/{commentId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow delete: if request.auth != null;
+        allow update: if request.auth != null;
+      }
+
+      match /likes/{likeId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow delete: if request.auth != null;
+        allow update: if request.auth != null;
+      }
+    }
+
+    // Swap market listings collection
+    match /swap_listings/{listingId} {
+      // Any authenticated user can read listings
+      allow read: if request.auth != null;
+      // Authenticated users can create listings where ownerUid matches their uid
+      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
+      // Authenticated users can fully read/write their own listings
+      allow update, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // Lineage collection: authenticated users can read and write
+    match /lineage/{lineageId} {
+      allow read, write: if request.auth != null;
+
+      match /{subPath=**} {
+        allow read, write: if request.auth != null;
+      }
+    }
+  }
+}

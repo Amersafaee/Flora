@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "731501257345",
+    "project_id": "flora-99ff7",
+    "storage_bucket": "flora-99ff7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:731501257345:android:80238d12e8b7928a50e380",
+        "android_client_info": {
+          "package_name": "app.digitalconservatory"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "731501257345-rgdpvnq0ugm7556k9bghrqrlm1pk8fe4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDC94PXNxLYGEY9vpqSs-QHXFfN3cJkmTY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "731501257345-rgdpvnq0ugm7556k9bghrqrlm1pk8fe4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "731501257345-1i4i3qq5579m8nkdvt24khi6pbf9ch4u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.digitalConservatory"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:731501257345:android:6cc054a6ff3d51ac50e380",
+        "android_client_info": {
+          "package_name": "com.example.flora"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "731501257345-rgdpvnq0ugm7556k9bghrqrlm1pk8fe4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDC94PXNxLYGEY9vpqSs-QHXFfN3cJkmTY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "731501257345-rgdpvnq0ugm7556k9bghrqrlm1pk8fe4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "731501257345-1i4i3qq5579m8nkdvt24khi6pbf9ch4u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.digitalConservatory"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
