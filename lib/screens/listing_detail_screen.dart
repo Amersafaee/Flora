@@ -322,7 +322,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: ElevatedButton(
-                  onPressed: _startConversation,
+                  onPressed: () => _showPassportSheet(data),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF154212),
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -336,6 +336,121 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  void _showPassportSheet(Map<String, dynamic> currentData) {
+    final title = currentData['title'] ?? '';
+    final type = currentData['type'] ?? '';
+    final description = currentData['description'] ?? '';
+    final ownerName = currentData['ownerName'] ?? '';
+    final healthScore = currentData['healthScore'];
+    
+    Widget healthBadge;
+    if (healthScore is num) {
+      final score = healthScore.toInt();
+      Color badgeColor;
+      if (score >= 70) {
+        badgeColor = Colors.green;
+      } else if (score >= 40) {
+        badgeColor = Colors.amber;
+      } else {
+        badgeColor = Colors.red;
+      }
+      
+      healthBadge = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(12)),
+        child: Text('Health: $score', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+      );
+    } else {
+      healthBadge = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(12)),
+        child: Text('Health: Not assessed', style: TextStyle(color: Colors.grey.shade800, fontWeight: FontWeight.bold, fontSize: 12)),
+      );
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                healthBadge,
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(12)),
+                  child: Text(type, style: const TextStyle(color: Color(0xFF154212), fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text('Passport Details', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            const SizedBox(height: 8),
+            Text(description, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.person, color: Colors.grey, size: 20),
+                const SizedBox(width: 8),
+                Text('Listed by $ownerName', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('View Full Listing', style: TextStyle(color: Color(0xFF154212))),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _startConversation();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF154212),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('Message Seller 💬', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: MediaQuery.of(ctx).viewInsets.bottom),
+          ],
+        ),
+      ),
     );
   }
 }

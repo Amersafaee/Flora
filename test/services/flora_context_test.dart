@@ -20,7 +20,8 @@ void main() {
           'tasks': {'completed': 5, 'skipped': 0}
         }],
         [{'type': 'temperature', 'value': 22}],
-        [{'role': 'user', 'text': 'Hello Flora'}]
+        [{'role': 'user', 'text': 'Hello Flora'}],
+        []
       );
 
       expect(context, isNotEmpty);
@@ -42,7 +43,8 @@ void main() {
         [],
         [],
         [],
-        chatMessages
+        chatMessages,
+        []
       );
 
       expect(context.length, lessThanOrEqualTo(1500 + '... [context truncated for performance]'.length));
@@ -63,7 +65,8 @@ void main() {
         [],
         [],
         [],
-        chatMessages
+        chatMessages,
+        []
       );
 
       // This is a test that the implementation logic conforms to the requirement

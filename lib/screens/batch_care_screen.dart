@@ -30,7 +30,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
       _completedTasks.add(task);
       try {
         final uid = FirestoreService().currentUserId;
-        if (uid != null) {
+        if (uid != null && !_completedTaskIds.contains(task.id)) {
           await FirestoreService().markTaskCompleted(task.id);
           _completedTaskIds.add(task.id);
           

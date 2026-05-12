@@ -193,17 +193,64 @@ class FirestoreService {
     final nextDue = calculateNextDueDate(dueDate, repeatType, (data['repeatDays'] as num?)?.toInt() ?? 7);
     if (nextDue == null) return;
 
+    DateTime finalNextDue = nextDue;
+    bool climateAdjusted = false;
+    String climateNote = '';
+
+    if (data['taskType'] == 'Watering') {
+      final now = DateTime.now();
+      final sevenDaysAgo = now.subtract(const Duration(days: 7));
+      final readingsSnap = await _db.collection('users').doc(uid).collection('zones').doc('main_zone').collection('readings')
+        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
+        .get();
+
+      double sumTemp = 0;
+      double sumHum = 0;
+      int countTemp = 0;
+      int countHum = 0;
+
+      for (var r in readingsSnap.docs) {
+        final rData = r.data();
+        if (rData['type'] == 'temperature' && rData['value'] is num) {
+          sumTemp += (rData['value'] as num).toDouble();
+          countTemp++;
+        } else if (rData['type'] == 'humidity' && rData['value'] is num) {
+          sumHum += (rData['value'] as num).toDouble();
+          countHum++;
+        }
+      }
+
+      double avgTemp = countTemp > 0 ? sumTemp / countTemp : 22.0;
+      double avgHum = countHum > 0 ? sumHum / countHum : 50.0;
+
+      final intervalDays = nextDue.difference(dueDate).inDays;
+      
+      if (avgHum < 40.0 || avgTemp > 27.0) {
+        final newIntervalDays = (intervalDays * 0.8).round();
+        finalNextDue = dueDate.add(Duration(days: newIntervalDays));
+        climateAdjusted = true;
+        climateNote = 'Adjusted for dry conditions';
+      } else if (avgHum > 70.0 && avgTemp < 18.0) {
+        final newIntervalDays = (intervalDays * 1.2).round();
+        finalNextDue = dueDate.add(Duration(days: newIntervalDays));
+        climateAdjusted = true;
+        climateNote = 'Adjusted for humid conditions';
+      }
+    }
+
     final newDocRef = _db.collection('users').doc(uid).collection('tasks').doc();
     await newDocRef.set({
       'id': newDocRef.id,
       'plantId': data['plantId'] ?? '',
       'plantName': data['plantName'] ?? '',
       'taskType': data['taskType'] ?? '',
-      'dueDate': Timestamp.fromDate(nextDue),
+      'dueDate': Timestamp.fromDate(finalNextDue),
       'isCompleted': false,
       'notes': data['notes'] ?? '',
       'repeatType': repeatType,
       'repeatDays': data['repeatDays'] ?? 0,
+      if (climateAdjusted) 'climateAdjusted': true,
+      if (climateAdjusted) 'climateNote': climateNote,
     });
   }
 
@@ -282,6 +329,72 @@ class FirestoreService {
       count += entries.count ?? 0;
     }
     return count;
+  }
+
+  Future<int> checkAndCreateInspectionTasks(String uid) async {
+    final plantsSnap = await _db.collection('users').doc(uid).collection('plants').get();
+    int newTasksCount = 0;
+    
+    for (var plantDoc in plantsSnap.docs) {
+      final plantData = plantDoc.data();
+      final plantId = plantDoc.id;
+      final plantName = plantData['name'] ?? 'Unknown';
+      
+      final growthSnap = await _db.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth')
+          .orderBy('timestamp', descending: true).limit(1).get();
+      
+      bool needsInspection = false;
+      if (growthSnap.docs.isEmpty) {
+        needsInspection = true;
+      } else {
+        final lastGrowth = growthSnap.docs.first.data();
+        if (lastGrowth['timestamp'] != null) {
+          final timestamp = lastGrowth['timestamp'] as Timestamp;
+          final diff = DateTime.now().difference(timestamp.toDate()).inDays;
+          if (diff > 21) {
+            needsInspection = true;
+          }
+        }
+      }
+      
+      if (needsInspection) {
+        final existingTaskSnap = await _db.collection('users').doc(uid).collection('tasks')
+            .where('plantId', isEqualTo: plantId)
+            .where('taskType', isEqualTo: 'Inspection')
+            .where('isCompleted', isEqualTo: false)
+            .get();
+        
+        bool hasFutureTask = false;
+        final now = DateTime.now();
+        for (var t in existingTaskSnap.docs) {
+          final td = t.data();
+          if (td['dueDate'] != null) {
+            final due = (td['dueDate'] as Timestamp).toDate();
+            if (due.isAfter(now) || DateTime(due.year, due.month, due.day).isAtSameMomentAs(DateTime(now.year, now.month, now.day))) {
+              hasFutureTask = true;
+              break;
+            }
+          }
+        }
+        
+        if (!hasFutureTask) {
+          final newTaskRef = _db.collection('users').doc(uid).collection('tasks').doc();
+          await newTaskRef.set({
+            'id': newTaskRef.id,
+            'plantId': plantId,
+            'plantName': plantName,
+            'taskType': 'Inspection',
+            'dueDate': Timestamp.fromDate(now),
+            'isCompleted': false,
+            'notes': 'No growth journal entry in 21+ days — Flora recommends a check-in',
+            'repeatType': 'none',
+            'repeatDays': 0,
+          });
+          newTasksCount++;
+        }
+      }
+    }
+    return newTasksCount;
   }
 
   Future<void> seedSpeciesData() async {
@@ -717,8 +830,12 @@ class FirestoreService {
     final uid = currentUserId;
     if (uid == null) return Stream.value([]);
     return _db.collection('users').doc(uid).collection('treatment_cases')
-        .where('plantId', isEqualTo: plantId).orderBy('detectedDate', descending: true)
-        .snapshots().map((snap) => snap.docs.map((d) => TreatmentCase.fromMap(d.data())).toList());
+        .where('plantId', isEqualTo: plantId)
+        .snapshots().map((snap) {
+          final cases = snap.docs.map((d) => TreatmentCase.fromMap(d.data())).toList();
+          cases.sort((a, b) => b.detectedDate.compareTo(a.detectedDate));
+          return cases;
+        });
   }
 
   Future<void> updateTreatmentCaseProgress({required String caseId, required String progressNote, required String photoUrl, required String newStatus}) async {
@@ -751,13 +868,24 @@ class FirestoreService {
     final plantName = plantData['name'] ?? '';
     
     final tasksQuery = await _db.collection('users').doc(userUid).collection('tasks')
-        .where('plantName', isEqualTo: plantName).orderBy('dueDate', descending: true).limit(10).get();
+        .where('plantName', isEqualTo: plantName).get();
+        
+    final tasksDocs = tasksQuery.docs.toList();
+    tasksDocs.sort((a, b) {
+      final aDate = a.data()['dueDate'] as Timestamp?;
+      final bDate = b.data()['dueDate'] as Timestamp?;
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+    final top10Tasks = tasksDocs.take(10).toList();
         
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    if (tasksQuery.docs.isNotEmpty) {
-      final waterTasks = tasksQuery.docs.where((d) => d.data()['taskType'] == 'Watering').toList();
+    if (top10Tasks.isNotEmpty) {
+      final waterTasks = top10Tasks.where((d) => d.data()['taskType'] == 'Watering').toList();
       if (waterTasks.isNotEmpty) {
         final lastWater = waterTasks.first.data();
         if (lastWater['isCompleted'] == false) {
@@ -772,7 +900,7 @@ class FirestoreService {
       }
 
       int skipCount = 0;
-      final last3 = tasksQuery.docs.take(3).toList();
+      final last3 = top10Tasks.take(3).toList();
       for (var doc in last3) {
         final data = doc.data();
         if (data['isCompleted'] == false) {
@@ -798,18 +926,38 @@ class FirestoreService {
     final zoneUid = plantData['zone']?.toString().isNotEmpty == true ? plantData['zone'] : 'main_zone';
     
     final tempQuery = await _db.collection('users').doc(userUid).collection('zones').doc(zoneUid).collection('readings')
-        .where('type', isEqualTo: 'temperature').orderBy('timestamp', descending: true).limit(1).get();
+        .where('type', isEqualTo: 'temperature').get();
         
-    if (tempQuery.docs.isNotEmpty) {
-      final temp = (tempQuery.docs.first.data()['value'] as num?)?.toDouble() ?? 20.0;
+    var tempDocs = tempQuery.docs.toList();
+    tempDocs.sort((a, b) {
+      final aTs = a.data()['timestamp'] as Timestamp?;
+      final bTs = b.data()['timestamp'] as Timestamp?;
+      if (aTs == null && bTs == null) return 0;
+      if (aTs == null) return 1;
+      if (bTs == null) return -1;
+      return bTs.compareTo(aTs);
+    });
+        
+    if (tempDocs.isNotEmpty) {
+      final temp = (tempDocs.first.data()['value'] as num?)?.toDouble() ?? 20.0;
       if (temp < 15 || temp > 28) { score -= 5; }
     }
     
     final humQuery = await _db.collection('users').doc(userUid).collection('zones').doc(zoneUid).collection('readings')
-        .where('type', isEqualTo: 'humidity').orderBy('timestamp', descending: true).limit(1).get();
+        .where('type', isEqualTo: 'humidity').get();
         
-    if (humQuery.docs.isNotEmpty) {
-      final hum = (humQuery.docs.first.data()['value'] as num?)?.toDouble() ?? 50.0;
+    var humDocs = humQuery.docs.toList();
+    humDocs.sort((a, b) {
+      final aTs = a.data()['timestamp'] as Timestamp?;
+      final bTs = b.data()['timestamp'] as Timestamp?;
+      if (aTs == null && bTs == null) return 0;
+      if (aTs == null) return 1;
+      if (bTs == null) return -1;
+      return bTs.compareTo(aTs);
+    });
+        
+    if (humDocs.isNotEmpty) {
+      final hum = (humDocs.first.data()['value'] as num?)?.toDouble() ?? 50.0;
       if (hum < 30) { score -= 10; }
     }
 
@@ -858,11 +1006,20 @@ class FirestoreService {
       final postsQuery = await _db.collection('posts')
           .where('category', isEqualTo: 'Question')
           .where('status', isEqualTo: 'published')
-          .orderBy('timestamp', descending: true)
-          .limit(10)
           .get();
 
-      for (var doc in postsQuery.docs) {
+      var postDocs = postsQuery.docs.toList();
+      postDocs.sort((a, b) {
+        final aTs = a.data()['timestamp'] as Timestamp?;
+        final bTs = b.data()['timestamp'] as Timestamp?;
+        if (aTs == null && bTs == null) return 0;
+        if (aTs == null) return 1;
+        if (bTs == null) return -1;
+        return bTs.compareTo(aTs);
+      });
+      final topPosts = postDocs.take(10).toList();
+
+      for (var doc in topPosts) {
         final data = doc.data();
         final postId = doc.id;
         

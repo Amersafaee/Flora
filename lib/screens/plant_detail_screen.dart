@@ -16,6 +16,7 @@ import '../models/task_model.dart';
 import 'wiki_plant_detail_screen.dart';
 import 'post_comments_screen.dart';
 import 'community_screen.dart';
+import 'create_listing_screen.dart' as import_create_listing;
 
 // ignore_for_file: avoid_dynamic_calls
 
@@ -88,13 +89,62 @@ class PlantDetailScreen extends StatelessWidget {
                       icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
-                    Text(
-                      plantData['name'] as String? ?? plantName,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          plantData['name'] as String? ?? plantName,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance.collection('lineage').where(Filter.or(Filter('childPlantId', isEqualTo: plantId), Filter('parentPlantId', isEqualTo: plantId))).snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const SizedBox.shrink();
+                            
+                            final docs = snapshot.data!.docs;
+                            final parentDocs = docs.where((d) => d['childPlantId'] == plantId).toList();
+                            final childDocs = docs.where((d) => d['parentPlantId'] == plantId).toList();
+
+                            List<Widget> lineageWidgets = [];
+
+                            if (parentDocs.isNotEmpty) {
+                              final parentId = parentDocs.first['parentPlantId'] as String;
+                              lineageWidgets.add(
+                                FutureBuilder<DocumentSnapshot>(
+                                  future: uid != null ? FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(parentId).get() : null,
+                                  builder: (context, pSnap) {
+                                    if (!pSnap.hasData || !pSnap.data!.exists) return const SizedBox.shrink();
+                                    final pName = pSnap.data!.get('name') as String? ?? 'Parent Plant';
+                                    return GestureDetector(
+                                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlantDetailScreen(plantId: parentId, plantName: pName))),
+                                      child: Text('🌱 Propagated from $pName', style: TextStyle(color: primaryColor, fontSize: 12, decoration: TextDecoration.underline)),
+                                    );
+                                  }
+                                )
+                              );
+                            }
+                            if (childDocs.isNotEmpty) {
+                              lineageWidgets.add(
+                                Text('🪴 ${childDocs.length} propagation(s) from this plant', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                              );
+                            }
+                            
+                            if (lineageWidgets.isEmpty) return const SizedBox.shrink();
+                            
+                            return Column(
+                              children: [
+                                const SizedBox(height: 4),
+                                ...lineageWidgets,
+                              ],
+                            );
+                          }
+                        ),
+                      ],
                     ),
                     const Spacer(),
                     IconButton(
@@ -419,6 +469,67 @@ class PlantDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              
+              if (plantData['lastLightReading'] != null) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.wb_sunny_outlined, color: primaryColor),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Last Light Reading',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                '${plantData['lastLightReadingLabel'] ?? 'Unknown'} (${(plantData['lastLightReading'] as num).toStringAsFixed(0)} lx)',
+                                style: TextStyle(
+                                  color: primaryColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (plantData['lastLightReadingDate'] != null)
+                                Text(
+                                  DateFormat('MMM d, yyyy').format((plantData['lastLightReadingDate'] as Timestamp).toDate()),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // ── Last Health Assessment Card ──────────────────────────────
               if (lastAssessment != null)
@@ -574,6 +685,53 @@ class PlantDetailScreen extends StatelessWidget {
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Swap Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => import_create_listing.CreateListingScreen(
+                            initialPlantName: plantData['name'] as String? ?? plantName,
+                            initialDescription: "Healthy ${plantData['category'] ?? 'plant'} from my personal collection. Health score: ${plantData['healthScore'] ?? 'Unknown'}.",
+                            initialType: "Whole Plant",
+                            initialHealthScore: plantData['healthScore'] as int?,
+                          ),
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Theme.of(context).cardColor,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.swap_horiz, color: primaryColor),
+                        const SizedBox(width: 8),
+                        Text(
+                          'List for Swap 🔄',
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1311,11 +1469,43 @@ Future<void> _showMemorialDialog(BuildContext context, String plantId, String pl
   if (confirmed == true && context.mounted) {
     showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
     final note = noteController.text;
+
+    List<Map<String, dynamic>> photos = [];
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final growthSnap = await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth').orderBy('timestamp').get();
+      for (var doc in growthSnap.docs) {
+        final data = doc.data();
+        if (data['imageUrl'] != null && data['imageUrl'].toString().isNotEmpty) {
+          photos.add({
+            'url': data['imageUrl'],
+            'date': data['timestamp'] != null ? (data['timestamp'] as Timestamp).toDate() : DateTime.now(),
+          });
+        }
+      }
+    }
+    
+    if (photos.length >= 2) {
+      if (!context.mounted) return;
+      Navigator.pop(context); // pop loading
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => _MemorialSlideshowDialog(
+          plantId: plantId,
+          plantName: plantName,
+          plantData: plantData,
+          photos: photos,
+          note: note,
+        ),
+      );
+      return;
+    }
+
     await FirestoreService().markPlantAsDeceased(plantId, note);
     final category = plantData['category']?.toString() ?? 'plant';
     final dateAdded = plantData['dateAdded'] != null ? (plantData['dateAdded'] as Timestamp).toDate() : DateTime.now();
     final daysCaredFor = DateTime.now().difference(dateAdded).inDays;
-    final uid = FirestoreService().currentUserId;
     int waterings = 0;
     int growthEntries = 0;
     if (uid != null) {
@@ -1455,3 +1645,180 @@ Future<void> _showTimeLapse(BuildContext context, String plantId) async {
       },
     );
   }
+
+
+class _MemorialSlideshowDialog extends StatefulWidget {
+  final String plantId;
+  final String plantName;
+  final Map<String, dynamic> plantData;
+  final List<Map<String, dynamic>> photos;
+  final String note;
+
+  const _MemorialSlideshowDialog({
+    required this.plantId,
+    required this.plantName,
+    required this.plantData,
+    required this.photos,
+    required this.note,
+  });
+
+  @override
+  State<_MemorialSlideshowDialog> createState() => _MemorialSlideshowDialogState();
+}
+
+class _MemorialSlideshowDialogState extends State<_MemorialSlideshowDialog> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveAndMove() async {
+    setState(() => _isSaving = true);
+    
+    await FirestoreService().markPlantAsDeceased(widget.plantId, widget.note);
+    final category = widget.plantData['category']?.toString() ?? 'plant';
+    final dateAdded = widget.plantData['dateAdded'] != null ? (widget.plantData['dateAdded'] as Timestamp).toDate() : DateTime.now();
+    final daysCaredFor = DateTime.now().difference(dateAdded).inDays;
+    
+    final uid = FirestoreService().currentUserId;
+    int waterings = 0;
+    int growthEntries = 0;
+    if (uid != null) {
+      final tasks = await FirebaseFirestore.instance.collection('users').doc(uid).collection('tasks').where('plantName', isEqualTo: widget.plantName).where('taskType', isEqualTo: 'Watering').where('isCompleted', isEqualTo: true).count().get();
+      waterings = tasks.count ?? 0;
+      final growths = await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(widget.plantId).collection('growth').count().get();
+      growthEntries = growths.count ?? 0;
+    }
+    final eulogy = await GeminiService().generatePlantEulogy(
+      plantName: widget.plantName,
+      category: category,
+      daysCaredFor: daysCaredFor,
+      totalWaterings: waterings,
+      totalGrowthEntries: growthEntries,
+      memorialNote: widget.note,
+    );
+    if (uid != null) {
+      await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(widget.plantId).update({'eulogy': eulogy});
+    }
+    
+    if (mounted) {
+      Navigator.pop(context); // pop dialog
+      Navigator.pop(context); // pop screen
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dateAdded = widget.plantData['dateAdded'] != null ? (widget.plantData['dateAdded'] as Timestamp).toDate() : DateTime.now();
+    final daysCaredFor = DateTime.now().difference(dateAdded).inDays;
+
+    return Dialog.fullscreen(
+      backgroundColor: const Color(0xFF1E1E1E),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(
+                'A farewell to ${widget.plantName} 🕊️',
+                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'serif'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Expanded(
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (i) => setState(() => _currentPage = i),
+                    itemCount: widget.photos.length,
+                    itemBuilder: (context, index) {
+                      final photo = widget.photos[index];
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: ColorFiltered(
+                                  colorFilter: const ColorFilter.matrix([
+                                    0.393, 0.769, 0.189, 0, 0,
+                                    0.349, 0.686, 0.168, 0, 0,
+                                    0.272, 0.534, 0.131, 0, 0,
+                                    0, 0, 0, 1, 0,
+                                  ]),
+                                  child: Image.network(photo['url'], fit: BoxFit.contain, width: double.infinity),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            DateFormat.yMMMMd().format(photo['date']),
+                            style: const TextStyle(color: Colors.white70, fontSize: 16),
+                          ),
+                          const SizedBox(height: 40),
+                        ],
+                      );
+                    },
+                  ),
+                  Positioned(
+                    bottom: 10,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        widget.photos.length,
+                        (index) => Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _currentPage == index ? Colors.white : Colors.white38,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  Text('Thank you for $daysCaredFor days of care', style: const TextStyle(color: Colors.white70, fontSize: 16, fontStyle: FontStyle.italic)),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _saveAndMove,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF1E1E1E),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: _isSaving 
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Color(0xFF1E1E1E), strokeWidth: 2))
+                        : const Text('Move to Memorial Garden', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

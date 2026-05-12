@@ -8,6 +8,7 @@ import 'profile_screen.dart';
 import 'create_post_screen.dart';
 import 'post_comments_screen.dart';
 import 'swap_market_screen.dart';
+import 'all_plants_screen.dart';
 import '../services/firestore_service.dart';
 
 class CommunityScreen extends StatefulWidget {
@@ -22,12 +23,30 @@ class _CommunityScreenState extends State<CommunityScreen> {
   bool _isSearching = false;
   String _searchQuery = '';
   String _selectedCategoryFilter = 'All';
+  List<String> _userPlantNames = [];
+  StreamSubscription? _plantsSub;
 
   @override
   void initState() {
     super.initState();
     _checkUnansweredQuestions();
     _checkAndSeedChallenge();
+    _loadUserPlants();
+  }
+
+  void _loadUserPlants() {
+    _plantsSub = FirestoreService().getPlants().listen((plants) {
+      if (!mounted) return;
+      setState(() {
+        _userPlantNames = plants.map((p) => p.name.toLowerCase()).toList();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _plantsSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkAndSeedChallenge() async {
@@ -522,6 +541,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final authorUid = data['authorUid'] ?? '';
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
+    bool hasMatch = false;
+    final textToCheck = '${title.toLowerCase()} ${body.toLowerCase()}';
+    for (final plantName in _userPlantNames) {
+      if (textToCheck.contains(plantName)) {
+        hasMatch = true;
+        break;
+      }
+    }
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -687,6 +715,33 @@ class _CommunityScreenState extends State<CommunityScreen> {
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
+          if (hasMatch) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AllPlantsScreen()));
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('🌿', style: TextStyle(fontSize: 12)),
+                    const SizedBox(width: 4),
+                    Text(
+                      'You grow this',
+                      style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Text(
             body,

@@ -14,6 +14,7 @@ import 'notification_settings_screen.dart';
 import 'zones_screen.dart';
 import 'edit_profile_screen.dart';
 import 'collection_personality_screen.dart';
+import 'memorial_garden_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -416,18 +417,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const SizedBox(height: 12),
-              _buildSettingsRow(
-                icon: Icons.auto_awesome,
-                title: 'My Gardener Personality',
-                softGreen: softGreen,
-                primaryColor: primaryColor,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const CollectionPersonalityScreen()),
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
+
               _buildSettingsRow(
                 icon: Icons.notifications_outlined,
                 title: 'Notification Settings',
@@ -479,7 +469,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                 },
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.history, color: Color(0xFF154212)),
+                title: const Text('Plant History'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MemorialGardenScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.psychology, color: Color(0xFF154212)),
+                title: const Text('My Collection Personality'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CollectionPersonalityScreen()),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
               
               // About Title
               const Text(

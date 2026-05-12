@@ -34,12 +34,14 @@ class FloraContextService {
         _fetchPlants(uid),
         _fetchClimateReadings(uid),
         _fetchRecentChatMessages(uid, conversationId),
+        _fetchActiveTreatmentCases(uid),
       ]);
 
       final profile = results[0] as Map<String, dynamic>?;
       final plants = results[1] as List<Map<String, dynamic>>;
       final climateReadings = results[2] as List<Map<String, dynamic>>;
       final chatMessages = results[3] as List<Map<String, dynamic>>;
+      final activeCases = results[4] as List<Map<String, dynamic>>;
 
       final perPlantFutures = plants.map((plant) async {
         final plantId = plant['id'] as String? ?? '';
@@ -62,7 +64,7 @@ class FloraContextService {
       final perPlantData = await Future.wait(perPlantFutures);
 
       var result = generateContextString(
-        profile, plants, perPlantData, climateReadings, chatMessages
+        profile, plants, perPlantData, climateReadings, chatMessages, activeCases
       );
 
       // ── Store in cache ───────────────────────────────────────────────────
@@ -81,6 +83,7 @@ class FloraContextService {
     List<dynamic> perPlantData,
     List<Map<String, dynamic>> climateReadings,
     List<Map<String, dynamic>> chatMessages,
+    List<Map<String, dynamic>> activeCases,
   ) {
       // ── User greeting line ────────────────────────────────────────────────
 
@@ -147,6 +150,29 @@ class FloraContextService {
               : 'an unknown date';
           buffer.writeln(
               'The last growth journal entry was on $entryDateStr and noted: "$entryNotes".');
+              
+          final lastAssessment = plant['lastAssessment'] as Map<String, dynamic>?;
+          if (lastAssessment != null) {
+            final summary = (lastAssessment['observations'] as String?)?.trim() ?? '';
+            if (summary.isNotEmpty) {
+              buffer.writeln('AI analysis summary from that entry: $summary');
+            }
+            
+            final issues = (lastAssessment['issuesDetected'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .where((e) => e.isNotEmpty)
+                .toList() ?? [];
+            if (issues.isNotEmpty) {
+              final issuesStr = issues.join(', ');
+              buffer.writeln('Last growth assessment on $entryDateStr detected: $issuesStr');
+            }
+            
+            final oldScore = (lastAssessment['overallScore'] as num?)?.toInt();
+            final currentScore = (plant['healthScore'] as num?)?.toInt();
+            if (oldScore != null && currentScore != null && currentScore > oldScore) {
+              buffer.writeln('Health score improved from $oldScore to $currentScore since last assessment');
+            }
+          }
         }
 
         buffer.writeln(
@@ -160,6 +186,25 @@ class FloraContextService {
               'This plant has an active health concern: $healthStatus.');
         }
 
+        buffer.writeln();
+      }
+
+      if (activeCases.isNotEmpty) {
+        for (final tc in activeCases) {
+          final plantName = tc['plantName'] ?? 'Unknown Plant';
+          final diagnosis = tc['diagnosis'] ?? 'Unknown condition';
+          final status = tc['status'] ?? 'Active';
+          final stepsList = (tc['treatmentSteps'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+          final steps = stepsList.join(', ');
+          
+          DateTime? detectedDate;
+          final rawDetected = tc['detectedDate'];
+          if (rawDetected is Timestamp) detectedDate = rawDetected.toDate();
+          
+          final daysAgo = detectedDate != null ? DateTime.now().difference(detectedDate).inDays : 0;
+          
+          buffer.writeln('$plantName has an active treatment case: $diagnosis, detected $daysAgo days ago, current status: $status. Treatment steps: $steps');
+        }
         buffer.writeln();
       }
 
@@ -231,6 +276,17 @@ class FloraContextService {
       data['id'] = d.id;
       return data;
     }).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchActiveTreatmentCases(String uid) async {
+    final snap = await _db
+        .collection('users')
+        .doc(uid)
+        .collection('treatment_cases')
+        .where('status', isEqualTo: 'Active')
+        .limit(3)
+        .get();
+    return snap.docs.map((d) => d.data()).toList();
   }
 
   /// Fetches only the single most recent growth entry — enough context for

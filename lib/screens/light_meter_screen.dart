@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LightMeterScreen extends StatefulWidget {
   const LightMeterScreen({super.key});
@@ -300,11 +302,116 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                   ),
                 ),
 
+              if (!_isMeasuring && _luxValue > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16, left: 20, right: 20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _showSaveToPlantSheet(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE8F5E9),
+                        foregroundColor: primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.eco, color: primaryColor),
+                          const SizedBox(width: 12),
+                          const Text('Save to a Plant 🌿', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
               const SizedBox(height: 40),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  void _showSaveToPlantSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid == null) return const SizedBox();
+        return SafeArea(
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.6,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: const BorderRadius.all(Radius.circular(2))),
+                  ),
+                ),
+                const Text('Save Light Reading', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      final docs = snapshot.data!.docs;
+                      if (docs.isEmpty) return const Center(child: Text('No plants found.'));
+                      return ListView.builder(
+                        itemCount: docs.length,
+                        itemBuilder: (context, index) {
+                          final data = docs[index].data() as Map<String, dynamic>;
+                          final isDeceased = data['isDeceased'] == true;
+                          if (isDeceased) return const SizedBox.shrink();
+                          
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: const Color(0xFFE8F5E9),
+                              backgroundImage: data['imageUrl'] != null && data['imageUrl'].toString().isNotEmpty
+                                  ? NetworkImage(data['imageUrl'])
+                                  : null,
+                              child: data['imageUrl'] == null || data['imageUrl'].toString().isEmpty
+                                  ? const Icon(Icons.eco, color: Color(0xFF154212))
+                                  : null,
+                            ),
+                            title: Text(data['name'] ?? 'Unknown'),
+                            subtitle: Text(data['category'] ?? 'Plant'),
+                            trailing: const Icon(Icons.check_circle_outline, color: Colors.grey),
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(docs[index].id).update({
+                                'lastLightReading': _averageLux,
+                                'lastLightReadingLabel': _lightLevel,
+                                'lastLightReadingDate': FieldValue.serverTimestamp(),
+                              });
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text('Light reading saved to ${data['name']} 🌿'),
+                                    backgroundColor: const Color(0xFF154212),
+                                  ),
+                                );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

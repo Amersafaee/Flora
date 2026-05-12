@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
@@ -139,22 +139,6 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
     final uid = _firestoreService.currentUserId;
     if (uid == null) return;
 
-    final sitterName = _nameController.text.trim();
-    if (sitterName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a sitter name.'), backgroundColor: Colors.red),
-      );
-      return;
-    }
-    
-    final sitterEmail = _emailController.text.trim();
-    if (sitterEmail.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a sitter\'s email address.'), backgroundColor: Colors.red),
-      );
-      return;
-    }
-
     if (_startDate == null || _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select start and end dates.'), backgroundColor: Colors.red),
@@ -165,6 +149,10 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
     final startStr = DateFormat('MMM d, yyyy').format(_startDate!);
     final endStr = DateFormat('MMM d, yyyy').format(_endDate!);
 
+    final user = FirebaseAuth.instance.currentUser;
+    final userName = user?.displayName ?? 'Your';
+    final userEmail = user?.email ?? 'Unknown';
+
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -172,8 +160,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
         .get();
 
     final buffer = StringBuffer();
-    buffer.writeln('Plant Care Guide for $sitterName');
-    buffer.writeln('Dates: $startStr to $endStr\n');
+    buffer.writeln("Care plan for $userName's plants while away $startStr to $endStr:");
 
     for (var doc in snapshot.docs) {
       final data = doc.data();
@@ -187,7 +174,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
           .get();
 
       if (tasksSnapshot.docs.isEmpty) {
-        buffer.writeln('No specific schedule set for $name — water when soil feels dry\n');
+        buffer.writeln('• $name: Water when soil feels dry.');
       } else {
         final tasks = tasksSnapshot.docs.map((d) => d.data()).toList();
         final taskTypes = tasks.map((t) => t['taskType'] as String).toSet();
@@ -209,75 +196,45 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
           
           String repeatStr = '';
           if (repeatType == 'daily') {
-            repeatStr = 'every day';
+            repeatStr = '1';
           } else if (repeatType == 'every2days') {
-            repeatStr = 'every 2 days';
+            repeatStr = '2';
           } else if (repeatType == 'weekly') {
-            repeatStr = 'every 7 days';
+            repeatStr = '7';
           } else if (repeatType == 'biweekly') {
-            repeatStr = 'every 14 days';
+            repeatStr = '14';
           } else if (repeatType == 'monthly') {
-            repeatStr = 'monthly';
+            repeatStr = '30';
           } else if (repeatType == 'custom' || repeatType == '') {
             final days = (scheduleTask['repeatDays'] as num?)?.toInt() ?? 0;
-            repeatStr = days > 0 ? 'every $days days' : 'as needed';
+            repeatStr = days > 0 ? '$days' : 'needed';
           } else {
             repeatStr = repeatType;
           }
           
-          if (type == 'Watering') {
-            String lastDateStr = 'never';
-            if (completed.isNotEmpty) {
-              final lastDate = (completed.first['dueDate'] as Timestamp?)?.toDate();
-              if (lastDate != null) {
-                lastDateStr = DateFormat('MMM d').format(lastDate);
-              }
+          String lastDateStr = 'never';
+          if (completed.isNotEmpty) {
+            final lastDate = (completed.first['dueDate'] as Timestamp?)?.toDate();
+            if (lastDate != null) {
+              lastDateStr = DateFormat('MMM d').format(lastDate);
             }
-            buffer.writeln('Water $name $repeatStr — last watered $lastDateStr');
-          } else if (type == 'Fertilizing') {
-            buffer.writeln('Fertilize $name $repeatStr');
-          } else {
-            buffer.writeln('$type $name $repeatStr');
           }
+          
+          buffer.writeln('• $name: $type every $repeatStr days. Last done: $lastDateStr.');
         }
-        buffer.writeln('');
       }
     }
 
-    // Send email to sitter if email is provided
-    if (sitterEmail.isNotEmpty) {
-      await _sendEmailToSitter(sitterEmail, buffer.toString());
-    }
-  }
+    buffer.writeln();
+    buffer.writeln('Emergency contact: $userEmail');
+    buffer.writeln('- Sent from Digital Conservatory');
 
-  Future<void> _sendEmailToSitter(String email, String carePlanText) async {
-    final user = FirebaseAuth.instance.currentUser;
-    final displayName = user?.displayName ?? 'Your Plant Parent';
-    final userEmail = user?.email ?? '';
-    final subject = Uri.encodeComponent('Plant Care Guide from $displayName');
-    final body = Uri.encodeComponent(carePlanText);
-    final from = Uri.encodeComponent(userEmail);
-    final mailtoUri = Uri.parse('mailto:$email?from=$from&subject=$subject&body=$body');
-    if (await canLaunchUrl(mailtoUri)) {
-      await launchUrl(mailtoUri);
-    } else {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Copy Care Plan'),
-            content: SingleChildScrollView(
-              child: SelectableText(carePlanText),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close', style: TextStyle(color: Color(0xFF154212))),
-              ),
-            ],
-          ),
-        );
-      }
+    await Clipboard.setData(ClipboardData(text: buffer.toString()));
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Care plan copied to clipboard! Paste it anywhere to share 📋'), backgroundColor: Color(0xFF154212)),
+      );
     }
   }
 
@@ -473,79 +430,6 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                           ),
                         ],
                       ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Divider(height: 1, thickness: 1),
-                      ),
-                      
-                      Text(
-                        'PLANT SITTER',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Sitter Name
-                      Text(
-                        'Sitter Name', style: TextStyle(color: textColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          hintText: 'e.g. Sarah',
-                          hintStyle: TextStyle(color: Colors.grey.shade400),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: primaryColor, width: 2),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Sitter Email
-                      Text(
-                        'Sitter\'s Email Address', style: TextStyle(color: textColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          hintText: 'e.g. sarah@email.com',
-                          hintStyle: TextStyle(color: Colors.grey.shade400),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: primaryColor, width: 2),
-                          ),
-                        ),
-                      ),
                       const SizedBox(height: 24),
                       // Generate Button
                       SizedBox(
@@ -561,7 +445,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                             elevation: 0,
                           ),
                           child: const Text(
-                            'Generate Care Plan',
+                            'Copy Care Plan 📋',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,

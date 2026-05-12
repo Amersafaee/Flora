@@ -66,7 +66,6 @@ class DigitalConservatoryApp extends StatefulWidget {
 
 class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
   ThemeMode _themeMode = ThemeMode.light;
-  bool _healthRefreshDone = false;
   late final Stream<User?> _authStream;
 
   @override
@@ -125,24 +124,9 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          if (snapshot.hasError) {
-            return const Scaffold(
-              body: Center(child: Text('Something went wrong',
-                  style: TextStyle(color: Colors.grey))),
-            );
-          }
-          if (snapshot.hasData) {
-            // Defer health score refresh to after auth is confirmed
-            if (!_healthRefreshDone) {
-              _healthRefreshDone = true;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                scheduleHealthScoreRefresh();
-              });
-            }
+          if (snapshot.hasData && snapshot.data != null) {
             return MainTabScreen(onThemeChanged: _onThemeChanged);
           }
-          // No authenticated user — show login screen.
-          // Onboarding check is handled inside LoginScreen.initState.
           return const LoginScreen();
         },
       ),

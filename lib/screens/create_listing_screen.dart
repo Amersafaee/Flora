@@ -3,13 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class CreateListingScreen extends StatefulWidget {
-  final String? prefilledPlantName;
-  final String? prefilledDescription;
+  final String? initialPlantName;
+  final String? initialDescription;
+  final String? initialType;
+  final int? initialHealthScore;
 
   const CreateListingScreen({
     super.key,
-    this.prefilledPlantName,
-    this.prefilledDescription,
+    this.initialPlantName,
+    this.initialDescription,
+    this.initialType,
+    this.initialHealthScore,
   });
 
   @override
@@ -25,8 +29,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.prefilledPlantName ?? '');
-    _descriptionController = TextEditingController(text: widget.prefilledDescription ?? '');
+    _titleController = TextEditingController(text: widget.initialPlantName ?? '');
+    _descriptionController = TextEditingController(text: widget.initialDescription ?? '');
+    if (widget.initialType != null && _types.contains(widget.initialType)) {
+      _selectedType = widget.initialType!;
+    }
   }
   
   String _selectedType = 'Cutting';
@@ -61,7 +68,27 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseFirestore.instance.collection('swap_listings').add({
+      int? healthScore = widget.initialHealthScore;
+      String? healthStatus;
+      String? plantId;
+
+      final plantsSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('plants')
+          .where('name', isEqualTo: title)
+          .limit(1)
+          .get();
+
+      if (plantsSnap.docs.isNotEmpty) {
+        final plantDoc = plantsSnap.docs.first;
+        final plantData = plantDoc.data();
+        healthScore ??= plantData['healthScore'] as int?;
+        healthStatus = plantData['healthStatus'] as String?;
+        plantId = plantDoc.id;
+      }
+
+      final listingData = {
         'ownerUid': user.uid,
         'ownerName': user.displayName ?? 'Local Swapper',
         'title': title,
@@ -73,7 +100,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'distanceKm': 0, // Mock distance
         'timestamp': FieldValue.serverTimestamp(),
         'isAvailable': true,
-      });
+      };
+
+      if (healthScore != null) listingData['healthScore'] = healthScore;
+      if (healthStatus != null) listingData['healthStatus'] = healthStatus;
+      if (plantId != null) listingData['plantId'] = plantId;
+
+      await FirebaseFirestore.instance.collection('swap_listings').add(listingData);
 
       if (mounted) {
         Navigator.pop(context);

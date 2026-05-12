@@ -2,10 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:share_plus/share_plus.dart' as import_share;
+
 import '../models/treatment_case_model.dart';
 import '../services/firestore_service.dart';
 import '../services/gemini_service.dart';
 import '../services/storage_service.dart';
+import 'create_post_screen.dart' as import_create_post;
 
 class TreatmentCaseScreen extends StatefulWidget {
   final String plantId;
@@ -243,6 +247,8 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                     newStatus: 'Resolved',
                   );
                   await _firestoreService.resolveTreatmentCase(tCase.id);
+                  if (!mounted) return;
+                  _showRecoveryCelebration(this.context, tCase.initialPhotoUrl, newPhotoUrl, tCase.diagnosis);
                 },
                 child: Text(
                   'Mark as Resolved',
@@ -256,6 +262,30 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
           ),
         );
       },
+    );
+  }
+
+  void _showRecoveryCelebration(BuildContext context, String initialPhotoUrl, String latestPhotoUrl, String diagnosis) async {
+    final uid = _firestoreService.currentUserId;
+    if (uid != null) {
+      await FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').add({
+        'type': 'recovery',
+        'message': '${widget.plantName} has fully recovered from $diagnosis!',
+        'isRead': false,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
+
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _RecoveryCelebrationDialog(
+        plantName: widget.plantName,
+        diagnosis: diagnosis,
+        initialPhotoUrl: initialPhotoUrl,
+        latestPhotoUrl: latestPhotoUrl,
+      ),
     );
   }
 
@@ -527,12 +557,177 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(color: const Color(0xFF154212), width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          final daysTreated = DateTime.now().difference(tCase.detectedDate).inDays;
+                          final body = 'My ${widget.plantName} has been diagnosed with ${tCase.diagnosis}. I have been treating it for $daysTreated days. Has anyone dealt with this before? Any advice would be appreciated.';
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => 
+                            import_create_post.CreatePostScreen(
+                              initialCategory: 'Question',
+                              initialTitle: 'Help with ${widget.plantName}: ${tCase.diagnosis}',
+                              initialBody: body,
+                            )
+                          ));
+                        },
+                        child: const Text(
+                          'Ask the Community 🌿',
+                          style: TextStyle(
+                            color: Color(0xFF154212),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               );
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class _RecoveryCelebrationDialog extends StatefulWidget {
+  final String plantName;
+  final String diagnosis;
+  final String initialPhotoUrl;
+  final String latestPhotoUrl;
+
+  const _RecoveryCelebrationDialog({
+    required this.plantName,
+    required this.diagnosis,
+    required this.initialPhotoUrl,
+    required this.latestPhotoUrl,
+  });
+
+  @override
+  State<_RecoveryCelebrationDialog> createState() => _RecoveryCelebrationDialogState();
+}
+
+class _RecoveryCelebrationDialogState extends State<_RecoveryCelebrationDialog> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _scaleAnimation = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog.fullscreen(
+      backgroundColor: const Color(0xFFE8F5E9),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ScaleTransition(
+                scale: _scaleAnimation,
+                child: const Icon(Icons.check_circle, color: Color(0xFF154212), size: 100),
+              ),
+              const SizedBox(height: 32),
+              const Text('Recovery Complete! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF154212))),
+              const SizedBox(height: 32),
+              if (widget.initialPhotoUrl.isNotEmpty && widget.latestPhotoUrl.isNotEmpty)
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(widget.initialPhotoUrl, height: 150, width: double.infinity, fit: BoxFit.cover),
+                          ),
+                          const SizedBox(height: 8),
+                          Text('Before', style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(widget.latestPhotoUrl, height: 150, width: double.infinity, fit: BoxFit.cover),
+                          ),
+                          const SizedBox(height: 8),
+                          Text('After', style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 32),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF154212).withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('🌿', style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Your ${widget.plantName} fought back from ${widget.diagnosis} and won. You did that. 🌿',
+                        style: const TextStyle(color: Color(0xFF154212), fontSize: 16, height: 1.5, fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.share, color: Colors.white),
+                  label: const Text('Share Recovery Story', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF154212),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () {
+                    // ignore: deprecated_member_use
+                    import_share.Share.share('My ${widget.plantName} just recovered from ${widget.diagnosis} at Digital Conservatory! 🌿 #PlantCare #DigitalConservatory');
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // pop dialog
+                  Navigator.pop(context); // pop screen
+                },
+                child: const Text('Continue', style: TextStyle(color: Color(0xFF154212), fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

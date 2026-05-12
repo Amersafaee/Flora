@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../../theme/tokens.dart';
 
@@ -147,7 +148,7 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
 
     debugPrint('Sending ${messagesPayload.length} messages to Gemini');
     
-    final apiKey = 'AIzaSyAiLqj90-A3AuMVVF0P0m7YCKLub3lgLNo';
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
     final model = GenerativeModel(
       model: 'gemini-2.0-flash',
       apiKey: apiKey,

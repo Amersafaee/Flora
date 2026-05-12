@@ -32,6 +32,8 @@ class _CareScreenState extends State<CareScreen> {
   // Cache task dates for dots
   Map<String, List<Color>> _taskDots = {};
 
+  Map<String, String> _plantHealthMapCache = {};
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +42,23 @@ class _CareScreenState extends State<CareScreen> {
     currentWeekStart = now.subtract(Duration(days: now.weekday - 1));
     currentWeekStart = DateTime(currentWeekStart.year, currentWeekStart.month, currentWeekStart.day);
     _loadTasksForWeek();
+
+    final uid = _firestoreService.currentUserId;
+    if (uid != null) {
+      _firestoreService.checkAndCreateInspectionTasks(uid);
+    }
+  }
+
+  Future<Map<String, String>> _getPlantHealthMap() async {
+    final uid = _firestoreService.currentUserId;
+    if (uid == null) return {};
+    final snap = await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').get();
+    final map = <String, String>{};
+    for (var doc in snap.docs) {
+      final data = doc.data();
+      map[data['name']?.toString() ?? ''] = data['healthStatus']?.toString() ?? 'Healthy';
+    }
+    return map;
   }
 
   Future<void> _loadTasksForWeek() async {
@@ -103,12 +122,12 @@ class _CareScreenState extends State<CareScreen> {
         .collection('tasks')
         .where('dueDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
         .where('dueDate', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-        .orderBy('dueDate')
         .get();
 
     if (!mounted) return;
 
     final tasks = snap.docs.map((d) => Task.fromMap(d.data())).toList();
+    tasks.sort((a, b) => a.dueDate.compareTo(b.dueDate));
     final pendingTasks = tasks.where((t) => !t.isCompleted).toList();
     final completedTasks = tasks.where((t) => t.isCompleted).toList();
     final dateLabel = DateFormat('EEEE, MMMM d').format(date);
@@ -251,9 +270,9 @@ class _CareScreenState extends State<CareScreen> {
                     .collection('tasks')
                     .where('dueDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
                     .where('dueDate', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-                    .orderBy('dueDate')
                     .get();
                 final updated = updatedSnap.docs.map((d) => Task.fromMap(d.data())).toList();
+                updated.sort((a, b) => a.dueDate.compareTo(b.dueDate));
                 setSheetState(() {
                   allTasks
                     ..clear()
@@ -445,100 +464,127 @@ class _CareScreenState extends State<CareScreen> {
                               );
                             }
                             final tasks = snapshot.data ?? [];
-                            final pendingTasks = tasks.where((t) => !t.isCompleted).toList();
-                            
-                            if (pendingTasks.isEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.calendar_today, size: 60, color: Color(0xFF154212)),
-                                    const SizedBox(height: 20),
-                                    Text(
-                                      'No care tasks yet',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    const Text(
-                                      'Add a plant to get a care schedule built automatically by Flora',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen()));
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF154212),
-                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                      child: const Text('Add a Plant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                            return Column(
-                              children: [
-                                if (pendingTasks.length >= 2)
-                                  GestureDetector(
-                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BatchCareScreen(tasks: pendingTasks))),
-                                    child: Container(
-                                      margin: const EdgeInsets.only(bottom: 16),
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF154212),
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4))],
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                                            child: const Icon(Icons.flash_on, color: Colors.white),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          const Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text('Quick Care Mode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                                SizedBox(height: 4),
-                                                Text('Swipe through all tasks fast', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                                              ],
-                                            ),
-                                          ),
-                                          const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ...pendingTasks.map((task) {
-                                  final colors = _taskTypeColors(task.taskType);
-                                  final isOverdue = !task.isCompleted && task.dueDate.isBefore(DateTime(today.year, today.month, today.day));
+                            return FutureBuilder<Map<String, String>>(
+                              future: _getPlantHealthMap(),
+                              builder: (context, healthSnap) {
+                                if (healthSnap.connectionState == ConnectionState.waiting && _plantHealthMapCache.isEmpty) {
+                                  return const Padding(padding: EdgeInsets.all(20.0), child: Center(child: CircularProgressIndicator()));
+                                }
+                                if (healthSnap.hasData) {
+                                  _plantHealthMapCache = healthSnap.data!;
+                                }
+                                
+                                final pendingTasks = List<Task>.from(tasks.where((t) => !t.isCompleted));
+                                if (pendingTasks.isEmpty) {
                                   return Padding(
-                                    padding: const EdgeInsets.only(bottom: 16),
-                                    child: _buildTaskCard(
-                                      context: context,
-                                      task: task,
-                                      icon: colors.$1,
-                                      iconBgColor: colors.$2.withValues(alpha: 0.15),
-                                      iconColor: colors.$2,
-                                      title: task.taskType,
-                                      subtitle: '${task.plantName}${task.notes.isNotEmpty ? ' (${task.notes})' : ''}${isOverdue ? ' • Overdue' : ''}',
-                                      isOverdue: isOverdue,
+                                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.calendar_today, size: 60, color: Color(0xFF154212)),
+                                        const SizedBox(height: 20),
+                                        Text('No care tasks yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                                        const SizedBox(height: 12),
+                                        const Text('Add a plant to get a care schedule built automatically by Flora', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 14)),
+                                        const SizedBox(height: 24),
+                                        ElevatedButton(
+                                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen())),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF154212),
+                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          ),
+                                          child: const Text('Add a Plant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ],
                                     ),
                                   );
-                                }),
-                              ],
+                                }
+                                
+                                final scoredTasks = pendingTasks.map((t) {
+                                  int score = 100;
+                                  final healthStatus = _plantHealthMapCache[t.plantName] ?? 'Healthy';
+                                  if (healthStatus != 'Healthy' && healthStatus != 'Thriving') score += 50;
+                                  final today = DateTime.now();
+                                  final due = DateTime(t.dueDate.year, t.dueDate.month, t.dueDate.day);
+                                  final diff = DateTime(today.year, today.month, today.day).difference(due).inDays;
+                                  if (diff == 1) {
+                                    score += 30;
+                                  } else if (diff == 2) {
+                                    score += 60;
+                                  } else if (diff >= 3) {
+                                    score += 100;
+                                  }
+                                  if (t.taskType == 'Inspection' || t.taskType == 'Treatment') {
+                                    score += 20;
+                                  }
+                                  if (t.taskType == 'Watering') {
+                                    score += 10;
+                                  }
+                                  return MapEntry(t, score);
+                                }).toList();
+                                
+                                scoredTasks.sort((a, b) => b.value.compareTo(a.value));
+                                
+                                return Column(
+                                  children: [
+                                    if (pendingTasks.length >= 2)
+                                      GestureDetector(
+                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BatchCareScreen(tasks: pendingTasks))),
+                                        child: Container(
+                                          margin: const EdgeInsets.only(bottom: 16),
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF154212),
+                                            borderRadius: BorderRadius.circular(16),
+                                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4))],
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                                                child: const Icon(Icons.flash_on, color: Colors.white),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              const Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text('Quick Care Mode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                                    SizedBox(height: 4),
+                                                    Text('Swipe through all tasks fast', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                                  ],
+                                                ),
+                                              ),
+                                              const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ...scoredTasks.map((entry) {
+                                      final task = entry.key;
+                                      final score = entry.value;
+                                      final colors = _taskTypeColors(task.taskType);
+                                      final isOverdue = !task.isCompleted && task.dueDate.isBefore(DateTime(today.year, today.month, today.day));
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 16),
+                                        child: _buildTaskCard(
+                                          context: context,
+                                          task: task,
+                                          icon: colors.$1,
+                                          iconBgColor: colors.$2.withValues(alpha: 0.15),
+                                          iconColor: colors.$2,
+                                          title: task.taskType,
+                                          subtitle: '${task.plantName}${task.notes.isNotEmpty ? ' (${task.notes})' : ''}${isOverdue ? ' • Overdue' : ''}',
+                                          isOverdue: isOverdue,
+                                          priorityScore: score,
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                );
+                              },
                             );
                           },
                         ),
@@ -649,14 +695,24 @@ class _CareScreenState extends State<CareScreen> {
     if (uid == null) {
       return const Center(child: Text('Not signed in.', style: TextStyle(color: Colors.grey)));
     }
-    return StreamBuilder<QuerySnapshot>(
+    return StreamBuilder<List<QueryDocumentSnapshot>>(
       stream: FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .collection('tasks')
           .where('isCompleted', isEqualTo: true)
-          .orderBy('dueDate', descending: true)
-          .snapshots(),
+          .snapshots().map((snap) {
+             final docs = snap.docs.toList();
+             docs.sort((a, b) {
+               final aTs = a.data()['dueDate'] as Timestamp?;
+               final bTs = b.data()['dueDate'] as Timestamp?;
+               if (aTs == null && bTs == null) return 0;
+               if (aTs == null) return 1;
+               if (bTs == null) return -1;
+               return bTs.compareTo(aTs);
+             });
+             return docs;
+          }),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -664,7 +720,7 @@ class _CareScreenState extends State<CareScreen> {
         if (snapshot.hasError) {
           return const Center(child: Text('Something went wrong', style: TextStyle(color: Colors.grey)));
         }
-        final docs = snapshot.data?.docs ?? [];
+        final docs = snapshot.data ?? [];
         if (docs.isEmpty) {
           return const Center(
             child: Text(
@@ -808,12 +864,21 @@ class _CareScreenState extends State<CareScreen> {
     required String title,
     required String subtitle,
     bool isOverdue = false,
+    int priorityScore = 0,
   }) {
+    Border? customBorder;
+    if (priorityScore > 150) {
+      customBorder = Border(left: BorderSide(color: const Color(0xFF8D3220), width: 2));
+    } else if (priorityScore > 100) {
+      customBorder = Border(left: BorderSide(color: Colors.amber.shade700, width: 2));
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(20),
+        border: customBorder,
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
@@ -831,6 +896,16 @@ class _CareScreenState extends State<CareScreen> {
                 Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isOverdue ? Colors.red : const Color(0xFF191C1B))),
                 const SizedBox(height: 4),
                 Text(subtitle, style: TextStyle(color: isOverdue ? Colors.red.shade300 : Colors.grey.shade600, fontSize: 13)),
+                if (task.climateAdjusted) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(task.climateNote.toLowerCase().contains('dry') ? Icons.wb_sunny : Icons.water_drop, size: 14, color: Colors.blueGrey),
+                      const SizedBox(width: 4),
+                      Expanded(child: Text(task.climateNote, style: const TextStyle(color: Colors.blueGrey, fontSize: 12, fontStyle: FontStyle.italic))),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -845,6 +920,44 @@ class _CareScreenState extends State<CareScreen> {
               if (!task.isCompleted) {
                 await _firestoreService.markTaskCompleted(task.id);
                 await NotificationService().cancelTaskNotification(task.id);
+                
+                final daysLate = DateTime.now().difference(DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day)).inDays;
+                if (daysLate >= 3 && context.mounted) {
+                  final result = await showDialog<String>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text('Reschedule ${task.plantName}\'s care?'),
+                      content: Text('You completed this ${task.taskType.toLowerCase()} $daysLate days late. Do you want to schedule the next one from today, or keep the original schedule?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, 'keep'), child: const Text('Keep schedule')),
+                        TextButton(onPressed: () => Navigator.pop(ctx, 'today'), child: const Text('From today')),
+                      ],
+                    ),
+                  );
+                  if (result == 'today') {
+                    final uid = _firestoreService.currentUserId;
+                    if (uid != null) {
+                      final tasksSnap = await FirebaseFirestore.instance.collection('users').doc(uid).collection('tasks')
+                        .where('plantId', isEqualTo: task.plantId)
+                        .where('taskType', isEqualTo: task.taskType)
+                        .where('isCompleted', isEqualTo: false)
+                        .get();
+                      
+                      for (var nextDoc in tasksSnap.docs) {
+                        final nextData = nextDoc.data();
+                        if (nextData['dueDate'] is Timestamp) {
+                          final due = (nextData['dueDate'] as Timestamp).toDate();
+                          if (due.isAfter(DateTime.now())) {
+                            final interval = due.difference(task.dueDate).inDays;
+                            await nextDoc.reference.update({'dueDate': Timestamp.fromDate(DateTime.now().add(Duration(days: interval)))});
+                            break;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+
                 try {
                   final badgesService = BadgesService();
                   final uid = _firestoreService.currentUserId;

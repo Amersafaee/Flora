@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
@@ -6,7 +7,13 @@ import 'package:http/http.dart' as http;
 import 'flora_context_service.dart';
 
 class GeminiService {
-  static final String geminiApiKey = 'AIzaSyBI1THerGBTPtyRW0yQkYgHj4NahOmcxX4';
+  static String get geminiApiKey {
+    final key = dotenv.env['GEMINI_API_KEY'] ?? '';
+    if (key.isEmpty) {
+      debugPrint('❌ GEMINI_API_KEY not found in .env file');
+    }
+    return key;
+  }
   final GenerativeModel _model;
   
   final String modelName;

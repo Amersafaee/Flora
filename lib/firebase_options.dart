@@ -2,6 +2,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -17,16 +18,16 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDC94PXNxLYGEY9vpqSs-QHXFfN3cJkmTY',
+  static FirebaseOptions get android => FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_ANDROID_KEY'] ?? '',
     appId: '1:731501257345:android:6cc054a6ff3d51ac50e380',
     messagingSenderId: '731501257345',
     projectId: 'flora-99ff7',
     storageBucket: 'flora-99ff7.firebasestorage.app',
   );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA9dWCgxiHv_v_8vp4ZziKiQXOGFQpobZ8',
+  static FirebaseOptions get ios => FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_IOS_KEY'] ?? '',
     appId: '1:731501257345:ios:9f61ff7cb5906e1150e380',
     messagingSenderId: '731501257345',
     projectId: 'flora-99ff7',

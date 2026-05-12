@@ -7,8 +7,9 @@ import '../services/storage_service.dart';
 class CreatePostScreen extends StatefulWidget {
   final String initialCategory;
   final String? initialTitle;
+  final String? initialBody;
 
-  const CreatePostScreen({super.key, this.initialCategory = 'General', this.initialTitle});
+  const CreatePostScreen({super.key, this.initialCategory = 'General', this.initialTitle, this.initialBody});
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -33,6 +34,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     _selectedCategory = widget.initialCategory;
     if (widget.initialTitle != null) {
       _titleController.text = widget.initialTitle!;
+    }
+    if (widget.initialBody != null) {
+      _bodyController.text = widget.initialBody!;
     }
   }
 

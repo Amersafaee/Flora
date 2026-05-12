@@ -83,6 +83,14 @@ class BadgesService {
           'badgeDescription': badge['badgeDescription'],
           'earnedDate': FieldValue.serverTimestamp(),
         });
+        
+        await _db.collection('users').doc(userId).collection('notifications').add({
+          'badgeCelebration': true,
+          'badgeId': badge['badgeId'],
+          'badgeName': badge['badgeName'],
+          'createdAt': FieldValue.serverTimestamp(),
+          'read': false,
+        });
       }
     }
   }

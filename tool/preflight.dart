@@ -17,25 +17,50 @@ Future<void> main() async {
     allPassed = false;
   }
 
-  // 1. Check that the Gemini API key is present and not a placeholder
+  // 0. Check for hardcoded AIzaSy keys in lib/
   try {
-    final geminiFile = File('lib/services/gemini_service.dart');
-    final geminiContent = await geminiFile.readAsString();
-    final apiKeyMatch = RegExp(r"geminiApiKey\s*=\s*'([^']+)'").firstMatch(geminiContent) ??
-        RegExp(r'geminiApiKey\s*=\s*"([^"]+)"').firstMatch(geminiContent);
-    
-    if (apiKeyMatch == null) {
-      fail('Gemini API key not found in gemini_service.dart');
+    bool hasHardcodedKey = false;
+    final libDir = Directory('lib');
+    if (libDir.existsSync()) {
+      final files = libDir.listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart'));
+      for (final file in files) {
+        final lines = file.readAsLinesSync();
+        for (int i = 0; i < lines.length; i++) {
+          if (lines[i].contains('AIzaSy')) {
+            fail('Hardcoded key found in ${file.path} at line ${i + 1}');
+            hasHardcodedKey = true;
+          }
+        }
+      }
+    }
+    if (!hasHardcodedKey) {
+      pass('No dart file contains hardcoded AIzaSy key');
+    }
+  } catch (e) {
+    fail('Could not check for hardcoded keys: $e');
+  }
+
+  // 1. Check that the Gemini API key is present in .env
+  try {
+    final envFile = File('.env');
+    if (!envFile.existsSync()) {
+      fail('.env file not found');
     } else {
-      final key = apiKeyMatch.group(1)!;
-      if (key.isEmpty || key == 'PASTE_YOUR_KEY_HERE') {
-        fail('Gemini API key is missing or placeholder');
+      final envContent = await envFile.readAsString();
+      final keyMatch = RegExp(r'GEMINI_API_KEY=(.+)').firstMatch(envContent);
+      if (keyMatch == null) {
+        fail('GEMINI_API_KEY not found in .env');
       } else {
-        pass('Gemini API key is configured');
+        final key = keyMatch.group(1)!.trim();
+        if (key.isEmpty || key == 'PASTE_YOUR_KEY_HERE') {
+          fail('GEMINI_API_KEY is missing or placeholder');
+        } else {
+          pass('Gemini API key is configured in .env');
+        }
       }
     }
   } catch (e) {
-    fail('Could not read gemini_service.dart: $e');
+    fail('Could not read .env: $e');
   }
 
   // 2. Check that all required Firestore collections are mentioned in firestore.rules
@@ -172,9 +197,14 @@ Future<void> main() async {
 
   // 9. Check Gemini API connectivity
   try {
+    final envFile = File('.env');
+    final envContents = envFile.existsSync() ? envFile.readAsStringSync() : '';
+    final keyMatch = RegExp(r'GEMINI_API_KEY=(.+)').firstMatch(envContents);
+    final apiKey = keyMatch?.group(1)?.trim() ?? '';
+
     final client = HttpClient();
     client.connectionTimeout = const Duration(seconds: 10);
-    final request = await client.getUrl(Uri.parse('https://generativelanguage.googleapis.com/v1beta/models?key=AIzaSyBI1THerGBTPtyRW0yQkYgHj4NahOmcxX4'));
+    final request = await client.getUrl(Uri.parse('https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey'));
     final response = await request.close();
     if (response.statusCode == 200) {
       final responseBody = await response.transform(SystemEncoding().decoder).join();

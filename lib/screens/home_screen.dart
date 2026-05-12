@@ -17,7 +17,6 @@ import '../models/plant_model.dart';
 import '../models/task_model.dart';
 
 import 'vitals_dashboard_screen.dart';
-import 'memorial_garden_screen.dart';
 import '../services/milestone_service.dart';
 import '../services/weekly_report_service.dart';
 import 'weekly_report_screen.dart';
@@ -777,13 +776,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               },
                               child: const Text('Or identify a plant with your camera', style: TextStyle(color: Color(0xFF154212))),
                             ),
-                            if (allPlants.any((p) => p.isDeceased))
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MemorialGardenScreen()));
-                                },
-                                child: const Text('Memorial Garden', style: TextStyle(color: Colors.grey, fontSize: 12, fontStyle: FontStyle.italic)),
-                              ),
                           ],
                         ),
                       ),
@@ -911,23 +903,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   );
                 }
               ),
-              StreamBuilder<List<Plant>>(
-                stream: firestoreService.getPlants(),
-                builder: (context, snapshot) {
-                  final allPlants = snapshot.data ?? [];
-                  if (allPlants.any((p) => p.isDeceased)) {
-                    return Center(
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const MemorialGardenScreen()));
-                        },
-                        child: const Text('Memorial Garden', style: TextStyle(color: Colors.grey, fontSize: 12, fontStyle: FontStyle.italic)),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
+
               const SizedBox(height: 16),
 
               // ── From the Community ──────────────────────────────────────

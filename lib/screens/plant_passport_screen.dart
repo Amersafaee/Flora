@@ -480,8 +480,9 @@ $_summaryText
                     context,
                     MaterialPageRoute(
                       builder: (context) => CreateListingScreen(
-                        prefilledPlantName: widget.plant.name,
-                        prefilledDescription: _summaryText,
+                        initialPlantName: widget.plant.name,
+                        initialDescription: _summaryText,
+                        initialHealthScore: widget.plant.healthScore,
                       ),
                     ),
                   );
