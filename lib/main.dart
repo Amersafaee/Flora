@@ -70,10 +70,12 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
   ThemeMode _themeMode = ThemeMode.light;
   bool _healthRefreshDone = false;
   bool? _onboardingComplete;
+  late final Stream<User?> _authStream;
 
   @override
   void initState() {
     super.initState();
+    _authStream = FirebaseAuth.instance.authStateChanges();
     _loadTheme();
     _checkOnboarding();
   }
@@ -124,7 +126,7 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
       darkTheme: AppTheme.dark,
       themeMode: _themeMode,
       home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
+        stream: _authStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(

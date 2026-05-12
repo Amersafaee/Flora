@@ -60,13 +60,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      if (result == 'Success') return; // AuthStateChanges handles navigation.
+      if (result != 'Success') {
+        final message = result == '__timeout__'
+            ? 'Connection is slow, please check your internet and try again.'
+            : _mapFirebaseError(result, result ?? 'Sign in failed. Please try again.');
 
-      final message = result == '__timeout__'
-          ? 'Connection is slow, please check your internet and try again.'
-          : _mapFirebaseError(result, result ?? 'Sign in failed. Please try again.');
-
-      _showError(message);
+        _showError(message);
+      }
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       _showError(_mapFirebaseError(e.code, e.message ?? 'Sign in failed.'));
