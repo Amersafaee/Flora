@@ -367,7 +367,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 Icon(Icons.auto_awesome, color: Colors.white, size: 20),
                 SizedBox(width: 10),
                 Text(
-                  'Analyze Plant with Gemini',
+                  'Analyze with Flora 🌿',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,

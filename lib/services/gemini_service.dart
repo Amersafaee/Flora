@@ -11,6 +11,20 @@ class GeminiService {
   
   final String modelName;
 
+  static Future<bool> testConnection() async {
+    try {
+      final model = GenerativeModel(
+        model: 'gemini-2.0-flash',
+        apiKey: geminiApiKey,
+      );
+      final response = await model.generateContent([Content.text("ping")]).timeout(const Duration(seconds: 30));
+      return response.text != null;
+    } catch (e) {
+      debugPrint("Error in testConnection: ${e.toString()}");
+      return false;
+    }
+  }
+
   GeminiService()
       : modelName = 'gemini-2.0-flash',
         _model = GenerativeModel(
@@ -29,11 +43,11 @@ class GeminiService {
       }).toList();
 
       final chat = _model.startChat(history: history);
-      final response = await chat.sendMessage(Content.text(newMsg));
+      final response = await chat.sendMessage(Content.text(newMsg)).timeout(const Duration(seconds: 30));
       return response.text ??
           "Sorry I could not connect right now. Please try again.";
     } catch (e) {
-      debugPrint("Error in askFlora: $e");
+      debugPrint("Error in askFlora: ${e.toString()}");
       return "Sorry I could not connect right now. Please try again.";
     }
   }
@@ -58,10 +72,10 @@ Provide practical advice, watering tips, and any specific attention they need ba
 Write it as plain readable text, no markdown. Use simple emojis for visual flair. Keep it engaging but concise.
 ''';
 
-      final response = await _model.generateContent([Content.text(prompt)]);
+      final response = await _model.generateContent([Content.text(prompt)]).timeout(const Duration(seconds: 30));
       return response.text ?? "I could not generate a plan at this time.";
     } catch (e) {
-      debugPrint("Error in generatePersonalizedWeeklyPlan: $e");
+      debugPrint("Error in generatePersonalizedWeeklyPlan: ${e.toString()}");
       return "Sorry, I could not generate your plan right now. Please try again.";
     }
   }
@@ -84,10 +98,10 @@ Write a heartfelt 3-sentence eulogy. Reference the care and data softly, and end
 ''';
       
       final content = [Content.text(prompt)];
-      final response = await _model.generateContent(content);
+      final response = await _model.generateContent(content).timeout(const Duration(seconds: 30));
       return response.text ?? 'May this plant rest peacefully in the soil.';
     } catch (e) {
-      debugPrint('Error generating eulogy: $e');
+      debugPrint("Error generating eulogy: ${e.toString()}");
       return 'May $plantName rest peacefully in the soil, returning to the earth after $daysCaredFor days of care.';
     }
   }
@@ -103,10 +117,10 @@ Write a warm practical and specific answer of 2 to 4 sentences.
 Start with directly addressing their specific situation. Give one concrete actionable recommendation. End with an encouraging note. Do not use bullet points. Write as if you are a knowledgeable friend not a robot. Return only the answer text with no preamble.
 ''';
       final content = [Content.text(prompt)];
-      final response = await _model.generateContent(content);
+      final response = await _model.generateContent(content).timeout(const Duration(seconds: 30));
       return response.text?.trim() ?? 'I recommend keeping a close eye on it and adjusting your care routine slightly. Let us know how it progresses!';
     } catch (e) {
-      debugPrint('Error generating community answer: $e');
+      debugPrint("Error generating community answer: ${e.toString()}");
       return 'That sounds like an interesting challenge! I hope the community here can share some great advice soon.';
     }
   }
@@ -136,10 +150,10 @@ Disease history: ${hasDisease ? (diseaseResolved ? 'Recovered from past issue' :
 The summary should mention how long it has been cared for, its current health, and one positive characteristic. Return only the text with no preamble.
 ''';
       final content = [Content.text(prompt)];
-      final response = await _model.generateContent(content);
+      final response = await _model.generateContent(content).timeout(const Duration(seconds: 30));
       return response.text?.trim() ?? 'A well-loved $plantName cared for over $daysCaredFor days with a health score of $currentHealthScore. It is ready for its next home.';
     } catch (e) {
-      debugPrint('Error generating passport summary: $e');
+      debugPrint("Error generating passport summary: ${e.toString()}");
       return 'A beautiful $plantName cared for over $daysCaredFor days. A great addition to any collection.';
     }
   }
@@ -188,12 +202,12 @@ Reference their specific plants by name when relevant. Be proactive but concise.
       }).toList();
 
       final chat = contextModel.startChat(history: history);
-      final response = await chat.sendMessage(Content.text(newMessage));
+      final response = await chat.sendMessage(Content.text(newMessage)).timeout(const Duration(seconds: 30));
       return response.text ??
           'Sorry, I could not connect right now. Please try again.';
     } catch (e, stackTrace) {
-      debugPrint('❌ Flora askFloraWithContext error: $e');
-      debugPrint('Stack trace:\n$stackTrace');
+      debugPrint("❌ Flora askFloraWithContext error: ${e.toString()}");
+      debugPrint("Stack trace:\n$stackTrace");
       return 'Sorry, I could not connect right now. Please try again.';
     }
   }
@@ -223,11 +237,11 @@ Reference their specific plants by name when relevant. Be proactive but concise.
         ])
       ];
 
-      final response = await _model.generateContent(content);
+      final response = await _model.generateContent(content).timeout(const Duration(seconds: 30));
       return response.text ??
           "Sorry I could not connect right now. Please try again.";
     } catch (e) {
-      debugPrint("Error in analyzeePlantImage: $e");
+      debugPrint("Error in analyzeePlantImage: ${e.toString()}");
       return "Sorry I could not connect right now. Please try again.";
     }
   }
@@ -291,7 +305,7 @@ Respond with JSON only. No markdown. No explanation.''';
         ])
       ];
 
-      final geminiResponse = await _model.generateContent(content);
+      final geminiResponse = await _model.generateContent(content).timeout(const Duration(seconds: 30));
       final raw = geminiResponse.text ?? '';
 
       // 5. Strip possible markdown code fences and parse
@@ -314,7 +328,7 @@ Respond with JSON only. No markdown. No explanation.''';
         'recommendations': decoded['recommendations']?.toString() ?? '',
       };
     } catch (e) {
-      debugPrint('Error in analyzeGrowthPhoto: $e');
+      debugPrint("Error in analyzeGrowthPhoto: ${e.toString()}");
       return fallback();
     }
   }
@@ -391,7 +405,7 @@ Return JSON only. No markdown. No explanation.''';
         ])
       ];
 
-      final geminiResponse = await _model.generateContent(content);
+      final geminiResponse = await _model.generateContent(content).timeout(const Duration(seconds: 30));
       final raw = geminiResponse.text ?? '';
 
       final cleaned =
@@ -408,9 +422,8 @@ Return JSON only. No markdown. No explanation.''';
             decoded['adjustedRecommendation']?.toString() ?? '',
       };
     } catch (e) {
-      debugPrint('Error in assessTreatmentProgress: $e');
+      debugPrint("Error in assessTreatmentProgress: ${e.toString()}");
       return fallback();
     }
   }
 }
-

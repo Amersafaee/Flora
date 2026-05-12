@@ -17,6 +17,8 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
   int _completedCount = 0;
   int _skippedCount = 0;
   bool _isAllDone = false;
+  final Set<Task> _completedTasks = {};
+  final Set<String> _completedTaskIds = {};
 
   void _handleSwipe(bool isCompleted) async {
     if (_currentIndex >= widget.tasks.length) return;
@@ -25,10 +27,12 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
     
     if (isCompleted) {
       _completedCount++;
+      _completedTasks.add(task);
       try {
         final uid = FirestoreService().currentUserId;
         if (uid != null) {
           await FirestoreService().markTaskCompleted(task.id);
+          _completedTaskIds.add(task.id);
           
           int baseInterval = 7;
           if (task.taskType == 'Fertilizing') baseInterval = 30;
@@ -123,7 +127,9 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
               ),
               const SizedBox(height: 48),
               ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF154212),
                   foregroundColor: Colors.white,

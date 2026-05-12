@@ -19,8 +19,6 @@ import 'screens/community_screen.dart';
 import 'screens/wiki_screen.dart';
 import 'screens/flora_chats_list_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/onboarding_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,22 +67,16 @@ class DigitalConservatoryApp extends StatefulWidget {
 class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
   ThemeMode _themeMode = ThemeMode.light;
   bool _healthRefreshDone = false;
-  bool? _onboardingComplete;
   late final Stream<User?> _authStream;
 
   @override
   void initState() {
     super.initState();
+    // _authStream is initialized once here and never recreated — this is
+    // intentional to prevent StreamBuilder from resubscribing on every rebuild
+    // which was the root cause of the "sign-in spins forever" bug.
     _authStream = FirebaseAuth.instance.authStateChanges();
     _loadTheme();
-    _checkOnboarding();
-  }
-
-  Future<void> _checkOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
-    });
   }
 
   Future<void> _loadTheme() async {
@@ -149,12 +141,9 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
             }
             return MainTabScreen(onThemeChanged: _onThemeChanged);
           }
-          if (_onboardingComplete == null) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          return _onboardingComplete! ? const LoginScreen() : const OnboardingScreen();
+          // No authenticated user — show login screen.
+          // Onboarding check is handled inside LoginScreen.initState.
+          return const LoginScreen();
         },
       ),
     );
@@ -236,7 +225,6 @@ class _MainTabScreenState extends State<MainTabScreen> {
     );
   }
 }
-
 
 
 

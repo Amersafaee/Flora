@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_screen.dart';
+import 'onboarding_screen.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,6 +18,28 @@ class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
   bool _obscurePassword = true;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check onboarding completion after the first frame so the widget tree
+    // is fully mounted before any navigation occurs.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkOnboarding();
+    });
+  }
+
+  Future<void> _checkOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    final complete = prefs.getBool('onboarding_complete') ?? false;
+    if (!complete) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -67,6 +91,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
         _showError(message);
       }
+      // On success the auth StreamBuilder in main.dart will detect the new
+      // user and automatically replace this screen with MainTabScreen —
+      // no manual navigation needed here.
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       _showError(_mapFirebaseError(e.code, e.message ?? 'Sign in failed.'));
