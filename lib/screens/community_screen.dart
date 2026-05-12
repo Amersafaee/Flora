@@ -23,6 +23,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   bool _isSearching = false;
   String _searchQuery = '';
   String _selectedCategoryFilter = 'All';
+  String _feedMode = 'mine';
   List<String> _userPlantNames = [];
   StreamSubscription? _plantsSub;
 
@@ -185,6 +186,44 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       borderSide: BorderSide.none,
                     ),
                   ),
+                ),
+              ),
+
+              // Feed Mode Toggle
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
+                child: Row(
+                  children: [
+                    ChoiceChip(
+                      label: const Text('For My Garden'),
+                      selected: _feedMode == 'mine',
+                      onSelected: (selected) {
+                        if (selected) setState(() => _feedMode = 'mine');
+                      },
+                      selectedColor: primaryColor,
+                      labelStyle: TextStyle(
+                        color: _feedMode == 'mine' ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                        fontWeight: _feedMode == 'mine' ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      backgroundColor: Theme.of(context).cardColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: const Text('All Posts'),
+                      selected: _feedMode == 'all',
+                      onSelected: (selected) {
+                        if (selected) setState(() => _feedMode = 'all');
+                      },
+                      selectedColor: primaryColor,
+                      labelStyle: TextStyle(
+                        color: _feedMode == 'all' ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                        fontWeight: _feedMode == 'all' ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      backgroundColor: Theme.of(context).cardColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                  ],
                 ),
               ),
 
@@ -430,7 +469,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       final query = _searchQuery.toLowerCase();
                       final matchesSearch = title.contains(query) || body.contains(query);
                       final matchesCategory = _selectedCategoryFilter == 'All' || data['category'] == _selectedCategoryFilter;
-                      return matchesSearch && matchesCategory;
+                      
+                      bool matchesFeedMode = true;
+                      if (_feedMode == 'mine') {
+                        if (data['category'] == 'Question' || data['category'] == 'Questions') {
+                          matchesFeedMode = true;
+                        } else {
+                          matchesFeedMode = _userPlantNames.any((pName) => pName.isNotEmpty && (title.contains(pName) || body.contains(pName)));
+                        }
+                      }
+
+                      return matchesSearch && matchesCategory && matchesFeedMode;
                     }).toList();
 
                     if (allDocs.isEmpty) {
@@ -473,6 +522,31 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     }
 
                     if (filteredDocs.isEmpty) {
+                      if (_feedMode == 'mine' && !_isSearching) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.eco_outlined, size: 60, color: Color(0xFF154212)),
+                              const SizedBox(height: 20),
+                              const Text('No community posts about your plants yet. Be the first to share! 🌿', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey)),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'General')));
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF154212),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: const Text('Create Post', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(40.0),

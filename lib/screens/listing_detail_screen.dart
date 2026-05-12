@@ -148,6 +148,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           final lookingFor = currentData['lookingFor'] ?? '';
           final ownerName = currentData['ownerName'] ?? '';
           final ownerUid = currentData['ownerUid'] ?? '';
+          final careStreak = currentData['careStreak'] as int? ?? 0;
           final isOwner = _currentUid == ownerUid;
 
           String timeAgo = 'Recently';
@@ -301,7 +302,26 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text('Listed by', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                Text(ownerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Row(
+                                  children: [
+                                    Text(ownerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    if (careStreak > 0) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.shade50,
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: Colors.orange.shade200),
+                                        ),
+                                        child: Text(
+                                          '🔥 $careStreak day care streak',
+                                          style: TextStyle(color: Colors.orange.shade800, fontSize: 10, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ],
                             ),
                           ],

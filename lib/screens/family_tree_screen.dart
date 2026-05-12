@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'create_listing_screen.dart';
 
 class FamilyTreeScreen extends StatefulWidget {
   final String plantId;
@@ -112,8 +113,49 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                     'childPlantName': name,
                     'dateRecorded': FieldValue.serverTimestamp(),
                   });
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    
+                    showModalBottomSheet(
+                      context: context,
+                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                      builder: (sheetContext) => SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text('List this cutting for swap? 🔄', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 8),
+                              Text('Share your ${widget.plantName} cutting with the community', style: const TextStyle(color: Colors.grey, fontSize: 16)),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(sheetContext);
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => CreateListingScreen(initialPlantName: name)));
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF154212),
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: const Text('List for Swap', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                              const SizedBox(height: 12),
+                              TextButton(
+                                onPressed: () => Navigator.pop(sheetContext),
+                                child: const Text('Not now', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                } else {
+                  if (context.mounted) Navigator.pop(context);
                 }
-                if (context.mounted) Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF154212),

@@ -4,8 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
 import '../services/gemini_service.dart';
-import '../models/treatment_case_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'flora_chats_list_screen.dart';
 
 class AddGrowthEntryScreen extends StatefulWidget {
   final String plantName;
@@ -94,65 +94,64 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
         );
         await FirestoreService().saveHealthAssessment(widget.plantId, assessment);
         
-        final condition = assessment['condition']?.toString() ?? 'Healthy';
         final issuesDetected = (assessment['issuesDetected'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
         
-        if (issuesDetected.isNotEmpty || condition == 'Needs Attention' || condition == 'Critical') {
+        if (issuesDetected.isNotEmpty) {
           if (mounted) {
-            final diagnosis = issuesDetected.isNotEmpty ? issuesDetected.first : condition;
-            final createCase = await showDialog<bool>(
+            await showModalBottomSheet(
               context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Flora detected an issue 🌿'),
-                content: Text('Flora noticed $diagnosis. Would you like to create a treatment case to track recovery?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Not now'),
+              isScrollControlled: true,
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              builder: (sheetContext) => SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text('Flora noticed something 🌿', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        children: issuesDetected.map((issue) => Chip(
+                          label: Text(issue),
+                          backgroundColor: Colors.orange.shade50,
+                          labelStyle: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.bold),
+                          side: BorderSide.none,
+                        )).toList(),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF154212),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Ask Flora about this', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          Navigator.pop(context);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: Color(0xFF154212), width: 2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('View Treatment Cases', style: TextStyle(color: Color(0xFF154212), fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Yes, create case'),
-                  ),
-                ],
+                ),
               ),
             );
-
-            if (createCase == true) {
-              final severity = condition == 'Critical' ? 'Critical' : 'Moderate';
-              final steps = ["Follow Flora's recommendations for $diagnosis"];
-              
-              final tCase = TreatmentCase(
-                id: '',
-                plantId: widget.plantId,
-                plantName: widget.plantName,
-                diagnosis: diagnosis,
-                severity: severity,
-                detectedDate: DateTime.now(),
-                status: 'Active',
-                treatmentSteps: steps,
-                followUpDates: [],
-                progressNotes: [],
-                initialPhotoUrl: '',
-                latestPhotoUrl: '',
-              );
-              
-              await FirestoreService().createTreatmentCase(tCase);
-              
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Treatment case created — track recovery in Plant Detail'),
-                    backgroundColor: Color(0xFF154212),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
-            }
+            return; // We skip the final Navigator.pop(context) below because the buttons handle it
           }
         }
       }
@@ -217,7 +216,22 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                   const SizedBox(width: 48), // Balance header
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              
+              // Ask Flora Button
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()));
+                },
+                icon: const Icon(Icons.psychology, color: Color(0xFF154212)),
+                label: const Text('Not sure what to write? Ask Flora 🌿', style: TextStyle(color: Color(0xFF154212), fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: const BorderSide(color: Color(0xFF154212), width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 24),
               
               // Image Picker Area
               GestureDetector(

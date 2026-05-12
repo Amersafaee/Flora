@@ -208,6 +208,26 @@ class FloraContextService {
         buffer.writeln();
       }
 
+      final lastWeeklyReportSummary = profile?['lastWeeklyReportSummary'] as Map<String, dynamic>?;
+      if (lastWeeklyReportSummary != null) {
+        final weekEndDateStr = lastWeeklyReportSummary['weekEndDate'] as String? ?? 'unknown date';
+        DateTime? weekEndDate;
+        try { weekEndDate = DateTime.parse(weekEndDateStr); } catch (_) {}
+        final formattedDate = weekEndDate != null ? DateFormat('MMMM d, yyyy').format(weekEndDate) : weekEndDateStr;
+
+        final tasksCompleted = lastWeeklyReportSummary['tasksCompleted'] ?? 0;
+        final tasksSkipped = lastWeeklyReportSummary['tasksSkipped'] ?? 0;
+        final avgHealthScore = lastWeeklyReportSummary['avgHealthScore'] ?? 0;
+        final streakAtEndOfWeek = lastWeeklyReportSummary['streakAtEndOfWeek'] ?? 0;
+        final topConcern = lastWeeklyReportSummary['topConcern'] as String? ?? '';
+
+        buffer.write('Last weekly report ($formattedDate): completed $tasksCompleted tasks, skipped $tasksSkipped, average collection health $avgHealthScore, care streak was $streakAtEndOfWeek days.');
+        if (topConcern.isNotEmpty) {
+          buffer.write(' Main concern was $topConcern.');
+        }
+        buffer.writeln('\n');
+      }
+
       // ── Climate summary ───────────────────────────────────────────────────
       if (climateReadings.isNotEmpty) {
         final tempReadings = climateReadings

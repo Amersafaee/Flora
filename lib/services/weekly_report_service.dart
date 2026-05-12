@@ -44,6 +44,9 @@ class WeeklyReportService {
     int maxImprovement = 0;
     int totalHealthScore = 0;
     int activePlantCount = 0;
+    
+    String topConcern = '';
+    int minHealthScore = 100;
 
     for (var doc in plantsQuery.docs) {
       final plantData = doc.data();
@@ -66,6 +69,11 @@ class WeeklyReportService {
             .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
             .get();
         newGrowthEntries += growthQuery.docs.length;
+        
+        if (plant.healthScore < 80 && plant.healthScore < minHealthScore) {
+          minHealthScore = plant.healthScore;
+          topConcern = plant.name;
+        }
       }
     }
 
@@ -116,6 +124,27 @@ class WeeklyReportService {
       headline = "Steady week. A few plants could use more attention.";
     } else {
       headline = "Your plants need you. Let us get back on track together.";
+    }
+
+    final userDoc = await _db.collection('users').doc(userUid).get();
+    int streakAtEndOfWeek = 0;
+    if (userDoc.exists && userDoc.data()!.containsKey('careStreak')) {
+      streakAtEndOfWeek = userDoc.data()!['careStreak'] as int;
+    }
+
+    try {
+      await _db.collection('users').doc(userUid).set({
+        'lastWeeklyReportSummary': {
+          'weekEndDate': now.toIso8601String(),
+          'tasksCompleted': completedTasks,
+          'tasksSkipped': skippedTasks,
+          'avgHealthScore': collectionHealthAvg.toDouble(),
+          'topConcern': topConcern,
+          'streakAtEndOfWeek': streakAtEndOfWeek,
+        }
+      }, SetOptions(merge: true));
+    } catch (e) {
+      // ignore
     }
 
     return {

@@ -12,6 +12,7 @@ import 'care_insights_screen.dart';
 import '../services/care_intelligence_service.dart';
 import 'batch_care_screen.dart';
 import 'add_plant_screen.dart';
+import 'community_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -475,31 +476,7 @@ class _CareScreenState extends State<CareScreen> {
                                 }
                                 
                                 final pendingTasks = List<Task>.from(tasks.where((t) => !t.isCompleted));
-                                if (pendingTasks.isEmpty) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.calendar_today, size: 60, color: Color(0xFF154212)),
-                                        const SizedBox(height: 20),
-                                        Text('No care tasks yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                                        const SizedBox(height: 12),
-                                        const Text('Add a plant to get a care schedule built automatically by Flora', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 14)),
-                                        const SizedBox(height: 24),
-                                        ElevatedButton(
-                                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen())),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF154212),
-                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                          ),
-                                          child: const Text('Add a Plant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
+                                final completedCount = tasks.where((t) => t.isCompleted).length;
                                 
                                 final scoredTasks = pendingTasks.map((t) {
                                   int score = 100;
@@ -528,11 +505,78 @@ class _CareScreenState extends State<CareScreen> {
                                 
                                 return Column(
                                   children: [
-                                    if (pendingTasks.length >= 2)
-                                      GestureDetector(
-                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BatchCareScreen(tasks: pendingTasks))),
-                                        child: Container(
-                                          margin: const EdgeInsets.only(bottom: 16),
+                                    FutureBuilder<QuerySnapshot>(
+                                      future: FirebaseFirestore.instance.collection('challenges').where('isActive', isEqualTo: true).limit(1).get(),
+                                      builder: (context, challengeSnap) {
+                                        if (!challengeSnap.hasData || challengeSnap.data!.docs.isEmpty) return const SizedBox();
+                                        final challenge = challengeSnap.data!.docs.first.data() as Map<String, dynamic>;
+                                        final title = challenge['title'] ?? 'Community Challenge';
+                                        final progress = (completedCount / 15.0).clamp(0.0, 1.0);
+                                        return GestureDetector(
+                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen())),
+                                          child: Container(
+                                            margin: const EdgeInsets.only(bottom: 16),
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(color: Colors.amber.shade200),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
+                                                    Text('$completedCount tasks done this week', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                LinearProgressIndicator(
+                                                  value: progress,
+                                                  backgroundColor: Colors.grey.shade200,
+                                                  color: Colors.green,
+                                                  minHeight: 4,
+                                                  borderRadius: BorderRadius.circular(2),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    if (pendingTasks.isEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(Icons.calendar_today, size: 60, color: Color(0xFF154212)),
+                                            const SizedBox(height: 20),
+                                            Text('No care tasks yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                                            const SizedBox(height: 12),
+                                            const Text('Add a plant to get a care schedule built automatically by Flora', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 14)),
+                                            const SizedBox(height: 24),
+                                            ElevatedButton(
+                                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen())),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(0xFF154212),
+                                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                              ),
+                                              child: const Text('Add a Plant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    else ...[
+                                      if (pendingTasks.length >= 2)
+                                        GestureDetector(
+                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BatchCareScreen(tasks: pendingTasks))),
+                                          child: Container(
+                                            margin: const EdgeInsets.only(bottom: 16),
                                           padding: const EdgeInsets.all(16),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFF154212),
@@ -582,6 +626,7 @@ class _CareScreenState extends State<CareScreen> {
                                         ),
                                       );
                                     }),
+                                    ],
                                   ],
                                 );
                               },

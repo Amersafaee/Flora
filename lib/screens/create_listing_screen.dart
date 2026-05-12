@@ -87,6 +87,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         healthStatus = plantData['healthStatus'] as String?;
         plantId = plantDoc.id;
       }
+      
+      int? careStreak;
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        careStreak = userDoc.data()?['careStreak'] as int?;
+      }
 
       final listingData = {
         'ownerUid': user.uid,
@@ -105,6 +111,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       if (healthScore != null) listingData['healthScore'] = healthScore;
       if (healthStatus != null) listingData['healthStatus'] = healthStatus;
       if (plantId != null) listingData['plantId'] = plantId;
+      if (careStreak != null) listingData['careStreak'] = careStreak;
 
       await FirebaseFirestore.instance.collection('swap_listings').add(listingData);
 
