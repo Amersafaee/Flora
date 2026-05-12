@@ -1,0 +1,28 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:digital_conservatory/services/gemini_service.dart';
+
+void main() {
+  group('Gemini Service Tests', () {
+    test('GeminiService can be instantiated without throwing', () {
+      expect(() => GeminiService(), returnsNormally);
+    });
+
+    test('API key is not empty and not equal to the placeholder "PASTE_YOUR_KEY_HERE"', () {
+      expect(GeminiService.geminiApiKey, isNotEmpty);
+      expect(GeminiService.geminiApiKey, isNot('PASTE_YOUR_KEY_HERE'));
+    });
+
+    test('Model name is set to a non-empty string', () {
+      final service = GeminiService();
+      expect(service.modelName, isNotEmpty);
+    });
+
+    test('Integration: askFlora with a simple message', () async {
+      final service = GeminiService();
+      final response = await service.askFlora([], 'What is a good beginner plant?');
+      expect(response, isNotEmpty);
+      expect(response.toLowerCase(), isNot(contains('sorry')));
+      expect(response.toLowerCase(), isNot(contains('cannot connect')));
+    }, tags: ['integration']);
+  });
+}

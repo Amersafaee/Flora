@@ -57,6 +57,7 @@ class _CareScreenState extends State<CareScreen> {
     final dots = <String, List<Color>>{};
     for (var doc in snap.docs) {
       final task = Task.fromMap(doc.data());
+      if (task.isCompleted) continue;
       final d = task.dueDate;
       final key = '${d.year}-${d.month}-${d.day}';
       final color = _taskTypeColors(task.taskType).$2;
@@ -108,6 +109,8 @@ class _CareScreenState extends State<CareScreen> {
     if (!mounted) return;
 
     final tasks = snap.docs.map((d) => Task.fromMap(d.data())).toList();
+    final pendingTasks = tasks.where((t) => !t.isCompleted).toList();
+    final completedTasks = tasks.where((t) => t.isCompleted).toList();
     final dateLabel = DateFormat('EEEE, MMMM d').format(date);
     final primaryColor = Theme.of(context).primaryColor;
 
@@ -175,78 +178,19 @@ class _CareScreenState extends State<CareScreen> {
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.5,
                       ),
-                      child: ListView.separated(
+                      child: ListView(
                         shrinkWrap: true,
-                        itemCount: tasks.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (_, i) {
-                          final task = tasks[i];
-                          final done = task.isCompleted;
-                          final tc = _taskTypeColors(task.taskType);
-                          return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(vertical: 6),
-                            leading: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: done
-                                    ? Colors.green.withValues(alpha: 0.1)
-                                    : tc.$2.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                done ? Icons.check_circle : tc.$1,
-                                color: done ? Colors.green : tc.$2,
-                                size: 20,
-                              ),
+                        children: [
+                          for (final task in pendingTasks) _buildBottomSheetTaskItem(task, uid, startOfDay, endOfDay, setSheetState, tasks),
+                          if (completedTasks.isNotEmpty) ...[
+                            if (pendingTasks.isNotEmpty) const Divider(height: 32),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: Text('Completed', style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.bold, fontSize: 13)),
                             ),
-                            title: Text(
-                              task.taskType,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                decoration: done ? TextDecoration.lineThrough : null,
-                                color: done ? Colors.grey : Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            subtitle: Text(
-                              task.plantName,
-                              style: TextStyle(
-                                fontSize: 13,
-                                decoration: done ? TextDecoration.lineThrough : null,
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                            trailing: done
-                                ? const Icon(Icons.check_circle, color: Colors.green, size: 26)
-                                : GestureDetector(
-                                    onTap: () async {
-                                      await _firestoreService.markTaskCompleted(task.id);
-                                      // Refresh the sheet list
-                                      final updatedSnap = await FirebaseFirestore.instance
-                                          .collection('users')
-                                          .doc(uid)
-                                          .collection('tasks')
-                                          .where('dueDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-                                          .where('dueDate', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-                                          .orderBy('dueDate')
-                                          .get();
-                                      final updated = updatedSnap.docs.map((d) => Task.fromMap(d.data())).toList();
-                                      setSheetState(() {
-                                        tasks
-                                          ..clear()
-                                          ..addAll(updated);
-                                      });
-                                      // Refresh dot cache
-                                      _loadTasksForWeek();
-                                    },
-                                    child: Icon(
-                                      Icons.radio_button_unchecked,
-                                      color: Colors.grey.shade400,
-                                      size: 26,
-                                    ),
-                                  ),
-                          );
-                        },
+                            for (final task in completedTasks) _buildBottomSheetTaskItem(task, uid, startOfDay, endOfDay, setSheetState, tasks),
+                          ],
+                        ],
                       ),
                     ),
                   SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 24),
@@ -256,6 +200,74 @@ class _CareScreenState extends State<CareScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildBottomSheetTaskItem(Task task, String uid, DateTime startOfDay, DateTime endOfDay, StateSetter setSheetState, List<Task> allTasks) {
+    final done = task.isCompleted;
+    final tc = _taskTypeColors(task.taskType);
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(vertical: 6),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: done
+              ? Colors.green.withValues(alpha: 0.1)
+              : tc.$2.withValues(alpha: 0.15),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          done ? Icons.check_circle : tc.$1,
+          color: done ? Colors.green : tc.$2,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        task.taskType,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          decoration: done ? TextDecoration.lineThrough : null,
+          color: done ? Colors.grey : Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+      subtitle: Text(
+        task.plantName,
+        style: TextStyle(
+          fontSize: 13,
+          decoration: done ? TextDecoration.lineThrough : null,
+          color: Colors.grey.shade500,
+        ),
+      ),
+      trailing: done
+          ? const Icon(Icons.check_circle, color: Colors.green, size: 26)
+          : GestureDetector(
+              onTap: () async {
+                await _firestoreService.markTaskCompleted(task.id);
+                // Refresh the sheet list
+                final updatedSnap = await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(uid)
+                    .collection('tasks')
+                    .where('dueDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+                    .where('dueDate', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+                    .orderBy('dueDate')
+                    .get();
+                final updated = updatedSnap.docs.map((d) => Task.fromMap(d.data())).toList();
+                setSheetState(() {
+                  allTasks
+                    ..clear()
+                    ..addAll(updated);
+                });
+                // Refresh dot cache
+                _loadTasksForWeek();
+              },
+              child: Icon(
+                Icons.radio_button_unchecked,
+                color: Colors.grey.shade400,
+                size: 26,
+              ),
+            ),
     );
   }
 
@@ -433,7 +445,9 @@ class _CareScreenState extends State<CareScreen> {
                               );
                             }
                             final tasks = snapshot.data ?? [];
-                            if (tasks.isEmpty) {
+                            final pendingTasks = tasks.where((t) => !t.isCompleted).toList();
+                            
+                            if (pendingTasks.isEmpty) {
                               return Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
                                 child: Column(
@@ -473,9 +487,9 @@ class _CareScreenState extends State<CareScreen> {
                             }
                             return Column(
                               children: [
-                                if (tasks.length >= 2)
+                                if (pendingTasks.length >= 2)
                                   GestureDetector(
-                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BatchCareScreen(tasks: tasks))),
+                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BatchCareScreen(tasks: pendingTasks))),
                                     child: Container(
                                       margin: const EdgeInsets.only(bottom: 16),
                                       padding: const EdgeInsets.all(16),
@@ -507,7 +521,7 @@ class _CareScreenState extends State<CareScreen> {
                                       ),
                                     ),
                                   ),
-                                ...tasks.map((task) {
+                                ...pendingTasks.map((task) {
                                   final colors = _taskTypeColors(task.taskType);
                                   final isOverdue = !task.isCompleted && task.dueDate.isBefore(DateTime(today.year, today.month, today.day));
                                   return Padding(

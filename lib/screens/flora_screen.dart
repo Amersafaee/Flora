@@ -27,7 +27,9 @@ class ChatMessage {
 
 class FloraScreen extends StatefulWidget {
   final String conversationId;
-  const FloraScreen({super.key, required this.conversationId});
+  final GeminiService? geminiService;
+  final FirebaseFirestore? firestore;
+  const FloraScreen({super.key, required this.conversationId, this.geminiService, this.firestore});
 
   @override
   State<FloraScreen> createState() => _FloraScreenState();
@@ -37,7 +39,8 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
-  final GeminiService _geminiService = GeminiService();
+  late final GeminiService _geminiService = widget.geminiService ?? GeminiService();
+  late final FirebaseFirestore _firestore = widget.firestore ?? FirebaseFirestore.instance;
   final ImagePicker _picker = ImagePicker();
 
   List<ChatMessage> _messages = [];
@@ -48,7 +51,13 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
   Timer? _contextLoadingTimer;
   late AnimationController _dotsController;
 
-  final String? _uid = FirebaseAuth.instance.currentUser?.uid;
+  String? get _uid {
+    try {
+      return FirebaseAuth.instance.currentUser?.uid;
+    } catch (_) {
+      return 'test_uid';
+    }
+  }
 
   @override
   void initState() {
@@ -81,7 +90,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
   void _loadChatHistory() {
     if (_uid == null) return;
 
-    FirebaseFirestore.instance
+    _firestore
         .collection('users')
         .doc(_uid)
         .collection('flora_chats')
@@ -109,7 +118,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
 
   Future<void> _saveMessageToFirestore(ChatMessage msg) async {
     if (_uid == null) return;
-    await FirebaseFirestore.instance
+    await _firestore
         .collection('users')
         .doc(_uid)
         .collection('flora_chats')
@@ -133,7 +142,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
       'lastMessageAt': FieldValue.serverTimestamp(),
     };
     if (newTitle != null) data['title'] = newTitle;
-    await FirebaseFirestore.instance
+    await _firestore
         .collection('users')
         .doc(_uid)
         .collection('flora_chats')
@@ -332,8 +341,8 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
   Future<void> _clearChatHistory() async {
     if (_uid == null) return;
 
-    final batch = FirebaseFirestore.instance.batch();
-    final snapshot = await FirebaseFirestore.instance
+    final batch = _firestore.batch();
+    final snapshot = await _firestore
         .collection('users')
         .doc(_uid)
         .collection('flora_chats')

@@ -60,12 +60,12 @@ class Plant {
       healthStatus: map['healthStatus'] ?? '',
       healthScore: map['healthScore'] ?? 100,
       isDeceased: map['isDeceased'] ?? false,
-      deceasedDate: map['deceasedDate'] is Timestamp ? (map['deceasedDate'] as Timestamp).toDate() : null,
+      deceasedDate: map['deceasedDate'] is Timestamp ? (map['deceasedDate'] as Timestamp).toDate() : (map['deceasedDate'] is DateTime ? map['deceasedDate'] as DateTime : null),
       memorialNote: map['memorialNote'],
       eulogy: map['eulogy'],
       dateAdded: map['dateAdded'] is Timestamp 
           ? (map['dateAdded'] as Timestamp).toDate() 
-          : DateTime.now(),
+          : (map['dateAdded'] is DateTime ? map['dateAdded'] as DateTime : DateTime.now()),
     );
   }
 }

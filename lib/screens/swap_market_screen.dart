@@ -3,6 +3,7 @@ import 'listing_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'create_listing_screen.dart';
+import 'swap_conversations_screen.dart';
 
 class SwapMarketScreen extends StatefulWidget {
   const SwapMarketScreen({super.key});
@@ -109,6 +110,12 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                             );
                           },
                         );
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.chat_bubble_outline, color: primaryColor),
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapConversationsScreen()));
                       },
                     ),
                   ],

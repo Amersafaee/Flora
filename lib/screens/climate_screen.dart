@@ -46,37 +46,37 @@ class _ClimateScreenState extends State<ClimateScreen> {
 
     // Listen to temp
     ref.where('type', isEqualTo: 'temperature')
-       .orderBy('timestamp', descending: true)
-       .limit(24)
        .snapshots()
        .listen((snap) {
          if (!mounted) return;
-         final docs = snap.docs;
+         final docs = snap.docs.toList();
+         docs.sort((a, b) => (b['timestamp'] as Timestamp).compareTo(a['timestamp'] as Timestamp));
+         final latestDocs = docs.take(24).toList();
          setState(() {
-           if (docs.isNotEmpty) {
-             _currentTemp = docs.first['value'].toString();
+           if (latestDocs.isNotEmpty) {
+             _currentTemp = latestDocs.first['value'].toString();
            } else {
              _currentTemp = '--';
            }
-           _tempReadings = docs.map((d) => d.data()).toList().reversed.toList();
+           _tempReadings = latestDocs.map((d) => d.data()).toList().reversed.toList();
          });
        });
 
     // Listen to humidity
     ref.where('type', isEqualTo: 'humidity')
-       .orderBy('timestamp', descending: true)
-       .limit(24)
        .snapshots()
        .listen((snap) {
          if (!mounted) return;
-         final docs = snap.docs;
+         final docs = snap.docs.toList();
+         docs.sort((a, b) => (b['timestamp'] as Timestamp).compareTo(a['timestamp'] as Timestamp));
+         final latestDocs = docs.take(24).toList();
          setState(() {
-           if (docs.isNotEmpty) {
-             _currentHum = docs.first['value'].toString();
+           if (latestDocs.isNotEmpty) {
+             _currentHum = latestDocs.first['value'].toString();
            } else {
              _currentHum = '--';
            }
-           _humReadings = docs.map((d) => d.data()).toList().reversed.toList();
+           _humReadings = latestDocs.map((d) => d.data()).toList().reversed.toList();
          });
        });
   }

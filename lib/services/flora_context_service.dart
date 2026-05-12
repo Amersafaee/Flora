@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
 
 /// Builds a rich, personalised context document about the user and their
 /// plants. The resulting String is injected into the Gemini system prompt so
 /// Flora feels like she genuinely knows the user's collection.
 class FloraContextService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _db;
+  FloraContextService({FirebaseFirestore? db}) : _db = db ?? FirebaseFirestore.instance;
 
   // ── In-memory cache ───────────────────────────────────────────────────────
   // Key: "$uid|$conversationId", Value: (timestamp, contextString)
@@ -39,6 +41,49 @@ class FloraContextService {
       final climateReadings = results[2] as List<Map<String, dynamic>>;
       final chatMessages = results[3] as List<Map<String, dynamic>>;
 
+      final perPlantFutures = plants.map((plant) async {
+        final plantId = plant['id'] as String? ?? '';
+        final name = (plant['name'] as String?)?.trim() ?? 'Unknown Plant';
+
+        if (plantId.isEmpty) return <String, dynamic>{'plant': plant};
+
+        final pResults = await Future.wait([
+          _fetchLastGrowthEntries(uid, plantId),
+          _fetchPlantTaskSummary(uid, name),
+        ]);
+
+        return <String, dynamic>{
+          'plant': plant,
+          'growth': pResults[0] as List<Map<String, dynamic>>,
+          'tasks': pResults[1] as Map<String, int>,
+        };
+      });
+
+      final perPlantData = await Future.wait(perPlantFutures);
+
+      var result = generateContextString(
+        profile, plants, perPlantData, climateReadings, chatMessages
+      );
+
+      // ── Store in cache ───────────────────────────────────────────────────
+      _cache[cacheKey] = (DateTime.now(), result);
+
+      return result;
+    } catch (e) {
+      return 'Context unavailable at this time.';
+    }
+  }
+
+  @visibleForTesting
+  String generateContextString(
+    Map<String, dynamic>? profile,
+    List<Map<String, dynamic>> plants,
+    List<dynamic> perPlantData,
+    List<Map<String, dynamic>> climateReadings,
+    List<Map<String, dynamic>> chatMessages,
+  ) {
+      // ── User greeting line ────────────────────────────────────────────────
+
       // ── User greeting line ────────────────────────────────────────────────
       final displayName =
           (profile?['fullName'] as String?)?.trim().isNotEmpty == true
@@ -53,30 +98,7 @@ class FloraContextService {
           'They have ${plants.length} plant${plants.length == 1 ? '' : 's'} in their collection.');
       buffer.writeln();
 
-      // ── Per-plant data fetched in PARALLEL ───────────────────────────────
-      // Build all per-plant futures together so Firestore round-trips
-      // for growth + tasks happen concurrently, not sequentially.
-      final perPlantFutures = plants.map((plant) async {
-        final plantId = plant['id'] as String? ?? '';
-        final name = (plant['name'] as String?)?.trim() ?? 'Unknown Plant';
 
-        if (plantId.isEmpty) return <String, dynamic>{'plant': plant};
-
-        final results = await Future.wait([
-          _fetchLastGrowthEntries(uid, plantId),
-          _fetchPlantTaskSummary(uid, name),
-        ]);
-
-        return <String, dynamic>{
-          'plant': plant,
-          'growth': results[0] as List<Map<String, dynamic>>,
-          'tasks': results[1] as Map<String, int>,
-        };
-      });
-
-      final perPlantData = await Future.wait(perPlantFutures);
-
-      // ── Per-plant paragraphs ──────────────────────────────────────────────
       for (final data in perPlantData) {
         final plant = data['plant'] as Map<String, dynamic>;
         final growthEntries =
@@ -188,15 +210,7 @@ class FloraContextService {
         result = '${result.substring(0, 1500)}... [context truncated for performance]';
       }
 
-      // ── Store in cache ───────────────────────────────────────────────────
-      _cache[cacheKey] = (DateTime.now(), result);
-
       return result;
-    } catch (e) {
-      // If context building fails for any reason, return a safe fallback so
-      // the chat still works.
-      return 'Context unavailable at this time.';
-    }
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────

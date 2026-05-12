@@ -6,6 +6,7 @@ import '../models/user_model.dart';
 import '../models/treatment_case_model.dart';
 import 'gemini_service.dart';
 import 'package:flutter/foundation.dart';
+import '../utils/task_utils.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -189,27 +190,8 @@ class FirestoreService {
     if (dueDateRaw == null) return;
     DateTime dueDate = dueDateRaw is Timestamp ? dueDateRaw.toDate() : DateTime.now();
 
-    DateTime nextDue;
-    switch (repeatType) {
-      case 'daily':
-        nextDue = dueDate.add(const Duration(days: 1));
-        break;
-      case 'every2days':
-        nextDue = dueDate.add(const Duration(days: 2));
-        break;
-      case 'weekly':
-        nextDue = dueDate.add(const Duration(days: 7));
-        break;
-      case 'biweekly':
-        nextDue = dueDate.add(const Duration(days: 14));
-        break;
-      case 'monthly':
-        nextDue = DateTime(dueDate.year, dueDate.month + 1, dueDate.day);
-        break;
-      default:
-        final repeatDays = (data['repeatDays'] as num?)?.toInt() ?? 7;
-        nextDue = dueDate.add(Duration(days: repeatDays));
-    }
+    final nextDue = calculateNextDueDate(dueDate, repeatType, (data['repeatDays'] as num?)?.toInt() ?? 7);
+    if (nextDue == null) return;
 
     final newDocRef = _db.collection('users').doc(uid).collection('tasks').doc();
     await newDocRef.set({

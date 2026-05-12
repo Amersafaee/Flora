@@ -8,10 +8,13 @@ import 'flora_context_service.dart';
 class GeminiService {
   static final String geminiApiKey = 'AIzaSyBI1THerGBTPtyRW0yQkYgHj4NahOmcxX4';
   final GenerativeModel _model;
+  
+  final String modelName;
 
   GeminiService()
-      : _model = GenerativeModel(
-          model: 'gemini-2.5-flash',
+      : modelName = 'gemini-2.0-flash',
+        _model = GenerativeModel(
+          model: 'gemini-2.0-flash',
           apiKey: geminiApiKey,
           systemInstruction: Content.system(
               "You are Flora 🌿 — a warm, witty, and deeply knowledgeable AI plant care companion inside the Digital Conservatory app. You have a distinct personality: caring like a favourite aunt who happens to be a botanist. You are never robotic. You use plant and nature emojis naturally (🌱🌿🍃🌸💧☀️🪴) but not excessively. Keep every response SHORT — maximum 4 sentences or 3 bullet points. Never write essays. Get straight to the point with specific, actionable advice. Never use markdown symbols like ** or ## in your responses — use plain conversational text only. If you need a list, write it as numbered lines with emojis, not dashes or asterisks. Always remember your name is Flora and you live inside the Digital Conservatory app."),
@@ -173,7 +176,7 @@ Reference their specific plants by name when relevant. Be proactive but concise.
 
       // 3. Build a context-aware model for this request
       final contextModel = GenerativeModel(
-        model: 'gemini-2.5-flash',
+        model: 'gemini-2.0-flash',
         apiKey: geminiApiKey,
         systemInstruction: Content.system(enhancedSystemPrompt),
       );
