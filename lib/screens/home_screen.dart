@@ -20,6 +20,7 @@ import 'vitals_dashboard_screen.dart';
 import '../services/milestone_service.dart';
 import '../services/weekly_report_service.dart';
 import 'weekly_report_screen.dart';
+import '../utils/user_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -30,6 +31,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  // Static guard: weekly report fires at most once per app process lifetime
+  static bool _weeklyCheckDone = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,18 +46,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (uid != null) {
         await FirestoreService().computeAllHealthScores(uid);
         await MilestoneService().checkMilestones(uid);
-        
-        final reportService = WeeklyReportService();
-        final shouldShow = await reportService.shouldShowWeeklyReport();
-        if (shouldShow && mounted) {
-          final reportData = await reportService.generateWeeklyReport(uid);
-          if (mounted) {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (context) => WeeklyReportScreen(reportData: reportData),
-            );
+
+        if (!_weeklyCheckDone) {
+          _weeklyCheckDone = true;
+          final reportService = WeeklyReportService();
+          final shouldShow = await reportService.shouldShowWeeklyReport();
+          if (shouldShow && mounted) {
+            final reportData = await reportService.generateWeeklyReport(uid);
+            await reportService.markWeeklyReportShown();
+            if (mounted) {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => WeeklyReportScreen(reportData: reportData),
+              );
+            }
           }
         }
       }
@@ -61,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       debugPrint('Error computing health scores: $e');
     }
   }
+
 
   Widget _buildCompactStatCard(BuildContext context, String title, String value, IconData icon, Color iconColor) {
     return Container(
@@ -159,11 +168,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         MaterialPageRoute(builder: (context) => ProfileScreen(onThemeChanged: widget.onThemeChanged)),
                       );
                     },
-                                          child: const CircleAvatar(
-                        backgroundColor: Colors.grey,
-                        radius: 18,
-                        child: Icon(Icons.person, color: Colors.white, size: 20),
-                      ),
+                    child: buildUserAvatar(radius: 18),
                     ),
                     const Text(
                       'Digital Conservatory',
@@ -358,7 +363,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                               ),
                             );
+                          } else if (plants.isEmpty) {
+                            // New user with no plants — never say "All 0 plants are thriving"
+                            card = GestureDetector(
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen())),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F3EA),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.add_circle_outline, color: primaryColor, size: 24),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        '🌱 Add your first plant to get started',
+                                        style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 14),
+                                      ),
+                                    ),
+                                    Icon(Icons.arrow_forward_ios, size: 14, color: primaryColor),
+                                  ],
+                                ),
+                              ),
+                            );
                           } else {
+                            // plants.length > 0 and nothing urgent
                             card = GestureDetector(
                               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VitalsDashboardScreen())),
                               child: Container(
@@ -374,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        '🌿 All ${plants.length} plants are thriving today',
+                                        '🌿 All ${plants.length} plant${plants.length == 1 ? '' : 's'} are thriving today',
                                         style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 14),
                                       ),
                                     ),
@@ -677,10 +709,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildQuickAction(context, Icons.water_drop, 'Water', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareScreen()))),
-                  _buildQuickAction(context, Icons.search, 'Identify', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()))),
-                  _buildQuickAction(context, Icons.book, 'Journal', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllPlantsScreen()))),
-                  _buildQuickAction(context, Icons.chat_bubble_outline, 'Ask Flora', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()))),
+                  _buildQuickAction(context, Icons.search, 'Identify 🔍', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()))),
+                  _buildQuickAction(context, Icons.chat_bubble_outline, 'Ask Flora 🌿', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()))),
+                  _buildQuickAction(context, Icons.menu_book_outlined, 'Journal 📖', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllPlantsScreen()))),
                 ],
               ),
               const SizedBox(height: 16),
@@ -724,7 +755,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   final allPlants = snapshot.data ?? [];
                   final plants = allPlants.where((p) => !p.isDeceased).toList();
                   
-                  if (plants.isEmpty) {
+                  // Only show empty state when data has actually loaded (not just waiting)
+                  if (plants.isEmpty && snapshot.connectionState == ConnectionState.active) {
                     return Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
@@ -1021,7 +1053,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               const SizedBox(height: 12),
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
-                    .collection('species')
+                    .collection('blogs')
+                    .orderBy('createdAt', descending: true)
                     .limit(2)
                     .snapshots(),
                 builder: (context, snapshot) {
@@ -1032,27 +1065,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   if (docs.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text('Wiki loading…',
+                      child: Text('Plant guides loading…',
                           style: TextStyle(color: Colors.grey.shade500)),
                     );
                   }
                   return Column(
                     children: docs.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
-                      final name = (data['name'] ?? '').toString();
-                      final commonName = (data['commonName'] ?? '').toString();
-                      final difficulty = (data['difficulty'] ?? 'Easy').toString();
-                      Color difficultyColor;
-                      switch (difficulty.toLowerCase()) {
-                        case 'hard':
-                          difficultyColor = Colors.red.shade400;
-                          break;
-                        case 'medium':
-                          difficultyColor = Colors.orange.shade400;
-                          break;
-                        default:
-                          difficultyColor = const Color(0xFF2E7D32);
-                      }
+                      final title = (data['title'] ?? '').toString();
+                      final summary = (data['summary'] ?? '').toString();
+                      final readMinutes = (data['readMinutes'] as num?)?.toInt() ?? 5;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: GestureDetector(
@@ -1083,7 +1105,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     color: softGreen,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(Icons.eco, color: primaryColor, size: 18),
+                                  child: Icon(Icons.article_outlined, color: primaryColor, size: 18),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -1091,7 +1113,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        name,
+                                        title,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
@@ -1100,14 +1122,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
-                                      if (commonName.isNotEmpty) ...[
-                                        const SizedBox(height: 2),
+                                      if (summary.isNotEmpty) ...[
+                                        const SizedBox(height: 3),
                                         Text(
-                                          commonName,
+                                          summary,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             color: Colors.grey.shade500,
                                             fontSize: 12,
-                                            fontStyle: FontStyle.italic,
                                           ),
                                         ),
                                       ],
@@ -1118,16 +1141,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: difficultyColor.withValues(alpha: 0.12),
+                                    color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Text(
-                                    difficulty,
-                                    style: TextStyle(
-                                      color: difficultyColor,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.access_time, size: 10, color: Color(0xFF2E7D32)),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        '$readMinutes min',
+                                        style: const TextStyle(
+                                          color: Color(0xFF2E7D32),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],

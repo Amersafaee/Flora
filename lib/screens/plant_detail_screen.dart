@@ -17,21 +17,61 @@ import 'wiki_plant_detail_screen.dart';
 import 'post_comments_screen.dart';
 import 'community_screen.dart';
 import 'create_listing_screen.dart' as import_create_listing;
+import '../services/onboarding_service.dart';
+import 'onboarding_overlay_screen.dart';
+import 'home_screen.dart';
 
 // ignore_for_file: avoid_dynamic_calls
 
-class PlantDetailScreen extends StatelessWidget {
+class PlantDetailScreen extends StatefulWidget {
   final String plantId;
   final String plantName;
 
   const PlantDetailScreen({
     super.key,
-    this.plantId = 'mock_id',
+    this.plantId = '',
     this.plantName = 'Monstera Deliciosa',
   });
 
   @override
+  State<PlantDetailScreen> createState() => _PlantDetailScreenState();
+}
+
+class _PlantDetailScreenState extends State<PlantDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (await OnboardingService.shouldShow('plant_detail_screen')) {
+        await OnboardingService.markShown('plant_detail_screen');
+        if (mounted) _showFeatureOnboarding();
+      }
+    });
+  }
+
+  void _showFeatureOnboarding() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const OnboardingOverlayScreen(
+          title: 'Your Plant Dashboard',
+          description: 'Everything you need to keep this plant thriving.',
+          tips: [
+            'Log growth, watering, and care tasks',
+            'Generate a scannable plant passport',
+            'Create time-lapse videos of growth',
+          ],
+          featureKey: 'plant_detail_screen',
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final plantId = widget.plantId;
+    final plantName = widget.plantName;
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -118,7 +158,7 @@ class PlantDetailScreen extends StatelessWidget {
                                 FutureBuilder<DocumentSnapshot>(
                                   future: uid != null ? FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(parentId).get() : null,
                                   builder: (context, pSnap) {
-                                    if (!pSnap.hasData || !pSnap.data!.exists) return const SizedBox.shrink();
+                                    if (!pSnap.hasData || pSnap.data == null || !pSnap.data!.exists) return const SizedBox.shrink();
                                     final pName = pSnap.data!.get('name') as String? ?? 'Parent Plant';
                                     return GestureDetector(
                                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlantDetailScreen(plantId: parentId, plantName: pName))),
@@ -243,8 +283,10 @@ class PlantDetailScreen extends StatelessWidget {
                                                   await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(plantId).delete();
                                                 }
                                                 if (!context.mounted) return;
-                                                Navigator.pop(context); // close dialog
-                                                Navigator.pop(context); // go back
+                                                Navigator.of(context).pushAndRemoveUntil(
+                                                  MaterialPageRoute(builder: (_) => HomeScreen(onThemeChanged: (_) {})),
+                                                  (route) => false,
+                                                );
                                               },
                                               child: const Text('Delete', style: TextStyle(color: Color(0xFF8D3220))),
                                             ),
@@ -547,6 +589,7 @@ class PlantDetailScreen extends StatelessWidget {
                   stream: FirestoreService().getTreatmentCases(plantId),
                   builder: (context, caseSnap) {
                     final cases = caseSnap.data ?? [];
+                    if (cases.isEmpty) return const SizedBox.shrink();
                     final hasActive = cases.any((c) =>
                         c.status == 'Active' || c.status == 'Monitoring');
 
@@ -710,6 +753,7 @@ class PlantDetailScreen extends StatelessWidget {
                             initialDescription: "Healthy ${plantData['category'] ?? 'plant'} from my personal collection. Health score: ${plantData['healthScore'] ?? 'Unknown'}.",
                             initialType: "Whole Plant",
                             initialHealthScore: plantData['healthScore'] as int?,
+                            initialPlantId: plantId,
                           ),
                         ),
                       );

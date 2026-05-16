@@ -64,9 +64,28 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     setState(() => _isSaving = true);
 
     try {
+      // Resolve author name: Firestore fullName → Firestore displayName → Auth displayName → email prefix
+      String resolvedAuthorName = '';
+      try {
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          final d = userDoc.data();
+          resolvedAuthorName = (d?['fullName'] as String? ?? '').trim();
+          if (resolvedAuthorName.isEmpty) {
+            resolvedAuthorName = (d?['displayName'] as String? ?? '').trim();
+          }
+        }
+      } catch (_) {}
+      if (resolvedAuthorName.isEmpty) {
+        resolvedAuthorName = (user.displayName ?? '').trim();
+      }
+      if (resolvedAuthorName.isEmpty) {
+        resolvedAuthorName = user.email?.split('@').first ?? 'Plant Lover';
+      }
+
       final postDoc = await _firestore.collection('posts').add({
         'authorUid': user.uid,
-        'authorName': user.displayName ?? 'Anonymous',
+        'authorName': resolvedAuthorName,
         'authorPhotoUrl': user.photoURL ?? '',
         'title': title,
         'body': body,
@@ -169,7 +188,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             const SizedBox(height: 16),
             Wrap(
               spacing: 8.0,
-              children: ['General', 'Question', 'Trade'].map((category) {
+              children: ['General', 'Question', 'Tips', 'Showcase', 'Experience'].map((category) {
                 final isSelected = _selectedCategory == category;
                 return ChoiceChip(
                   label: Text(category),

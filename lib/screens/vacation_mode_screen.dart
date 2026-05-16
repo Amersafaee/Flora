@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -19,9 +20,11 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
   bool _isEnabled = false;
   DateTime? _startDate;
   DateTime? _endDate;
+  bool _isGenerating = false;
   
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _generatedPlanController = TextEditingController();
   
   final FirestoreService _firestoreService = FirestoreService();
   final NotificationService _notificationService = NotificationService();
@@ -74,23 +77,46 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
   Future<void> _rescheduleAllTasks() async {
     final uid = _firestoreService.currentUserId;
     if (uid == null) return;
-    
+
+    // Calculate how many days the vacation lasted
+    final vacationDays = (_startDate != null && _endDate != null)
+        ? _endDate!.difference(_startDate!).inDays
+        : 0;
+
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
         .collection('tasks')
         .where('isCompleted', isEqualTo: false)
         .get();
-        
+
+    final batch = FirebaseFirestore.instance.batch();
+
     for (var doc in snapshot.docs) {
       final task = Task.fromMap(doc.data());
+      // Shift original dueDate forward by vacation length
+      final shiftedDate = task.dueDate.add(Duration(days: vacationDays));
+      // If still in the past, default to tomorrow
+      final rescheduleDate = shiftedDate.isBefore(DateTime.now())
+          ? tomorrow
+          : shiftedDate;
+
+      // Update Firestore dueDate so the Care screen reflects the new schedule
+      batch.update(doc.reference, {
+        'dueDate': Timestamp.fromDate(rescheduleDate),
+      });
+
       await _notificationService.scheduleTaskNotification(
         task.id,
         task.plantName,
         task.taskType,
-        task.dueDate,
+        rescheduleDate,
       );
     }
+
+    await batch.commit();
   }
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
@@ -145,6 +171,8 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
       );
       return;
     }
+
+    setState(() => _isGenerating = true);
 
     final startStr = DateFormat('MMM d, yyyy').format(_startDate!);
     final endStr = DateFormat('MMM d, yyyy').format(_endDate!);
@@ -229,19 +257,18 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
     buffer.writeln('Emergency contact: $userEmail');
     buffer.writeln('- Sent from Digital Conservatory');
 
-    await Clipboard.setData(ClipboardData(text: buffer.toString()));
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Care plan copied to clipboard! Paste it anywhere to share 📋'), backgroundColor: Color(0xFF154212)),
-      );
-    }
+    // Show the plan in the editable TextField instead of copying directly
+    setState(() {
+      _generatedPlanController.text = buffer.toString();
+      _isGenerating = false;
+    });
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _generatedPlanController.dispose();
     super.dispose();
   }
 
@@ -435,7 +462,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _generateCarePlan,
+                          onPressed: _isGenerating ? null : _generateCarePlan,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -444,16 +471,77 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'Copy Care Plan 📋',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                          child: _isGenerating
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Text(
+                                  'Generate Care Plan 🌿',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      // Editable plan preview
+                      if (_generatedPlanController.text.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: _generatedPlanController,
+                          maxLines: 12,
+                          decoration: InputDecoration(
+                            labelText: 'Your Care Plan',
+                            labelStyle: TextStyle(color: primaryColor),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: primaryColor, width: 2),
+                            ),
+                            contentPadding: const EdgeInsets.all(16),
+                            hintText: 'Edit your care plan before sharing…',
+                          ),
+                          style: const TextStyle(fontSize: 13, height: 1.5),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.share, color: Colors.white),
+                            label: const Text(
+                              'Share 🌿',
+                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () {
+                              final text = _generatedPlanController.text.trim();
+                              if (text.isNotEmpty) {
+                                SharePlus.instance.share(ShareParams(text: text, subject: 'Plant Care Plan from Digital Conservatory'));
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
                             ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        TextButton.icon(
+                          icon: const Icon(Icons.copy, size: 18),
+                          label: const Text('Copy to Clipboard'),
+                          onPressed: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            await Clipboard.setData(ClipboardData(text: _generatedPlanController.text));
+                            messenger.showSnackBar(
+                              const SnackBar(content: Text('Copied to clipboard 📋'), backgroundColor: Color(0xFF154212)),
+                            );
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),

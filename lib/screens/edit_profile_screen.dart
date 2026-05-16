@@ -54,7 +54,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       
       await user!.updatePhotoURL(url);
       await FirebaseFirestore.instance.collection('users').doc(user!.uid).set({
-        'photoUrl': url,
+        'profilePhotoUrl': url,
       }, SetOptions(merge: true));
       
       setState(() {});

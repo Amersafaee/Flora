@@ -11,12 +11,16 @@ class AuthService {
       );
       return 'Success';
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        return 'The password provided is too weak.';
-      } else if (e.code == 'email-already-in-use') {
-        return 'The account already exists for that email.';
+      switch (e.code) {
+        case 'email-already-in-use':
+          return 'An account with this email already exists';
+        case 'weak-password':
+          return 'Password must be at least 6 characters';
+        case 'invalid-email':
+          return 'Please enter a valid email address';
+        default:
+          return e.message ?? 'An error occurred during sign up.';
       }
-      return e.message ?? 'An error occurred during sign up.';
     } catch (e) {
       return e.toString();
     }

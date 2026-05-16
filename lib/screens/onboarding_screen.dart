@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'login_screen.dart';
+import 'signup_screen.dart';
 
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  final ValueChanged<bool>? onThemeChanged;
+
+  const OnboardingScreen({super.key, this.onThemeChanged});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -26,7 +28,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      MaterialPageRoute(
+        builder: (context) => SignupScreen(
+          onThemeChanged: widget.onThemeChanged,
+        ),
+      ),
     );
   }
 

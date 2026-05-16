@@ -4,9 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_screen.dart';
 import 'onboarding_screen.dart';
 import '../services/auth_service.dart';
+import '../main.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final ValueChanged<bool>? onThemeChanged;
+
+  const LoginScreen({super.key, this.onThemeChanged});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -36,7 +39,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!complete) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+        MaterialPageRoute(
+          builder: (_) => OnboardingScreen(
+            onThemeChanged: widget.onThemeChanged,
+          ),
+        ),
       );
     }
   }
@@ -90,6 +97,16 @@ class _LoginScreenState extends State<LoginScreen> {
             : _mapFirebaseError(result, result ?? 'Sign in failed. Please try again.');
 
         _showError(message);
+      }
+      
+      if (result == 'Success' && mounted) {
+        // Auth succeeded - StreamBuilder should handle this but add explicit
+        // navigation as fallback to prevent the stuck spinner issue
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => MainTabScreen(onThemeChanged: widget.onThemeChanged ?? (_) {})),
+          (route) => false,
+        );
+        return;
       }
       // On success the auth StreamBuilder in main.dart will detect the new
       // user and automatically replace this screen with MainTabScreen —
@@ -279,12 +296,12 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Sign Up Link
+              // New here? Create an account
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "Don't have an account?",
+                    "New here?",
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(width: 8),
@@ -294,11 +311,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         : () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => SignupScreen()),
+                              MaterialPageRoute(
+                                builder: (context) => SignupScreen(
+                                  onThemeChanged: widget.onThemeChanged,
+                                ),
+                              ),
                             );
                           },
                     child: const Text(
-                      'Sign Up',
+                      'Create an account',
                       style: TextStyle(
                         color: Color(0xFF8D3220),
                         fontWeight: FontWeight.bold,

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/gemini_service.dart';
 import 'identify_result_screen.dart';
+import '../services/onboarding_service.dart';
+import 'onboarding_overlay_screen.dart';
 
 class IdentifyScreen extends StatefulWidget {
   const IdentifyScreen({super.key});
@@ -19,6 +21,36 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
   bool _isAnalyzing = false;
   final ImagePicker _picker = ImagePicker();
   final GeminiService _geminiService = GeminiService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (await OnboardingService.shouldShow('identify_screen')) {
+        await OnboardingService.markShown('identify_screen');
+        if (mounted) _showFeatureOnboarding();
+      }
+    });
+  }
+
+  void _showFeatureOnboarding() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const OnboardingOverlayScreen(
+          title: 'Welcome to Plant Scanner',
+          description: 'Identify plants and instantly diagnose problems.',
+          tips: [
+            'Snap a photo to identify unknown species',
+            'Scan sick plants for instant AI diagnosis',
+            'Add identified plants to your collection',
+          ],
+          featureKey: 'identify_screen',
+        ),
+      ),
+    );
+  }
 
   static const String _analysisPrompt =
       'Please analyze this plant photo completely and provide: '

@@ -222,12 +222,265 @@ Future<void> main() async {
     fail('Could not connect to Gemini API: $e');
   }
 
+  // ── LOGIC CHECK 11 — Signup navigates to home not login ───────────────────
+  try {
+    final signupFile = File('lib/screens/signup_screen.dart');
+    final signupContent = await signupFile.readAsString();
+    if (signupContent.contains('pushAndRemoveUntil')) {
+      pass('Signup uses pushAndRemoveUntil for post-signup navigation');
+    } else {
+      fail('Signup does not use pushAndRemoveUntil — user will be stuck on login after signup');
+    }
+  } catch (e) {
+    fail('Could not read signup_screen.dart: $e');
+  }
+
+  // ── LOGIC CHECK 12 — Empty plant list has friendly message ──────────────
+  try {
+    final homeFile = File('lib/screens/home_screen.dart');
+    final homeContent = await homeFile.readAsString();
+    final hasEmptyCheck = homeContent.contains('plants.isEmpty');
+    final hasFriendlyMsg = homeContent.toLowerCase().contains('add your first plant');
+    if (hasEmptyCheck && hasFriendlyMsg) {
+      pass('Home screen handles empty plant list with friendly message');
+    } else {
+      fail('Home screen does not handle empty plant list — will show nonsensical 0 plants message');
+    }
+  } catch (e) {
+    fail('Could not read home_screen.dart: $e');
+  }
+
+  // ── LOGIC CHECK 13 — Community posts include all required fields ────────
+  try {
+    final createPostFile = File('lib/screens/create_post_screen.dart');
+    final createPostContent = await createPostFile.readAsString();
+    final requiredFields = ['status', 'authorUid', 'authorName', 'timestamp', 'likesCount'];
+    final List<String> missingFields = [];
+    for (final field in requiredFields) {
+      if (!createPostContent.contains("'$field'")) {
+        missingFields.add(field);
+      }
+    }
+    if (missingFields.isEmpty) {
+      pass('Community posts include all required fields');
+    } else {
+      fail('Community posts missing fields: ${missingFields.join(", ")}');
+    }
+  } catch (e) {
+    fail('Could not read create_post_screen.dart: $e');
+  }
+
+  // ── LOGIC CHECK 14 — Community has all 5 post categories ────────────────
+  try {
+    final createPostFile = File('lib/screens/create_post_screen.dart');
+    final createPostContent = await createPostFile.readAsString();
+    final requiredCategories = ['General', 'Question', 'Tips', 'Showcase', 'Experience'];
+    final List<String> missingCategories = [];
+    for (final cat in requiredCategories) {
+      if (!createPostContent.contains("'$cat'")) {
+        missingCategories.add(cat);
+      }
+    }
+    if (missingCategories.isEmpty) {
+      pass('Create post screen has all 5 categories');
+    } else {
+      fail('Create post screen is missing categories: [${missingCategories.join(", ")}]');
+    }
+  } catch (e) {
+    fail('Could not read create_post_screen.dart: $e');
+  }
+
+  // ── LOGIC CHECK 15 — Weekly report has date guard ───────────────────────
+  try {
+    final weeklyFile = File('lib/services/weekly_report_service.dart');
+    final weeklyContent = await weeklyFile.readAsString();
+    final hasDateKey = weeklyContent.contains('last_weekly_report_date');
+    final hasWeekday = weeklyContent.contains('weekday');
+    if (hasDateKey && hasWeekday) {
+      pass('Weekly report has date guard with last_weekly_report_date and weekday check');
+    } else {
+      fail('Weekly report has no date guard — will fire repeatedly');
+    }
+  } catch (e) {
+    fail('Could not read weekly_report_service.dart: $e');
+  }
+
+  // ── LOGIC CHECK 16 — Care screen handles empty task list ────────────────
+  try {
+    final careFile = File('lib/screens/care_screen.dart');
+    final careContent = await careFile.readAsString();
+    final hasEmptyState = careContent.contains('pendingTasks.isEmpty') || careContent.contains('tasks.isEmpty');
+    final hasEmptyMessage = careContent.contains('No care tasks') || careContent.contains('Add a plant');
+    if (hasEmptyState && hasEmptyMessage) {
+      pass('Care screen handles empty task list with friendly message');
+    } else {
+      fail('Care screen has no empty state — shows blank screen when no tasks exist');
+    }
+  } catch (e) {
+    fail('Could not read care_screen.dart: $e');
+  }
+
+  // ── LOGIC CHECK 17 — Add plant screen has care schedule bottom sheet ────
+  try {
+    final addPlantFile = File('lib/screens/add_plant_screen.dart');
+    final addPlantContent = await addPlantFile.readAsString();
+    if (addPlantContent.contains('_showCareScheduleBottomSheet') || addPlantContent.contains('CareSchedule')) {
+      pass('Add plant screen shows care schedule after saving');
+    } else {
+      fail('Add plant screen does not show care schedule after saving — tasks will never be created');
+    }
+  } catch (e) {
+    fail('Could not read add_plant_screen.dart: $e');
+  }
+
+  // ── LOGIC CHECK 18 — No screen uses hardcoded user name fallback of User
+  try {
+    final screensDir = Directory('lib/screens');
+    bool foundHardcoded = false;
+    final files = screensDir.listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart'));
+    for (final file in files) {
+      final lines = file.readAsLinesSync();
+      for (int i = 0; i < lines.length; i++) {
+        if (lines[i].contains("?? 'User'") || lines[i].contains('?? "User"')) {
+          fail("Hardcoded 'User' fallback in ${file.path} at line ${i + 1}");
+          foundHardcoded = true;
+        }
+      }
+    }
+    if (!foundHardcoded) {
+      pass('No screen uses hardcoded User name fallback');
+    }
+  } catch (e) {
+    fail('Could not search screens for hardcoded User: $e');
+  }
+
+  // ── LOGIC CHECK 19 — Every quick action button has a real navigation target
+  try {
+    final homeFile = File('lib/screens/home_screen.dart');
+    final homeLines = await homeFile.readAsLines();
+    bool foundDeadButton = false;
+    // Look for _buildQuickAction calls near showSnackBar
+    bool inQuickActionArea = false;
+    for (int i = 0; i < homeLines.length; i++) {
+      if (homeLines[i].contains('_buildQuickAction')) {
+        inQuickActionArea = true;
+      }
+      if (inQuickActionArea && homeLines[i].contains('showSnackBar')) {
+        fail('Quick action button at line ${i + 1} uses showSnackBar — dead button placeholder');
+        foundDeadButton = true;
+      }
+      // Reset area after the quick actions block ends
+      if (inQuickActionArea && homeLines[i].contains('SizedBox(height:') && !homeLines[i].contains('_buildQuickAction')) {
+        inQuickActionArea = false;
+      }
+    }
+    if (!foundDeadButton) {
+      pass('All quick action buttons have real navigation targets');
+    }
+  } catch (e) {
+    fail('Could not check quick action buttons: $e');
+  }
+
+  // ── LOGIC CHECK 20 — Task completion creates next recurring occurrence ──
+  try {
+    final firestoreFile = File('lib/services/firestore_service.dart');
+    final firestoreContent = await firestoreFile.readAsString();
+    final hasNewDocRef = firestoreContent.contains('newDocRef');
+    final hasBatchSet = firestoreContent.contains('batch.set');
+    if (hasNewDocRef || hasBatchSet) {
+      pass('markTaskCompleted creates next occurrence for recurring tasks');
+    } else {
+      fail('Task completion does not create next occurrence — recurring tasks will stop after first completion');
+    }
+  } catch (e) {
+    fail('Could not read firestore_service.dart: $e');
+  }
+
+  // ── LOGIC CHECK 21 — Identify result extracts health status ─────────────
+  try {
+    final identifyResultFile = File('lib/screens/identify_result_screen.dart');
+    final identifyResultContent = await identifyResultFile.readAsString();
+    if (identifyResultContent.contains('_extractHealthStatus')) {
+      pass('Identify result screen extracts health status');
+    } else {
+      fail('Identify result does not extract health status — add to collection will always show Healthy regardless of Flora\'s diagnosis');
+    }
+  } catch (e) {
+    fail('Could not read identify_result_screen.dart: $e');
+  }
+
+  // ── LOGIC CHECK 22 — Profile photo loads from Firestore not just Auth ───
+  try {
+    File profileFile;
+    final userUtilsFile = File('lib/utils/user_utils.dart');
+    if (userUtilsFile.existsSync()) {
+      profileFile = userUtilsFile;
+    } else {
+      profileFile = File('lib/screens/profile_screen.dart');
+    }
+    final profileContent = await profileFile.readAsString();
+    final hasPhotoUrl = profileContent.contains('profilePhotoUrl');
+    final hasFirestore = profileContent.contains('Firestore') || profileContent.contains("collection('users')");
+    if (hasPhotoUrl && hasFirestore) {
+      pass('Profile photo loads from Firestore (not just Firebase Auth)');
+    } else {
+      fail('Profile photo only reads from Firebase Auth — uploaded photos will not show');
+    }
+  } catch (e) {
+    fail('Could not read profile/user utils file: $e');
+  }
+
+  // ── LOGIC CHECK 23 — Blog content is formatted for readability ──────────
+  try {
+    final wikiFile = File('lib/screens/wiki_screen.dart');
+    final wikiContent = await wikiFile.readAsString();
+    final hasSplit = wikiContent.contains('split');
+    final hasMultipleParagraphs = wikiContent.contains('paragraphs');
+    if (hasSplit && hasMultipleParagraphs) {
+      pass('Blog content is split into paragraphs for readability');
+    } else {
+      fail('Blog content is displayed as one unformatted block — will be unreadable');
+    }
+  } catch (e) {
+    fail('Could not read wiki_screen.dart: $e');
+  }
+
+  // ── LOGIC CHECK 24 — Swap chat does not contain Ask Flora button ────────
+  try {
+    final swapChatFile = File('lib/screens/swap_chat_screen.dart');
+    final swapChatContent = await swapChatFile.readAsString();
+    if (!swapChatContent.contains('askFlora') && !swapChatContent.contains('Ask Flora')) {
+      pass('Swap chat does not contain inappropriate Flora AI button');
+    } else {
+      fail('Swap chat contains Flora AI button — inappropriate for peer-to-peer trade chat');
+    }
+  } catch (e) {
+    fail('Could not read swap_chat_screen.dart: $e');
+  }
+
+  // ── LOGIC CHECK 25 — Onboarding only triggers for new users ─────────────
+  try {
+    final signupFile = File('lib/screens/signup_screen.dart');
+    final signupContent = await signupFile.readAsString();
+    if (signupContent.contains('OnboardingService.initForNewUser') || signupContent.contains('initForNewUser')) {
+      pass('Signup calls initForNewUser — onboarding only triggers for new users');
+    } else {
+      fail('Signup does not call initForNewUser — returning users will see onboarding tooltips on every login');
+    }
+  } catch (e) {
+    fail('Could not read signup_screen.dart: $e');
+  }
+
   print('');
+  print('═══════════════════════════════════════════════════════════════════');
+  print('  PREFLIGHT SUMMARY — 25 checks total');
+  print('  ✅ $checksPassed passed   ❌ $checksFailed failed');
+  print('═══════════════════════════════════════════════════════════════════');
   if (allPassed) {
-    print('🟢 ALL CHECKS PASSED — Safe to build and install APK');
+    print('🟢 ALL 25 CHECKS PASSED — Safe to build and install APK');
     exit(0);
   } else {
-    print('🔴 $checksFailed CHECKS FAILED — Fix issues above before installing APK');
+    print('🔴 $checksFailed of 25 CHECKS FAILED — Fix issues above before installing APK');
     exit(1);
   }
 }

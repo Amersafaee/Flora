@@ -15,6 +15,10 @@ import 'add_plant_screen.dart';
 import 'community_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/user_utils.dart';
+import '../services/onboarding_service.dart';
+import 'onboarding_overlay_screen.dart';
 
 class CareScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -46,7 +50,47 @@ class _CareScreenState extends State<CareScreen> {
 
     final uid = _firestoreService.currentUserId;
     if (uid != null) {
-      _firestoreService.checkAndCreateInspectionTasks(uid);
+      _maybeRunInspectionCheck(uid);
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (await OnboardingService.shouldShow('care_screen')) {
+        await OnboardingService.markShown('care_screen');
+        if (mounted) _showFeatureOnboarding();
+      }
+    });
+  }
+
+  void _showFeatureOnboarding() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const OnboardingOverlayScreen(
+          title: 'Welcome to Care Calendar',
+          description: 'Manage all your plant care tasks in one place.',
+          tips: [
+            'View upcoming watering and fertilizing tasks',
+            'Track your care history',
+            'Complete weekly community challenges',
+          ],
+          featureKey: 'care_screen',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _maybeRunInspectionCheck(String uid) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now();
+      final todayStr =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final lastCheckStr = prefs.getString('last_inspection_check_date');
+      if (lastCheckStr == todayStr) return; // Already ran today
+      await _firestoreService.checkAndCreateInspectionTasks(uid);
+    } catch (e) {
+      debugPrint('Inspection check error: $e');
     }
   }
 
@@ -337,11 +381,7 @@ class _CareScreenState extends State<CareScreen> {
                         builder: (_) => ProfileScreen(onThemeChanged: widget.onThemeChanged),
                       ));
                     },
-                    child: const CircleAvatar(
-                      backgroundColor: Colors.grey,
-                      radius: 18,
-                      child: Icon(Icons.person, color: Colors.white, size: 20),
-                    ),
+                    child: buildUserAvatar(radius: 18),
                   ),
                   const Text(
                     'Digital Conservatory',

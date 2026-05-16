@@ -18,7 +18,7 @@ import 'screens/care_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/wiki_screen.dart';
 import 'screens/flora_chats_list_screen.dart';
-import 'screens/login_screen.dart';
+import 'screens/signup_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -127,7 +127,7 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
           if (snapshot.hasData && snapshot.data != null) {
             return MainTabScreen(onThemeChanged: _onThemeChanged);
           }
-          return const LoginScreen();
+          return SignupScreen(onThemeChanged: _onThemeChanged);
         },
       ),
     );

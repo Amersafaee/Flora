@@ -52,7 +52,7 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Coming soon', style: TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF2D5A27), behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), ));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not detect location: $e', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), ));
       }
     } finally {
       if (mounted) setState(() => _isLoadingLoc = false);
@@ -65,7 +65,7 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
     final city = _cityCtrl.text.trim();
 
     if (title.isEmpty || desc.isEmpty || city.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Coming soon', style: TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF2D5A27), behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), ));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill in all required fields.'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
       return;
     }
 
@@ -114,12 +114,12 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Coming soon', style: TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF2D5A27), behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), ));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing posted successfully! 🌱', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF2D5A27), behavior: SnackBarBehavior.floating));
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Coming soon', style: TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF2D5A27), behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), ));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to post listing: $e', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
         setState(() => _isSubmitting = false);
       }
     }

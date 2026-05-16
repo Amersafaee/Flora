@@ -19,7 +19,7 @@ class DefaultFirebaseOptions {
   }
 
   static FirebaseOptions get android => FirebaseOptions(
-    apiKey: dotenv.env['FIREBASE_ANDROID_KEY'] ?? '',
+    apiKey: dotenv.env['FIREBASE_ANDROID_KEY']?.trim() ?? '',
     appId: '1:731501257345:android:6cc054a6ff3d51ac50e380',
     messagingSenderId: '731501257345',
     projectId: 'flora-99ff7',
@@ -27,7 +27,7 @@ class DefaultFirebaseOptions {
   );
 
   static FirebaseOptions get ios => FirebaseOptions(
-    apiKey: dotenv.env['FIREBASE_IOS_KEY'] ?? '',
+    apiKey: dotenv.env['FIREBASE_IOS_KEY']?.trim() ?? '',
     appId: '1:731501257345:ios:9f61ff7cb5906e1150e380',
     messagingSenderId: '731501257345',
     projectId: 'flora-99ff7',

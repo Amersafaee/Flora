@@ -8,6 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../services/gemini_service.dart';
 import 'package:intl/intl.dart';
+import '../services/onboarding_service.dart';
+import 'onboarding_overlay_screen.dart';
 
 class ChatMessage {
   final String role;
@@ -85,6 +87,32 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
     _contextLoadingTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) setState(() => _isContextLoading = false);
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (await OnboardingService.shouldShow('flora_screen')) {
+        await OnboardingService.markShown('flora_screen');
+        if (mounted) _showFeatureOnboarding();
+      }
+    });
+  }
+
+  void _showFeatureOnboarding() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const OnboardingOverlayScreen(
+          title: 'Meet Flora AI',
+          description: 'Your personal plant care consultant.',
+          tips: [
+            'Ask questions about any plant issue',
+            'Flora knows your plant collection context',
+            'Upload photos for AI diagnosis',
+          ],
+          featureKey: 'flora_screen',
+        ),
+      ),
+    );
   }
 
   void _loadChatHistory() {

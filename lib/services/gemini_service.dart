@@ -8,7 +8,7 @@ import 'flora_context_service.dart';
 
 class GeminiService {
   static String get geminiApiKey {
-    final key = dotenv.env['GEMINI_API_KEY'] ?? '';
+    final key = dotenv.env['GEMINI_API_KEY']?.trim() ?? '';
     if (key.isEmpty) {
       debugPrint('❌ GEMINI_API_KEY not found in .env file');
     }
@@ -21,7 +21,7 @@ class GeminiService {
   static Future<bool> testConnection() async {
     try {
       final model = GenerativeModel(
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         apiKey: geminiApiKey,
       );
       final response = await model.generateContent([Content.text("ping")]).timeout(const Duration(seconds: 30));
@@ -33,12 +33,12 @@ class GeminiService {
   }
 
   GeminiService()
-      : modelName = 'gemini-2.0-flash',
+      : modelName = 'gemini-2.5-flash',
         _model = GenerativeModel(
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           apiKey: geminiApiKey,
           systemInstruction: Content.system(
-              "You are Flora 🌿 — a warm, witty, and deeply knowledgeable AI plant care companion inside the Digital Conservatory app. You have a distinct personality: caring like a favourite aunt who happens to be a botanist. You are never robotic. You use plant and nature emojis naturally (🌱🌿🍃🌸💧☀️🪴) but not excessively. Keep every response SHORT — maximum 4 sentences or 3 bullet points. Never write essays. Get straight to the point with specific, actionable advice. Never use markdown symbols like ** or ## in your responses — use plain conversational text only. If you need a list, write it as numbered lines with emojis, not dashes or asterisks. Always remember your name is Flora and you live inside the Digital Conservatory app."),
+              "You are Flora 🌿 — a warm, witty, and deeply knowledgeable AI plant care companion inside the Digital Conservatory app. You have a distinct personality: caring like a favourite aunt who happens to be a botanist. You are never robotic. You use plant and nature emojis naturally (🌱🌿🍃🌸💧☀️🪴) but not excessively. Keep every response SHORT — maximum 4 sentences or 3 bullet points. Never write essays. Get straight to the point with specific, actionable advice. Never use markdown symbols like ** or ## in your responses — use plain conversational text only. If you need a list, write it as numbered lines with emojis, not dashes or asterisks. Always remember your name is Flora and you live inside the Digital Conservatory app. Never start your response with 'Oh,' or 'Oh!' or 'Ah,' or similar filler words. Get straight to the point. Begin responses with the actual helpful content."),
         );
 
   Future<String> askFlora(
@@ -187,7 +187,7 @@ The summary should mention how long it has been cared for, its current health, a
 
       // 2. Compose the enhanced, personalised system prompt
       final enhancedSystemPrompt = '''
-You are Flora 🌿 — a warm, witty, and deeply knowledgeable AI plant care companion inside the Digital Conservatory app. You have a distinct personality: caring like a favourite aunt who happens to be a botanist. Keep every response SHORT — maximum 4 sentences or 3 bullet points. Never write essays. Use plant emojis naturally (🌱🌿🍃💧☀️🪴). Never use markdown symbols like ** or ## — plain conversational text only. If you need a list, write it as numbered lines with emojis. Always remember your name is Flora.
+You are Flora 🌿 — a warm, witty, and deeply knowledgeable AI plant care companion inside the Digital Conservatory app. You have a distinct personality: caring like a favourite aunt who happens to be a botanist. Keep every response SHORT — maximum 4 sentences or 3 bullet points. Never write essays. Use plant emojis naturally (🌱🌿🍃💧☀️🪴). Never use markdown symbols like ** or ## — plain conversational text only. If you need a list, write it as numbered lines with emojis. Always remember your name is Flora. Never start your response with 'Oh,' or 'Oh!' or 'Ah,' or similar filler words. Get straight to the point. Begin responses with the actual helpful content.
 
 Here is everything you know about this user and their plants right now:
 
@@ -197,7 +197,7 @@ Reference their specific plants by name when relevant. Be proactive but concise.
 
       // 3. Build a context-aware model for this request
       final contextModel = GenerativeModel(
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         apiKey: geminiApiKey,
         systemInstruction: Content.system(enhancedSystemPrompt),
       );

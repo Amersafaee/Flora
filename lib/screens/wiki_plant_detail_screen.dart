@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'add_plant_screen.dart';
+import 'flora_chats_list_screen.dart';
 
 class WikiPlantDetailScreen extends StatelessWidget {
   final Map<String, dynamic> plantData;
@@ -285,6 +286,9 @@ class WikiPlantDetailScreen extends StatelessWidget {
                             builder: (_) => AddPlantScreen(
                               initialPlantName: name,
                               initialCommonName: commonName,
+                              initialCategory: category.isNotEmpty ? category : null,
+                              initialHealthStatus: 'Healthy',
+                              initialWateringDays: RegExp(r'\d+').firstMatch(wateringFrequency)?.group(0) ?? '7',
                             ),
                           ),
                         );
@@ -309,20 +313,9 @@ class WikiPlantDetailScreen extends StatelessWidget {
                     height: 56,
                     child: OutlinedButton(
                       onPressed: () {
-                        // Pop back to main navigation
-                        Navigator.of(context).popUntil((route) => route.isFirst);
-                        // The MainNavigation should handle switching to tab index 4 (Flora), but we don't have direct access
-                        // to the main nav state from here. We can push a new MainNavigation with initialIndex if it supported it.
-                        // Or we can just pop to home, and if they need Flora they tap it. 
-                        // Actually, pushing a replacement to main navigation might be best, but we'll just push FloraScreen for now.
-                        // Wait, if it pushes FloraScreen, it loses the bottom nav bar.
-                        // Let's just push FloraScreen directly as a top-level route if we can't switch tabs, or since 
-                        // it's a tab, let's see if we can use Navigator.popUntil route.settings.name == '/'
-                        // User requirement: "opens flora_screen as a tab by popping back to the main navigation."
-                        // We will use Navigator.popUntil then try to push FloraScreen or maybe the user just means "go to Flora screen".
-                        Navigator.of(context).popUntil((route) => route.isFirst);
-                        // In a real app we'd use an InheritedWidget or Provider to switch the tab.
-                        // For now popping to first is close enough. 
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const FloraChatsListScreen()),
+                        );
                       },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: primaryColor, width: 2),

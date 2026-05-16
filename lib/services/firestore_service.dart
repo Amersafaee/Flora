@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/plant_model.dart';
 import '../models/task_model.dart';
 import '../models/user_model.dart';
@@ -332,6 +333,19 @@ class FirestoreService {
   }
 
   Future<int> checkAndCreateInspectionTasks(String uid) async {
+    // Cooldown: only run once per calendar day
+    try {
+      final prefs = await _getSharedPrefs();
+      final now = DateTime.now();
+      final todayStr =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final lastCheckStr = prefs.getString('last_inspection_check_date');
+      if (lastCheckStr == todayStr) return 0;
+      await prefs.setString('last_inspection_check_date', todayStr);
+    } catch (e) {
+      debugPrint('Inspection cooldown prefs error: $e');
+    }
+
     final plantsSnap = await _db.collection('users').doc(uid).collection('plants').get();
     int newTasksCount = 0;
     
@@ -358,33 +372,21 @@ class FirestoreService {
       }
       
       if (needsInspection) {
+        // Thorough check: any incomplete Inspection task for this plant
         final existingTaskSnap = await _db.collection('users').doc(uid).collection('tasks')
             .where('plantId', isEqualTo: plantId)
             .where('taskType', isEqualTo: 'Inspection')
             .where('isCompleted', isEqualTo: false)
             .get();
         
-        bool hasFutureTask = false;
-        final now = DateTime.now();
-        for (var t in existingTaskSnap.docs) {
-          final td = t.data();
-          if (td['dueDate'] != null) {
-            final due = (td['dueDate'] as Timestamp).toDate();
-            if (due.isAfter(now) || DateTime(due.year, due.month, due.day).isAtSameMomentAs(DateTime(now.year, now.month, now.day))) {
-              hasFutureTask = true;
-              break;
-            }
-          }
-        }
-        
-        if (!hasFutureTask) {
+        if (existingTaskSnap.docs.isEmpty) {
           final newTaskRef = _db.collection('users').doc(uid).collection('tasks').doc();
           await newTaskRef.set({
             'id': newTaskRef.id,
             'plantId': plantId,
             'plantName': plantName,
             'taskType': 'Inspection',
-            'dueDate': Timestamp.fromDate(now),
+            'dueDate': Timestamp.fromDate(DateTime.now()),
             'isCompleted': false,
             'notes': 'No growth journal entry in 21+ days — Flora recommends a check-in',
             'repeatType': 'none',
@@ -396,6 +398,11 @@ class FirestoreService {
     }
     return newTasksCount;
   }
+
+  Future<SharedPreferences> _getSharedPrefs() async {
+    return SharedPreferences.getInstance();
+  }
+
 
   Future<void> seedSpeciesData() async {
     final collection = _db.collection('species');
@@ -664,12 +671,6 @@ class FirestoreService {
   Future<void> seedBlogData() async {
     final collection = _db.collection('blogs');
 
-    // Check if the collection already has documents
-    final snapshot = await collection.limit(1).get();
-    if (snapshot.docs.isNotEmpty) {
-      return; // Return early if blogs already exist
-    }
-
     final List<Map<String, dynamic>> blogs = [
       {
         'id': 'common_watering_mistakes',
@@ -679,7 +680,8 @@ class FirestoreService {
         'summary': 'Watering is the hardest part of plant parenting. Learn how to avoid the deadly sins of over and under-watering.',
         'content': '''Welcome to the Digital Conservatory! Watering your plants sounds incredibly simple, but it is actually the number one reason houseplant parents face heartache. You might think that a strict schedule of watering every Sunday is the best way to show your leafy friends you care, but plants do not thrive on human calendars. They have their own rhythms, dictated by the season, the humidity in your home, and the type of pot they are living in. Overwatering is by far the most common mistake you can make. When you water too frequently, the soil stays constantly wet, suffocating the roots. Roots need oxygen just as much as they need water, and sitting in mud leads directly to root rot. To fix this, you need to start checking the soil before you water. Stick your finger about two inches down into the pot. If it feels moist, wait a few more days. If it feels completely dry, it is time for a drink. Underwatering is the opposite problem, usually born out of neglect or a fear of overwatering. When you do not give your plant enough water, the leaves will begin to droop, curl, and eventually crisp up at the edges. The fix here is to water deeply when you do water. Do not just give your plant a tiny sip; instead, take it to the sink and water it until moisture pours out of the drainage holes. This ensures that the entire root ball gets hydrated. Another mistake is using the wrong temperature of water. Always use room temperature water. Ice cold water can shock the tropical roots of your indoor plants. Furthermore, try to avoid getting water directly on the leaves of fuzzy plants like African violets, as this can cause spotting and fungal issues. The pot itself matters greatly, too. Terracotta pots are porous and allow soil to dry out faster, making them great for heavy waterers, whereas plastic pots retain moisture longer. Moreover, never ever use a pot without drainage holes. It is essentially a bathtub with no drain, and water will pool at the bottom where you cannot see it. If you find a beautiful decorative pot without holes, simply keep your plant in its plastic nursery pot and use the decorative one as a cachepot—taking the plastic pot out when you water, letting it drain completely, and then placing it back inside. By paying attention to these simple cues, you will become a much more intuitive plant parent.''',
         'tags': ['watering', 'mistakes', 'basics', 'roots'],
-        'publishedDate': '2024-01-15'
+        'publishedDate': '2024-01-15',
+        'localImagePath': 'assets/blog_images/blog_watering_mistakes.jpg'
       },
       {
         'id': 'understanding_light_levels',
@@ -689,7 +691,8 @@ class FirestoreService {
         'summary': 'Confused by bright indirect light? We break down exactly what your plant needs to thrive.',
         'content': '''Light is food for your plants. While fertilizer is like a vitamin supplement, light provides the actual energy your plant needs to photosynthesize and grow. When you bring a new plant home, the first thing you need to figure out is where it will live, and that decision is entirely dependent on light. You have probably read the phrase bright indirect light a hundred times, but what does it actually mean? Imagine you are a plant. If you are sitting in a spot where you can see the sky but the sun is not directly hitting your leaves, you are in bright indirect light. This is the sweet spot for the vast majority of tropical houseplants. A few feet away from an east or west-facing window is usually perfect. Direct light, on the other hand, means the sun's rays are beating right down on the plant. South-facing windows often provide direct light. While desert dwellers like cacti and succulents absolutely love this, it will quickly scorch the delicate leaves of a calathea or a fern. Low light is a tricky category. It does not mean no light. A room with no windows is not low light; it is a cave, and no plant will survive there long-term without artificial help. Low light means an area far from a window or a north-facing room where the light is very gentle and ambient. Plants like snake plants and ZZ plants can tolerate this, but keep in mind that they are merely surviving, not necessarily thriving. Growth will be very slow in low light conditions. To measure your light, you can try the shadow test. On a sunny day, hold your hand about a foot above the spot where you want to place your plant. If the shadow is sharp and well-defined, you have bright, direct light. If the shadow is fuzzy but still distinct, you have bright indirect light. If the shadow is barely there, it is a low light spot. Remember that light changes with the seasons. A spot that receives bright light in the summer might be completely shadowed in the winter, meaning you will need to relocate your plants. If your home simply does not have the natural light required, do not despair. Artificial grow lights have come a long way and can perfectly supplement or entirely replace the sun. LED grow lights are energy-efficient and come in various spectrums. Full-spectrum white lights blend seamlessly into your home decor while providing the exact wavelengths your plants need to photosynthesize. Place them a few inches to a foot above your plants and run them for twelve to sixteen hours a day to simulate a bright summer day.''',
         'tags': ['sunlight', 'placement', 'growth', 'grow lights'],
-        'publishedDate': '2024-02-10'
+        'publishedDate': '2024-02-10',
+        'localImagePath': 'assets/blog_images/blog_light_levels.jpg'
       },
       {
         'id': 'diagnosing_yellow_leaves',
@@ -699,7 +702,8 @@ class FirestoreService {
         'summary': 'Yellow leaves are your plant crying out for help. Learn to interpret the signs and save your green friends.',
         'content': '''Nothing strikes fear into the heart of a plant parent quite like the sudden appearance of a yellow leaf. But before you panic, take a deep breath. A yellow leaf is simply a form of communication. Your plant is trying to tell you that something in its environment needs adjusting. The tricky part is that yellow leaves can mean several entirely different things, so you have to play detective. The most common culprit, as with many plant woes, is your watering routine. Both overwatering and underwatering can cause leaves to yellow. If the yellow leaves are primarily near the bottom of the plant, and they feel soft, limp, and perhaps even a bit mushy, you are likely dealing with overwatering. The roots are drowning and cannot transport nutrients. Let the soil dry out significantly before you water again. Conversely, if the yellow leaves are dry, crispy, and crumbling to the touch, your plant is extremely thirsty. Give it a thorough soaking. If you have ruled out watering, consider your light situation. A plant that is not getting enough light will often shed its older, lower leaves to conserve energy for new growth at the top. The plant is essentially deciding that those lower leaves are not producing enough energy to justify keeping them alive. On the flip side, too much direct sunlight can cause a plant's leaves to look washed out and yellowed, essentially giving them a sunburn. Nutrient deficiencies are another possibility, though less common for new plants. If the leaves are turning yellow but the veins remain green, your plant might be lacking magnesium or iron. A balanced, water-soluble fertilizer applied during the growing season can help correct this. Pests can also be the hidden cause behind yellowing foliage. Sap-sucking insects like spider mites, aphids, or thrips attach themselves to the undersides of leaves and drain the plant's essential fluids. This relentless attack damages the plant tissue, causing a speckled yellowing that eventually takes over the whole leaf. Always check the undersides of yellowing leaves for tiny webs or specks of dust that seem to move. Treating the pest problem promptly is the only way to stop the yellowing in its tracks. Finally, do not forget that plants are living things that age. It is entirely normal for a plant to drop its oldest leaves as it grows. If you see an occasional yellow leaf at the very base of a mature plant, there is likely no cause for concern.''',
         'tags': ['troubleshooting', 'yellow leaves', 'health', 'signs'],
-        'publishedDate': '2024-03-05'
+        'publishedDate': '2024-03-05',
+        'localImagePath': 'assets/blog_images/blog_yellow_leaves.jpg'
       },
       {
         'id': 'beginner_guide_to_propagation',
@@ -709,7 +713,8 @@ class FirestoreService {
         'summary': 'Turn one plant into many! Discover the joy and simplicity of propagating your houseplants in water.',
         'content': '''Welcome to one of the most rewarding aspects of plant ownership: propagation. There is something truly magical about taking a small clipping from a beloved plant and watching it transform into an entirely new, independent life. It feels like a plant superpower, and the best part is that it is incredibly easy to learn. The simplest and most visually satisfying method for beginners is water propagation. It works beautifully for popular vining plants like pothos, philodendrons, and monsteras. The first and most crucial step is knowing where to cut. You cannot just snip a leaf off anywhere and expect it to grow roots. You need to find a node. A node is the small, slightly raised bump on the stem where a leaf attaches, or where aerial roots might be starting to form. This is the spot where the magic happens, as it contains the cellular blueprints to create new roots. Use a clean, sharp pair of scissors or pruning shears to make a cut about a quarter-inch below the node. Make sure your cutting has at least one or two leaves to provide energy, but remove any leaves that would be submerged in water, as they will rot and foul the liquid. Place your cutting in a glass jar or vase filled with clean, room-temperature water. Ensure the node is completely submerged. Place the vessel in a warm spot that receives bright, indirect light. Direct sun will heat the water too much and cook your fragile new clipping. Now, you wait. Patience is key here. Every few days, change the water to keep it fresh and oxygenated. Over the next few weeks, you will start to see tiny white nubs emerging from the node. These will gradually lengthen into roots. It is a thrilling process to watch unfold. While water propagation is fantastic for beginners, you can also experiment with rooting directly in moist sphagnum moss or perlite. These mediums provide excellent airflow around the developing roots, which can sometimes lead to a stronger, faster-growing root system than water alone. Simply soak the moss, squeeze out the excess water, and nestle your node right into it. Keep the moss consistently damp by enclosing it in a clear plastic bag or a propagation box to maintain incredibly high humidity. Once the roots are a couple of inches long, pot it up in soil, keep it slightly moist to ease the transition, and congratulations on your new plant!''',
         'tags': ['propagation', 'cuttings', 'water rooting', 'nodes'],
-        'publishedDate': '2024-04-12'
+        'publishedDate': '2024-04-12',
+        'localImagePath': 'assets/blog_images/blog_propagation.jpg'
       },
       {
         'id': 'winter_plant_care_guide',
@@ -719,7 +724,8 @@ class FirestoreService {
         'summary': 'As the days get shorter and colder, your plants need a change in routine. Learn how to winterize your indoor garden.',
         'content': '''As the days grow shorter, the temperatures drop, and you start reaching for your cozy sweaters, it is time to realize your houseplants are feeling the change too. Winter requires a significant shift in how you care for your indoor jungle. The routines that worked perfectly in the bright, warm days of summer can actually be harmful during the dormant winter months. The most dramatic change you need to make is to your watering schedule. Because there is less light and less heat, your plants' growth slows down drastically. Many enter a period of semi-dormancy. This means they are not consuming water at nearly the same rate. If you continue to water them as often as you did in July, the soil will stay wet for too long, leading to the dreaded root rot. You must learn to wait. Check the soil diligently before watering, and let it dry out much more thoroughly than you would in the spring. Alongside reducing water, you should completely stop fertilizing. Pushing a plant to grow when it naturally wants to rest will result in weak, spindly, and unhealthy growth. Wait until you see the first signs of active new growth in the early spring before you bring out the plant food again. Temperature and drafts are another major winter concern. Most houseplants originate from tropical environments and despise cold air. Make sure your plants are not sitting near drafty windows or doors that open to the freezing outdoors. If you have older, drafty windows, consider pulling your plants a few feet back into the room from November until March. You can also use temporary window insulation film to block freezing air from seeping in and shocking your tropicals. Pay attention to the temperature fluctuations in your home. A space heater might keep you warm, but if it is blowing dry, hot air directly onto a fern, that plant will crisp up and die within days. Positioning is everything during the winter. Heating your home creates its own set of problems, mainly by destroying humidity. Radiators, forced air, and fireplaces dry out the air intensely. You need to artificially boost the humidity around your plants by grouping them or using a humidifier. Finally, maximize whatever light is available. Clean your windows to let in as much sun as possible, ensuring they emerge healthy and ready to burst with life when spring arrives.''',
         'tags': ['winter', 'dormancy', 'seasonal', 'temperature'],
-        'publishedDate': '2024-05-20'
+        'publishedDate': '2024-05-20',
+        'localImagePath': 'assets/blog_images/blog_winter_care.jpg'
       },
       {
         'id': 'how_to_repot_without_stress',
@@ -729,7 +735,8 @@ class FirestoreService {
         'summary': 'Repotting does not have to be a traumatic experience. Learn the gentle techniques for upgrading your plant’s home.',
         'content': '''Repotting is a necessary chore in the life of a plant parent, but it is often approached with a mix of dread and anxiety. It is true that moving a plant from its established home into a new one causes stress, but if done correctly, that stress is minimal and the long-term benefits are immense. The first step is knowing when it is actually time to repot. Do not repot simply because you bought a pretty new planter. Look for signs that your plant is rootbound. Are roots poking out of the bottom drainage holes? Is the plant pushing itself up out of the pot? Does water run straight through the soil instantly because there is more root than dirt? If you answer yes to these, it is time for an upgrade. Timing matters, too. Spring and early summer are the best times to repot, as the plant is in its active growing phase and will recover much faster. Choose a new pot that is only one to two inches larger in diameter than the current one. Putting a small plant in a massive pot is a recipe for overwatering. Drainage is non-negotiable; ensure your new pot has holes at the bottom. To keep the mess manageable, lay down an old tarp or a large plastic garbage bag on your floor or table before you begin. When you are ready to make the move, water your plant a day or two beforehand. A well-hydrated plant is more flexible and resilient. Gently lay the pot on its side and coax the plant out. Do not yank it by the stem. If it is stuck, tap the sides of the pot to loosen the soil. Once the plant is out, inspect the roots. If they are tightly coiled, gently loosen the outer layer. Sometimes, if a plant is severely rootbound and you do not want to move it to a massive, heavy pot, you can practice root pruning. With a sterilized pair of scissors, carefully trim away the bottom third of the tightly coiled roots. This encourages fresh growth and allows you to put the plant back into the same pot with fresh, nutrient-rich soil. It is a slightly more advanced technique but incredibly useful. Place a layer of fresh mix in the bottom, center the plant, fill in the sides, and water thoroughly. Avoid fertilizing for a few weeks to let the sensitive roots heal.''',
         'tags': ['repotting', 'roots', 'growth', 'potting up'],
-        'publishedDate': '2024-06-08'
+        'publishedDate': '2024-06-08',
+        'localImagePath': 'assets/blog_images/blog_repotting.jpg'
       },
       {
         'id': 'natural_pest_control_for_houseplants',
@@ -739,7 +746,8 @@ class FirestoreService {
         'summary': 'Spider mites, fungus gnats, and mealybugs, oh my! Defend your jungle using safe, natural methods.',
         'content': '''No matter how clean your home is or how careful you are, dealing with pests is an inevitable part of keeping houseplants. It is completely normal, so do not feel like you have failed as a plant parent if you spot a creepy crawler. The key is catching them early and treating them swiftly before an annoyance becomes an infestation. Because our plants live in our enclosed living spaces, often around pets and children, reaching for harsh chemical pesticides should be an absolute last resort. Fortunately, nature provides us with highly effective, gentle solutions. The first line of defense is observation. Every time you water, take a moment to inspect your plants. Look closely at the undersides of the leaves, where pests love to hide. If you see tiny webs, you likely have spider mites. If you notice small, white, cotton-like masses, you are dealing with mealybugs. If tiny black flies are buzzing around the soil, those are fungus gnats. If you spot an infestation, immediately isolate the affected plant. You do not want the bugs spreading to your entire collection. For most physical pests like aphids, spider mites, and mealybugs, a strong spray of water in the shower or sink is an excellent first step to physically knock them off the foliage. Next, employ neem oil. Neem oil is a natural byproduct of the neem tree and acts as an organic insecticide, disrupting the pests' life cycles. Mix a teaspoon of pure, cold-pressed neem oil with a drop of mild dish soap and warm water in a spray bottle. Thoroughly coat the plant, wiping down the leaves carefully. You will need to repeat this process every few days for a couple of weeks to catch newly hatched eggs. For fungus gnats, the problem lies in the wet soil. You must let the top two inches of soil dry out completely between waterings. If you are dealing with a truly severe infestation that natural sprays cannot seem to dent, you might explore beneficial insects. Releasing ladybugs or lacewings onto your indoor plants can be a fascinating, eco-friendly way to decimate aphid or mite populations. Alternatively, for non-edible ornamental plants, systemic granules mixed into the soil are taken up by the plant's roots, making the sap toxic to pests. While not strictly natural, it is an effective last resort when you are desperate to save a beloved plant from total destruction.''',
         'tags': ['pests', 'neem oil', 'organic', 'bugs'],
-        'publishedDate': '2024-07-14'
+        'publishedDate': '2024-07-14',
+        'localImagePath': 'assets/blog_images/blog_pest_control.jpg'
       },
       {
         'id': 'best_soil_mixes_for_indoor_plants',
@@ -749,7 +757,8 @@ class FirestoreService {
         'summary': 'Stop using straight potting soil! Learn how to amend your dirt to mimic your plants natural environment.',
         'content': '''One of the biggest leaps you will take in your plant care journey is realizing that standard, store-bought potting soil is rarely good enough straight out of the bag. Soil is the foundation of your plant's health. It provides stability, holds nutrients, and regulates moisture. However, the dense, peat-heavy mixes you find at the hardware store hold onto water for far too long, starving indoor roots of oxygen and almost guaranteeing root rot over time. To truly make your plants thrive, you need to start custom mixing your soil to suit the specific needs of your plants. Think of potting soil as merely the base ingredient. You need to add amendments to improve aeration and drainage. The most essential amendment you can buy is perlite or pumice. These lightweight, porous volcanic rocks create vital air pockets in the soil, allowing oxygen to reach the roots and excess water to drain away quickly. A good rule of thumb for most tropical foliage plants, like monsteras and pothos, is to mix two parts standard potting soil with one part perlite and one part orchid bark. Orchid bark provides excellent chunkiness, mimicking the loose, organic matter these plants climb on in their natural rainforest habitats. When choosing your base soil, consider looking for mixes made with coco coir instead of peat moss. Coco coir is a sustainable byproduct of the coconut industry, whereas peat is harvested from fragile bogs. Coir also rewets much easier if you accidentally let it dry out completely. To give your custom mix an incredible, natural nutrient boost, mix in a generous handful of worm castings. This organic fertilizer will not burn your plants' roots and provides a slow, steady release of essential minerals and beneficial microbes. If you are dealing with moisture-loving plants like ferns or calatheas, try two parts potting soil, one part perlite, and a handful of horticultural charcoal to keep the soil sweet. For succulents and cacti, drainage is everything. Combine one part potting soil with one part pumice, and one part coarse sand. Mixing your own soil might seem messy at first, but it gives you incredible control over your plants' environment. It is like cooking a meal from scratch instead of microwaving a frozen dinner. Storing your ingredients in airtight bins makes the process easy, and watching your plants explode with healthy root growth will prove the effort is worth it.''',
         'tags': ['soil', 'drainage', 'amendments', 'perlite'],
-        'publishedDate': '2024-08-22'
+        'publishedDate': '2024-08-22',
+        'localImagePath': 'assets/blog_images/blog_soil_mix.jpg'
       },
       {
         'id': 'how_humidity_affects_tropical_plants',
@@ -759,7 +768,8 @@ class FirestoreService {
         'summary': 'Crispy leaf edges? The air in your home might be too dry. Discover how to create the humid microclimate your tropicals crave.',
         'content': '''If you have ever purchased a gorgeous, lush calathea or a delicate maidenhair fern, only to watch its leaves slowly turn brown and crispy at the edges despite perfect watering, you have encountered the invisible enemy: a lack of humidity. Most of the popular houseplants we bring into our homes originate from tropical rainforests, where the air is thick with moisture, often sitting at seventy or eighty percent humidity. Our modern, climate-controlled homes, especially in the winter or in arid climates, frequently hover around thirty percent or lower. This drastic difference in air moisture causes a severe issue for plants. Leaves constantly lose water to the air through tiny pores called stomata in a process known as transpiration. When the surrounding air is excessively dry, the plant loses water faster than its roots can pull it up from the soil. The result is those unsightly brown, dry margins, and a plant that generally looks dull and unhappy. So, how do we fix this invisible problem? Misting is often the first thing people try, but unfortunately, it is largely ineffective. Spraying your plants with a bottle only raises the humidity for a few minutes until the water evaporates, and leaving water sitting on leaves can actually encourage fungal diseases. You need solutions that provide consistent, ambient moisture. One excellent method is grouping your plants together. As they all transpire, they release moisture into the air, creating a humid microclimate. When you group your plants, try to place the most humidity-loving plants in the center of the cluster, surrounded by more resilient plants. This puts the sensitive divas right in the thickest part of the moisture cloud created by the collective transpiration. If you have plants that are absolute humidity divas, consider relocating them to a bathroom or kitchen that receives adequate light. The frequent use of showers and sinks makes these rooms naturally more humid than living rooms or bedrooms. Another low-tech solution is the pebble tray. Fill a shallow tray with pebbles and water, placing your pot on top to catch the evaporating moisture. However, if you are serious about keeping fussy tropicals, the best investment you can make is a humidifier. Placing a humidifier in your plant room guarantees a constant, measurable level of moisture in the air. Aim for fifty to sixty percent humidity, and your tropical beauties will truly flourish.''',
         'tags': ['humidity', 'tropicals', 'environment', 'microclimate'],
-        'publishedDate': '2024-09-18'
+        'publishedDate': '2024-09-18',
+        'localImagePath': 'assets/blog_images/blog_humidity.jpg'
       },
       {
         'id': 'reading_your_plant_signs',
@@ -769,7 +779,8 @@ class FirestoreService {
         'summary': 'Plants speak to us, just very slowly. Learn to interpret their subtle cues to become a master plant whisperer.',
         'content': '''Caring for houseplants is a continuous conversation. You provide water, light, and nutrients, and your plant responds by growing, changing color, or occasionally, drooping dramatically. The secret to becoming a truly successful plant parent is not adhering to a rigid, mathematical schedule, but rather learning to read the subtle visual and tactile signs your plant uses to communicate. A thriving plant is a joy to observe. Its leaves will appear turgid, meaning they are plump, firm, and fully hydrated. The foliage will possess a vibrant color and a natural, healthy sheen. You will see signs of active growth: tiny green spikes emerging from the soil, unfurling new leaves at the tips of vines, and robust, sturdy stems holding the plant upright. A plant that feels secure in its environment will often stand tall, reaching confidently toward its light source. Conversely, a struggling plant will send out distress signals long before it completely fails. Wilting is the most common cry for help. While a slight droop might just mean it is thirsty, a severe, sudden collapse can indicate shock or severe root rot. Pay close attention to the texture of the leaves. If they feel thin, papery, and brittle, your plant is severely dehydrated. If they feel unusually soft, mushy, or translucent, you are likely dealing with overwatering and cellular breakdown. Part of reading your plant involves noticing when it is physically struggling under its own weight. Climbing plants like Monsteras or vining Philodendrons will begin to look messy and unsupported without something to grab onto. Providing a moss pole or a trellis not only helps them grow larger, more mature leaves, but it also signals that you understand their natural climbing habits. Furthermore, take note of dust accumulation. A dusty leaf cannot photosynthesize properly. Gently wiping the foliage with a damp microfiber cloth is a great time to check in, read the signs, and bond with your collection. The speed of growth is another excellent indicator of overall health. A plant that produces zero new growth during the sunny months of spring and summer is telling you that something is wrong with its environment—usually a lack of light or exhausted soil. By taking the time to touch your plants, lift their pots, and closely inspect their leaves, you will develop an intuitive understanding of this silent language.''',
         'tags': ['observation', 'health', 'beginner tips', 'growth signs'],
-        'publishedDate': '2024-10-02'
+        'publishedDate': '2024-10-02',
+        'localImagePath': 'assets/blog_images/blog_reading_plants.jpg'
       }
     ];
 
@@ -1043,6 +1054,35 @@ class FirestoreService {
       }
     } catch (e) {
       debugPrint('Error checking unanswered questions: $e');
+    }
+  }
+  Future<void> checkAndFlagReportedPosts() async {
+    try {
+      final reportsSnap = await _db.collection('reports').get();
+      // Count reports per postId
+      final Map<String, int> counts = {};
+      for (final doc in reportsSnap.docs) {
+        final postId = doc.data()['postId'] as String?;
+        if (postId != null && postId.isNotEmpty) {
+          counts[postId] = (counts[postId] ?? 0) + 1;
+        }
+      }
+      // Flag posts with 10+ reports
+      final batch = _db.batch();
+      bool hasBatchWork = false;
+      for (final entry in counts.entries) {
+        if (entry.value >= 10) {
+          final postRef = _db.collection('posts').doc(entry.key);
+          batch.update(postRef, {
+            'flaggedForReview': true,
+            'flaggedAt': FieldValue.serverTimestamp(),
+          });
+          hasBatchWork = true;
+        }
+      }
+      if (hasBatchWork) await batch.commit();
+    } catch (e) {
+      debugPrint('checkAndFlagReportedPosts error: $e');
     }
   }
 }

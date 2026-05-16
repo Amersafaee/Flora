@@ -53,16 +53,22 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
   /// Tries to pull the first meaningful noun from the analysis result to use
   /// as the plant name in the conversation title. Falls back to "this plant".
   String _extractPlantName() {
-    // Look for "Plant Name: X", "Species: X", or "**X**" patterns
-    final namePatterns = [
-      RegExp(r'(?:plant\s+name|species|identified as)[:\s*]+([A-Z][^\n,\.]{2,40})', caseSensitive: false),
-      RegExp(r'\*\*([A-Z][a-zA-Z\s]{2,35})\*\*'),
+    // Try common patterns first
+    final patterns = [
+      RegExp(r'(?:Plant Name|Species|Common Name|Name):\s*([^\n\r]+)', caseSensitive: false),
+      RegExp(r'(?:This is a|This appears to be a|Identified as)\s+([A-Z][a-zA-Z\s]+?)(?:\.|,|\n)', caseSensitive: false),
+      RegExp(r'\*\*([A-Z][a-zA-Z\s]+?)\*\*', caseSensitive: false),
     ];
-    for (final pattern in namePatterns) {
-      final m = pattern.firstMatch(widget.analysisResult);
-      if (m != null) {
-        final candidate = m.group(1)?.trim() ?? '';
-        if (candidate.isNotEmpty && candidate.length < 40) return candidate;
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(widget.analysisResult);
+      if (match != null) {
+        final name = match.group(1)?.trim() ?? '';
+        // Reject if the extracted name contains common false positives
+        final rejectWords = ['identification', 'analysis', 'assessment', 'result', 'note', 'warning', 'however', 'please', 'the plant'];
+        final nameLower = name.toLowerCase();
+        if (name.isNotEmpty && !rejectWords.any((w) => nameLower.contains(w)) && name.length < 50) {
+          return name;
+        }
       }
     }
     return 'this plant';
@@ -86,6 +92,40 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
       }
     }
     return null;
+  }
+
+  String _extractHealthStatus() {
+    final lower = widget.analysisResult.toLowerCase();
+    if (lower.contains('critical') || lower.contains('severely') || lower.contains('dying')) {
+      return 'Critical';
+    }
+    if (lower.contains('needs attention') || lower.contains('concerning') ||
+        lower.contains('yellowing') || lower.contains('disease') ||
+        lower.contains('pest')) {
+      return 'Needs Attention';
+    }
+    return 'Healthy';
+  }
+
+  String _extractWateringFrequency() {
+    final patterns = [
+      RegExp(r'water(?:ing)?\s+every\s+(\d+(?:\s*[-\u2013]\s*\d+)?)\s*(day|week)', caseSensitive: false),
+      RegExp(r'every\s+(\d+(?:\s*[-\u2013]\s*\d+)?)\s*(day|week)s?\s+water', caseSensitive: false),
+      RegExp(r'(\d+(?:\s*[-\u2013]\s*\d+)?)\s*(day|week)s?\s+between\s+water', caseSensitive: false),
+    ];
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(widget.analysisResult);
+      if (match != null) {
+        final number = match.group(1) ?? '7';
+        final unit = match.group(2)?.toLowerCase() ?? 'day';
+        if (unit.startsWith('week')) {
+          final days = int.tryParse(number.split(RegExp(r'[-\u2013]')).first.trim()) ?? 1;
+          return '${days * 7}';
+        }
+        return number.split(RegExp(r'[-\u2013]')).first.trim();
+      }
+    }
+    return '7';
   }
 
   /// Creates a new Flora conversation pre-seeded with the identify result,
@@ -391,6 +431,8 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                           final plantName = _extractPlantName();
                           final commonName = _extractCommonName();
                           final category = _extractCategory();
+                          final healthStatus = _extractHealthStatus();
+                          final wateringDays = _extractWateringFrequency();
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -398,6 +440,10 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                 initialPlantName: plantName == 'this plant' ? null : plantName,
                                 initialCommonName: commonName,
                                 initialCategory: category,
+                                initialHealthStatus: healthStatus,
+                                initialImageFile: widget.imageFile,
+                                initialWateringDays: wateringDays,
+                                analysisResult: widget.analysisResult,
                               ),
                             ),
                           );

@@ -151,7 +151,7 @@ class HomeScreen extends ConsumerWidget {
                     const Spacer(),
                     if (plants.isNotEmpty)
                       GestureDetector(
-                        onTap: () { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Coming soon', style: TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF2D5A27), behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), )); },
+                        onTap: () => context.go('/care'),
                         child: const Text('VIEW ALL', style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

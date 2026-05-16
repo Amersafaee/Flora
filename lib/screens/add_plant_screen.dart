@@ -1,24 +1,34 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
 import '../models/plant_model.dart';
 import '../models/task_model.dart';
-import 'flora_chats_list_screen.dart';
+import 'flora_screen.dart';
 
 class AddPlantScreen extends StatefulWidget {
   final String? initialPlantName;
   final String? initialCommonName;
   final String? initialCategory;
-  
+  final String? initialHealthStatus;
+  final File? initialImageFile;
+  final String? initialImageUrl;
+  final String? initialWateringDays;
+  final String? analysisResult;
+
   const AddPlantScreen({
     super.key,
     this.initialPlantName,
     this.initialCommonName,
     this.initialCategory,
+    this.initialHealthStatus,
+    this.initialImageFile,
+    this.initialImageUrl,
+    this.initialWateringDays,
+    this.analysisResult,
   });
 
   @override
@@ -28,15 +38,16 @@ class AddPlantScreen extends StatefulWidget {
 class _AddPlantScreenState extends State<AddPlantScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _commonNameController;
-  final TextEditingController _zoneController = TextEditingController();
   
   String _selectedCategory = 'Tropical';
   String _selectedHealth = 'Healthy';
-  
+
   bool _isLoading = false;
   bool _showNameError = false;
-  
+
   File? _imageFile;
+  String _initialImageUrl = '';
+  String _initialWateringDays = '7';
   final ImagePicker _picker = ImagePicker();
   
   final FirestoreService _firestoreService = FirestoreService();
@@ -47,12 +58,27 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialPlantName ?? '');
     _commonNameController = TextEditingController(text: widget.initialCommonName ?? '');
-    
+
     if (widget.initialCategory != null &&
         ['Tropical', 'Succulent', 'Fern', 'Herb', 'Cactus', 'Other'].contains(widget.initialCategory)) {
       _selectedCategory = widget.initialCategory!;
     }
-    
+
+    if (widget.initialHealthStatus != null &&
+        ['Healthy', 'Needs Attention', 'Critical'].contains(widget.initialHealthStatus)) {
+      _selectedHealth = widget.initialHealthStatus!;
+    }
+
+    if (widget.initialImageFile != null) {
+      _imageFile = widget.initialImageFile;
+    } else if (widget.initialImageUrl != null && widget.initialImageUrl!.isNotEmpty) {
+      _initialImageUrl = widget.initialImageUrl!;
+    }
+
+    if (widget.initialWateringDays != null && widget.initialWateringDays!.isNotEmpty) {
+      _initialWateringDays = widget.initialWateringDays!;
+    }
+
     _nameController.addListener(() => setState(() {}));
   }
 
@@ -60,7 +86,6 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   void dispose() {
     _nameController.dispose();
     _commonNameController.dispose();
-    _zoneController.dispose();
     super.dispose();
   }
 
@@ -75,7 +100,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     
     try {
       String imageUrl = '';
-      final docRef = FirebaseFirestore.instance.collection('dummy').doc();
+      final docRef = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).collection('plants').doc();
       final plantId = docRef.id;
 
       if (_imageFile != null) {
@@ -85,6 +110,9 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
           return;
         }
         imageUrl = url;
+      } else if (_initialImageUrl.isNotEmpty) {
+        // Pre-filled from identify — use the network URL directly
+        imageUrl = _initialImageUrl;
       }
       
       final plant = Plant(
@@ -92,7 +120,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         name: _nameController.text.trim(),
         commonName: _commonNameController.text.trim(),
         category: _selectedCategory,
-        zone: _zoneController.text.trim(),
+        zone: '',
         imageUrl: imageUrl,
         healthStatus: _selectedHealth,
         dateAdded: DateTime.now(),
@@ -167,7 +195,10 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                 onTap: () async {
                   final picked = await _picker.pickImage(source: ImageSource.gallery);
                   if (picked != null) {
-                    setState(() => _imageFile = File(picked.path));
+                    setState(() {
+                      _imageFile = File(picked.path);
+                      _initialImageUrl = ''; // clear URL if user picks new file
+                    });
                   }
                 },
                 child: Container(
@@ -182,15 +213,32 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                           )
                         : null,
                   ),
-                  child: _imageFile == null
-                      ? Center(
-                          child: Icon(
-                            Icons.eco,
-                            size: 48,
-                            color: const Color(0xFF154212).withValues(alpha: 0.4),
-                          ),
-                        )
-                      : null,
+                  child: _imageFile != null
+                      ? null
+                      : _initialImageUrl.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.network(
+                                _initialImageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 200,
+                                errorBuilder: (_, __, ___) => Center(
+                                  child: Icon(
+                                    Icons.eco,
+                                    size: 48,
+                                    color: const Color(0xFF154212).withValues(alpha: 0.4),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Center(
+                              child: Icon(
+                                Icons.eco,
+                                size: 48,
+                                color: const Color(0xFF154212).withValues(alpha: 0.4),
+                              ),
+                            ),
                 ),
               ),
               const SizedBox(height: 32),
@@ -297,35 +345,6 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
               const SizedBox(height: 20),
               
               Text(
-                'Room or Zone',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _zoneController,
-                decoration: InputDecoration(
-                  hintText: 'e.g. Living Room',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                  filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E211E) : const Color(0xFFFFFFFF),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFCCCCCC)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFCCCCCC)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF154212), width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              Text(
                 'Health Status',
                 style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
               ),
@@ -397,6 +416,17 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
       ),
     );
   }
+  /// Maps a watering-days string extracted from AI to the dropdown label.
+  String _wateringDaysToLabel(String daysStr) {
+    final days = int.tryParse(daysStr.trim()) ?? 7;
+    if (days <= 1) return 'Every day';
+    if (days <= 2) return 'Every 2 days';
+    if (days <= 4) return 'Every 3 days';
+    if (days <= 8) return 'Weekly';
+    if (days <= 16) return 'Every 2 weeks';
+    return 'Monthly';
+  }
+
   void _showCareScheduleBottomSheet(String plantName, String plantId) {
     showModalBottomSheet(
       context: context,
@@ -406,12 +436,12 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        String wateringVal = 'Weekly';
+        String wateringVal = _wateringDaysToLabel(_initialWateringDays);
         String fertilizingVal = 'Monthly';
         String mistingVal = 'Skip';
 
         final List<String> options = [
-          'Every day', 'Every 2 days', 'Weekly', 'Every 2 weeks', 'Monthly', 'Skip'
+          'Every day', 'Every 2 days', 'Every 3 days', 'Weekly', 'Every 2 weeks', 'Monthly', 'Skip'
         ];
 
         return StatefulBuilder(
@@ -469,8 +499,34 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     const SizedBox(height: 32),
                     
                     OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()));
+                      onPressed: () async {
+                        final uid = FirebaseAuth.instance.currentUser?.uid;
+                        if (uid == null) return;
+                        final plantName = _nameController.text.trim().isEmpty ? 'your plant' : _nameController.text.trim();
+                        final db = FirebaseFirestore.instance;
+                        final chatsRef = db.collection('users').doc(uid).collection('flora_chats');
+                        // Create conversation
+                        final docRef = await chatsRef.add({
+                          'title': 'Care advice for $plantName',
+                          'createdAt': FieldValue.serverTimestamp(),
+                          'lastMessageAt': FieldValue.serverTimestamp(),
+                          'lastMessage': 'Care advice for $plantName',
+                        });
+                        final conversationId = docRef.id;
+                        final messagesRef = chatsRef.doc(conversationId).collection('messages');
+                        // Seed the first message
+                        final userText = (widget.analysisResult != null && widget.analysisResult!.isNotEmpty)
+                            ? widget.analysisResult!
+                            : 'I just added $plantName to my collection. Can you give me specific advice on watering schedule, fertilizing, and repotting for this plant?';
+                        await messagesRef.add({
+                          'role': 'user',
+                          'text': userText,
+                          'imageUrl': '',
+                          'timestamp': FieldValue.serverTimestamp(),
+                        });
+                        if (!context.mounted) return;
+                        Navigator.pop(context); // close bottom sheet
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => FloraScreen(conversationId: conversationId)));
                       },
                       icon: const Icon(Icons.psychology, color: Color(0xFF154212)),
                       label: const Text(
@@ -566,6 +622,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
       switch (val) {
         case 'Every day': return 'daily';
         case 'Every 2 days': return 'every2days';
+        case 'Every 3 days': return 'every3days';
         case 'Weekly': return 'weekly';
         case 'Every 2 weeks': return 'biweekly';
         case 'Monthly': return 'monthly';

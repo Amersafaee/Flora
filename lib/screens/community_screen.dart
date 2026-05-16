@@ -1,15 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'profile_screen.dart';
 import 'create_post_screen.dart';
 import 'post_comments_screen.dart';
 import 'swap_market_screen.dart';
 import 'all_plants_screen.dart';
 import '../services/firestore_service.dart';
+import '../utils/user_utils.dart';
+import '../services/onboarding_service.dart';
+import 'onboarding_overlay_screen.dart';
+
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -19,13 +25,13 @@ class CommunityScreen extends StatefulWidget {
 }
 
 class _CommunityScreenState extends State<CommunityScreen> {
-  // ignore: unused_field
   bool _isSearching = false;
   String _searchQuery = '';
   String _selectedCategoryFilter = 'All';
   String _feedMode = 'mine';
   List<String> _userPlantNames = [];
   StreamSubscription? _plantsSub;
+  List<String> _reportedPostIds = [];
 
   @override
   void initState() {
@@ -33,7 +39,36 @@ class _CommunityScreenState extends State<CommunityScreen> {
     _checkUnansweredQuestions();
     _checkAndSeedChallenge();
     _loadUserPlants();
+    _loadReportedPosts();
+    FirestoreService().checkAndFlagReportedPosts();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (await OnboardingService.shouldShow('community_screen')) {
+        await OnboardingService.markShown('community_screen');
+        if (mounted) _showFeatureOnboarding();
+      }
+    });
   }
+
+  void _showFeatureOnboarding() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const OnboardingOverlayScreen(
+          title: 'Welcome to Community',
+          description: 'Connect with other plant lovers and experts.',
+          tips: [
+            'Share your plant progress and tips',
+            'Ask for help with sick plants',
+            'Join weekly growing challenges',
+          ],
+          featureKey: 'community_screen',
+        ),
+      ),
+    );
+  }
+
 
   void _loadUserPlants() {
     _plantsSub = FirestoreService().getPlants().listen((plants) {
@@ -60,10 +95,47 @@ class _CommunityScreenState extends State<CommunityScreen> {
           'endDate': Timestamp.fromDate(DateTime.now().add(const Duration(days: 7))),
           'participantCount': 0,
           'isActive': true,
+          'authorName': 'Digital Conservatory Team',
+          'authorUid': 'system',
         });
+      } else {
+        // Backfill authorName if missing on existing challenge
+        final doc = qs.docs.first;
+        final data = doc.data();
+        if (!data.containsKey('authorName')) {
+          await doc.reference.update({
+            'authorName': 'Digital Conservatory Team',
+            'authorUid': 'system',
+          });
+        }
       }
     } catch (e) {
       debugPrint('Error seeding challenge: $e');
+    }
+  }
+
+  Future<void> _loadReportedPosts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString('reported_posts') ?? '[]';
+    try {
+      final list = List<String>.from(json.decode(jsonStr) as List);
+      if (mounted) setState(() => _reportedPostIds = list);
+    } catch (_) {}
+  }
+
+  Future<void> _saveReportedPost(String postId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString('reported_posts') ?? '[]';
+    List<String> list;
+    try {
+      list = List<String>.from(json.decode(jsonStr) as List);
+    } catch (_) {
+      list = [];
+    }
+    if (!list.contains(postId)) {
+      list.add(postId);
+      await prefs.setString('reported_posts', json.encode(list));
+      if (mounted) setState(() => _reportedPostIds = list);
     }
   }
 
@@ -85,45 +157,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       backgroundColor: backgroundColor,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-            builder: (context) => SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('Create Post', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.lightbulb_outline, color: Color(0xFFF57F17)),
-                    title: const Text('Share a Tip'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'Tips')));
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.help_outline, color: Color(0xFF2196F3)),
-                    title: const Text('Ask a Question'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'Questions')));
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.photo_camera_outlined, color: Color(0xFF4CAF50)),
-                    title: const Text('Show your Plant'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'Showcase')));
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'General')));
         },
         backgroundColor: primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
@@ -154,11 +188,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           MaterialPageRoute(builder: (context) => const ProfileScreen()),
                         );
                       },
-                      child: const CircleAvatar(
-                        backgroundColor: Colors.grey,
-                        radius: 20,
-                        child: Icon(Icons.person, color: Colors.white),
-                      ),
+                      child: buildUserAvatar(radius: 20),
                     ),
                   ],
                 ),
@@ -384,65 +414,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
               ),
 
-              // Action Buttons
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const CreatePostScreen(initialCategory: 'General')),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'Join Discussion',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const CreatePostScreen(initialCategory: 'Question')),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: Colors.grey.shade300, width: 1.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Ask for Help',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 16),
               
               // Feed
@@ -462,13 +433,19 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     }
 
                     final allDocs = snapshot.data?.docs ?? [];
+                    // Filter reported posts (hidden locally)
                     final filteredDocs = allDocs.where((doc) {
+                      if (_reportedPostIds.contains(doc.id)) return false;
                       final data = doc.data() as Map<String, dynamic>;
                       final title = (data['title'] ?? '').toString().toLowerCase();
                       final body = (data['body'] ?? '').toString().toLowerCase();
                       final query = _searchQuery.toLowerCase();
                       final matchesSearch = title.contains(query) || body.contains(query);
-                      final matchesCategory = _selectedCategoryFilter == 'All' || data['category'] == _selectedCategoryFilter;
+                      final matchesCategory = _selectedCategoryFilter == 'All' ||
+                          data['category'] == _selectedCategoryFilter ||
+                          // Normalise Question/Questions mismatch
+                          (_selectedCategoryFilter == 'Questions' && data['category'] == 'Question') ||
+                          (_selectedCategoryFilter == 'Question' && data['category'] == 'Questions');
                       
                       bool matchesFeedMode = true;
                       if (_feedMode == 'mine') {
@@ -706,6 +683,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             title: const Text('Report Post'),
                             onTap: () {
                               Navigator.pop(context);
+                              // FIX 9: Prevent self-reporting
+                              if (currentUserId != null && currentUserId == authorUid) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('You cannot report your own post'),
+                                    backgroundColor: Colors.grey,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                return;
+                              }
                               showModalBottomSheet(
                                 context: context,
                                 shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -728,8 +716,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                             'timestamp': FieldValue.serverTimestamp(),
                                             'status': 'pending',
                                           });
+                                          // Hide post locally from this reporter
+                                          await _saveReportedPost(postDoc.id);
                                           if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report submitted. Thank you for keeping the community safe.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating));
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Post hidden. Thank you for keeping the community safe.'),
+                                                backgroundColor: Colors.green,
+                                                behavior: SnackBarBehavior.floating,
+                                              ),
+                                            );
                                           }
                                         },
                                       )),

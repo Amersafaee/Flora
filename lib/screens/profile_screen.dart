@@ -11,7 +11,7 @@ import 'login_screen.dart';
 import 'badges_screen.dart';
 import 'vacation_mode_screen.dart';
 import 'notification_settings_screen.dart';
-import 'zones_screen.dart';
+// zones_screen import removed — no navigation button leads there
 import 'edit_profile_screen.dart';
 import 'collection_personality_screen.dart';
 import 'memorial_garden_screen.dart';
@@ -49,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       String? savedPhotoUrl;
       if (uid != null) {
         final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-        savedPhotoUrl = doc.data()?['profilePhotoUrl'] as String?;
+        savedPhotoUrl = (doc.data()?['profilePhotoUrl'] ?? doc.data()?['photoUrl']) as String?;
       }
 
       if (mounted) {
@@ -183,9 +183,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     const Color softGreen = Color(0xFFE8F3EA);
     
     final user = _auth.currentUser;
-    final fullName = user?.displayName ?? 'User';
     final email = user?.email ?? 'No email';
-    final initials = _getInitials(fullName);
+
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -245,96 +244,124 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 32),
               
-              // Avatar and Info
-              Center(
-                child: Column(
-                  children: [
-                    GestureDetector(
-                      onTap: _isUploadingPhoto ? null : _uploadProfilePhoto,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CircleAvatar(
-                            radius: 48,
-                            backgroundColor: (_profilePhotoUrl == null && user?.photoURL == null) ? Colors.grey : primaryColor,
-                            backgroundImage: _profilePhotoUrl != null
-                                ? NetworkImage(_profilePhotoUrl!)
-                                : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
-                            child: (_profilePhotoUrl == null && user?.photoURL == null)
-                                ? Text(
-                                    initials,
-                                    style: const TextStyle(
+              // Avatar and Info — name resolved from Firestore first
+              StreamBuilder<DocumentSnapshot>(
+                stream: user != null
+                    ? FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots()
+                    : const Stream.empty(),
+                builder: (context, userSnap) {
+                  String displayedName = '';
+                  if (userSnap.hasData && userSnap.data!.exists) {
+                    final data = userSnap.data!.data() as Map<String, dynamic>?;
+                    if (data != null) {
+                      // Priority: fullName → displayName in Firestore
+                      displayedName = (data['fullName'] as String? ?? '').trim();
+                      if (displayedName.isEmpty) {
+                        displayedName = (data['displayName'] as String? ?? '').trim();
+                      }
+                    }
+                  }
+                  // Then FirebaseAuth displayName
+                  if (displayedName.isEmpty) {
+                    displayedName = (user?.displayName ?? '').trim();
+                  }
+                  // Never show 'user' — fall back to email prefix
+                  if (displayedName.isEmpty) {
+                    displayedName = email.split('@').first;
+                  }
+                  final resolvedInitials = _getInitials(displayedName);
+
+                  return Center(
+                    child: Column(
+                      children: [
+                        GestureDetector(
+                          onTap: _isUploadingPhoto ? null : _uploadProfilePhoto,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CircleAvatar(
+                                radius: 48,
+                                backgroundColor: (_profilePhotoUrl == null && user?.photoURL == null) ? Colors.grey : primaryColor,
+                                backgroundImage: _profilePhotoUrl != null
+                                    ? NetworkImage(_profilePhotoUrl!)
+                                    : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
+                                child: (_profilePhotoUrl == null && user?.photoURL == null)
+                                    ? Text(
+                                        resolvedInitials,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              if (_isUploadingPhoto)
+                                Container(
+                                  width: 96,
+                                  height: 96,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black38,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
                                       color: Colors.white,
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.bold,
+                                      strokeWidth: 2.5,
                                     ),
-                                  )
-                                : null,
+                                  ),
+                                )
+                              else
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: primaryColor,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 2),
+                                    ),
+                                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                                  ),
+                                ),
+                            ],
                           ),
-                          if (_isUploadingPhoto)
-                            Container(
-                              width: 96,
-                              height: 96,
-                              decoration: BoxDecoration(
-                                color: Colors.black38,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.5,
-                                ),
-                              ),
-                            )
-                          else
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: primaryColor,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                ),
-                                child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
-                              ),
-                            ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          displayedName,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          email,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                            ).then((_) => setState(() {}));
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: primaryColor),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
+                          child: Text('Edit Profile', style: TextStyle(color: primaryColor)),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      fullName,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      email,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const EditProfileScreen()),
-                        ).then((_) => setState(() {}));
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: primaryColor),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      ),
-                      child: Text('Edit Profile', style: TextStyle(color: primaryColor)),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 32),
               
@@ -438,18 +465,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const VacationModeScreen()),
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
-              _buildSettingsRow(
-                icon: Icons.home_outlined,
-                title: 'My Zones',
-                softGreen: softGreen,
-                primaryColor: primaryColor,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ZonesScreen()),
                   );
                 },
               ),

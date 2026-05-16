@@ -148,9 +148,9 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
 
     debugPrint('Sending ${messagesPayload.length} messages to Gemini');
     
-    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    final apiKey = dotenv.env['GEMINI_API_KEY']?.trim() ?? '';
     final model = GenerativeModel(
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       apiKey: apiKey,
       systemInstruction: Content.system('You are Flora, a warm, knowledgeable, and conversational AI plant care expert. You have a long memory of this conversation. Keep your answers brief, practical, and highly personalized based on our chat history.'),
     );
@@ -185,7 +185,7 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
       // Generate suggestions after response completes
       try {
         final suggestionModel = GenerativeModel(
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           apiKey: apiKey,
           systemInstruction: Content.system("Generate exactly 3 short suggestion phrases for the user to reply with in the context of the conversation. Return ONLY a JSON array of strings, nothing else."),
         );

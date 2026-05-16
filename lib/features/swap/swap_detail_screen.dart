@@ -176,7 +176,7 @@ class SwapDetailScreen extends ConsumerWidget {
                             child: OutlinedButton(
                               onPressed: () async {
                                 await completeListing(item.id);
-                                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Coming soon', style: TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF2D5A27), behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), ));
+                                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing marked as completed ✅', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF2D5A27), behavior: SnackBarBehavior.floating));
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.forestGreen,
@@ -193,7 +193,7 @@ class SwapDetailScreen extends ConsumerWidget {
                             onPressed: () async {
                               await deleteListing(item.id);
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Coming soon', style: TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF2D5A27), behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), ));
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing deleted', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
                                 context.pop();
                               }
                             },

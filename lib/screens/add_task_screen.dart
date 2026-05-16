@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 import '../models/task_model.dart';
@@ -60,7 +61,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     setState(() => _isLoading = true);
     
     try {
-      final taskId = widget.task?.id ?? FirebaseFirestore.instance.collection('dummy').doc().id;
+      final taskId = widget.task?.id ?? FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).collection('tasks').doc().id;
 
       String lookedUpPlantId = _selectedPlantId;
       if (lookedUpPlantId.isEmpty && _plantNameController.text.trim().isNotEmpty) {

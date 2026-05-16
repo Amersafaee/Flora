@@ -1,8 +1,18 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
+import '../services/onboarding_service.dart';
+import 'login_screen.dart';
+import '../main.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+  final ValueChanged<bool>? onThemeChanged;
+
+  const SignupScreen({super.key, this.onThemeChanged});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -15,21 +25,158 @@ class _SignupScreenState extends State<SignupScreen> {
   final AuthService _authService = AuthService();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  File? _profileImage;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickProfileImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 512,
+      maxHeight: 512,
+    );
+    if (picked != null && mounted) {
+      setState(() => _profileImage = File(picked.path));
+    }
+  }
 
   void _signup() async {
-    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) return;
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (name.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your full name', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+          elevation: 4,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    if (email.isEmpty || password.isEmpty) return;
 
     setState(() => _isLoading = true);
-    final result = await _authService.signUpWithEmailAndPassword(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
-    setState(() => _isLoading = false);
 
-    if (result != 'Success' && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result ?? 'Error signing up', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF2D5A27), behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), ));
-    } else if (mounted) {
-      Navigator.pop(context); // Go back after successful signup and let Auth stream handle routing
+    try {
+      final result = await _authService.signUpWithEmailAndPassword(email, password);
+
+      if (result != 'Success' && mounted) {
+        setState(() => _isLoading = false);
+        String friendlyMessage;
+        if (result == null) {
+          friendlyMessage = 'An unexpected error occurred. Please try again.';
+        } else if (result.contains('email-already-in-use') || result.contains('account already exists')) {
+          friendlyMessage = 'An account with this email already exists';
+        } else if (result.contains('weak-password') || result.contains('too weak')) {
+          friendlyMessage = 'Password must be at least 6 characters';
+        } else if (result.contains('invalid-email') || result.contains('badly formatted')) {
+          friendlyMessage = 'Please enter a valid email address';
+        } else {
+          friendlyMessage = result;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(friendlyMessage, style: const TextStyle(color: Colors.white)),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 4,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+
+      if (result == 'Success' && mounted) {
+        // Save fullName and profile data to Firestore
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid != null) {
+          final userData = <String, dynamic>{
+            'fullName': name,
+            'displayName': name,
+            'email': email,
+            'createdAt': FieldValue.serverTimestamp(),
+          };
+
+          // Upload profile photo if selected — skip entirely if null
+          if (_profileImage != null) {
+            try {
+              final storageRef = FirebaseStorage.instance
+                  .ref()
+                  .child('users/$uid/profile/profile.jpg');
+              await storageRef.putFile(
+                _profileImage!,
+                SettableMetadata(contentType: 'image/jpeg'),
+              );
+              final downloadUrl = await storageRef.getDownloadURL();
+              userData['profilePhotoUrl'] = downloadUrl;
+            } catch (e) {
+              debugPrint('Profile photo upload failed during signup: $e');
+              // Non-fatal — continue signup without photo
+            }
+          }
+
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .set(userData, SetOptions(merge: true));
+
+          // Also update FirebaseAuth displayName
+          if (name.isNotEmpty) {
+            await FirebaseAuth.instance.currentUser?.updateDisplayName(name);
+          }
+        }
+
+        await OnboardingService.initForNewUser();
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        // Explicit navigation to MainTabScreen as fallback (same pattern as login)
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => MainTabScreen(
+              onThemeChanged: widget.onThemeChanged ?? (_) {},
+            ),
+          ),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint('Signup error: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Sign up failed: ${e.toString().replaceAll('Exception: ', '')}',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 4,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 
@@ -42,24 +189,49 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo
+              // Profile Photo Picker
               Center(
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    shape: BoxShape.circle,
+                child: GestureDetector(
+                  onTap: _isLoading ? null : _pickProfileImage,
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      CircleAvatar(
+                        radius: 48,
+                        backgroundColor: primaryColor.withValues(alpha: 0.15),
+                        backgroundImage: _profileImage != null
+                            ? FileImage(_profileImage!)
+                            : null,
+                        child: _profileImage == null
+                            ? Icon(Icons.person, color: primaryColor, size: 44)
+                            : null,
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: primaryColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.eco, color: Colors.white, size: 40),
                 ),
               ),
-              const SizedBox(height: 24),
-              
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  'Add Photo (optional)',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 20),
+
               // Title and Subtitle
               Text(
                 'Create Account',
@@ -80,8 +252,8 @@ class _SignupScreenState extends State<SignupScreen> {
                   fontSize: 16,
                 ),
               ),
-              const SizedBox(height: 48),
-              
+              const SizedBox(height: 32),
+
               // Name Input
               Text(
                 'Full Name',
@@ -93,6 +265,8 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 8),
               TextField(
                 controller: _nameController,
+                textInputAction: TextInputAction.next,
+                enabled: !_isLoading,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
@@ -123,6 +297,9 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                enabled: !_isLoading,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
@@ -141,7 +318,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Password Input
               Text(
                 'Password',
@@ -154,6 +331,9 @@ class _SignupScreenState extends State<SignupScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
+                enabled: !_isLoading,
+                onSubmitted: (_) => _signup(),
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
@@ -162,11 +342,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       _obscurePassword ? Icons.visibility_off : Icons.visibility,
                       color: Colors.grey,
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
+                    onPressed: _isLoading
+                        ? null
+                        : () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -183,7 +361,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              
+
               // Create Account Button
               SizedBox(
                 height: 50,
@@ -191,29 +369,30 @@ class _SignupScreenState extends State<SignupScreen> {
                   onPressed: _isLoading ? null : _signup,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
+                    disabledBackgroundColor: primaryColor.withValues(alpha: 0.6),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(
-                        width: 20, 
-                        height: 20, 
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                      )
-                    : const Text(
-                        'Create Account',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Create Account',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
                 ),
               ),
               const SizedBox(height: 24),
-              
-              // Login Link
+
+              // Already have an account? Sign In
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -221,15 +400,24 @@ class _SignupScreenState extends State<SignupScreen> {
                     "Already have an account?",
                     style: TextStyle(color: Colors.grey),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text(
+                    onTap: _isLoading
+                        ? null
+                        : () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LoginScreen(
+                                  onThemeChanged: widget.onThemeChanged,
+                                ),
+                              ),
+                            );
+                          },
+                    child: const Text(
                       'Sign In',
                       style: TextStyle(
-                        color: const Color(0xFF8D3220),
+                        color: Color(0xFF8D3220),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -243,8 +431,3 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 }
-
-
-
-
-

@@ -20,6 +20,7 @@ class PostCommentsScreen extends StatefulWidget {
 
 class _PostCommentsScreenState extends State<PostCommentsScreen> {
   final TextEditingController _commentController = TextEditingController();
+  final FocusNode _commentFocusNode = FocusNode();
   bool _isSending = false;
   bool _hasText = false;
 
@@ -210,6 +211,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
   @override
   void dispose() {
     _commentController.dispose();
+    _commentFocusNode.dispose();
     super.dispose();
   }
 
@@ -419,6 +421,21 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                                         '${(data['likedBy'] as List?)?.length ?? 0}',
                                         style: const TextStyle(fontSize: 12, color: Colors.grey),
                                       ),
+                                      const SizedBox(width: 12),
+                                      GestureDetector(
+                                        onTap: () {
+                                          final authorName = data['authorName'] ?? 'Anonymous';
+                                          _commentController.text = '@$authorName ';
+                                          _commentController.selection = TextSelection.fromPosition(
+                                            TextPosition(offset: _commentController.text.length),
+                                          );
+                                          _commentFocusNode.requestFocus();
+                                        },
+                                        child: const Text(
+                                          'Reply',
+                                          style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -456,6 +473,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                 Expanded(
                   child: TextField(
                     controller: _commentController,
+                    focusNode: _commentFocusNode,
                     decoration: InputDecoration(
                       hintText: 'Add a comment...',
                       border: OutlineInputBorder(

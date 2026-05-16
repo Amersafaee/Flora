@@ -249,7 +249,13 @@ class _WikiScreenState extends State<WikiScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     
-                    final allBlogs = snapshot.data?.docs ?? [];
+                    final allBlogsRaw = snapshot.data?.docs ?? [];
+                    // FIX 8: Only show blogs that have a real localImagePath (filters out seeded species-wiki entries)
+                    final allBlogs = allBlogsRaw.where((doc) {
+                      final d = doc.data() as Map<String, dynamic>;
+                      final path = (d['localImagePath'] as String? ?? '').trim();
+                      return path.isNotEmpty;
+                    }).toList();
                     if (allBlogs.isEmpty) {
                       return const Center(
                         child: Padding(
@@ -478,11 +484,12 @@ class _WikiScreenState extends State<WikiScreen> {
     required BuildContext context,
     required Map<String, dynamic> blogData,
   }) {
-    final title = blogData['title'] ?? '';
-    final category = blogData['category'] ?? '';
-    final readMinutes = blogData['readMinutes'] ?? 0;
-    final summary = blogData['summary'] ?? '';
-    final content = blogData['content'] ?? '';
+    final title = (blogData['title'] as String? ?? '');
+    final category = (blogData['category'] as String? ?? '');
+    final readMinutes = (blogData['readMinutes'] as num?)?.toInt() ?? 5;
+    final summary = (blogData['summary'] as String? ?? '');
+    final content = (blogData['content'] as String? ?? '');
+    final localImagePath = (blogData['localImagePath'] as String? ?? '');
 
     return GestureDetector(
       onTap: () {
@@ -515,6 +522,26 @@ class _WikiScreenState extends State<WikiScreen> {
                       ),
                     ),
                   ),
+                  if (localImagePath.isNotEmpty) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        localImagePath,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 200,
+                          width: double.infinity,
+                          color: const Color(0xFFE8F5E9),
+                          child: const Center(
+                            child: Icon(Icons.article, color: Color(0xFF154212), size: 48),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -551,14 +578,77 @@ class _WikiScreenState extends State<WikiScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  Text(
-                    content,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      height: 1.6,
-                      color: Colors.black87,
-                    ),
+                  // Read time indicator
+                  Row(
+                    children: [
+                      const Icon(Icons.access_time, size: 16, color: Color(0xFF2E7D32)),
+                      const SizedBox(width: 6),
+                      Text(
+                        '$readMinutes min read',
+                        style: const TextStyle(
+                          color: Color(0xFF2E7D32),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 24),
+                  // Paragraph-grouped content
+                  Builder(builder: (context) {
+                    // Split into sentences and group into paragraphs of ~3 sentences
+                    final rawSentences = content.split('. ');
+                    final List<String> paragraphs = [];
+                    const sentencesPerParagraph = 3;
+                    for (int i = 0; i < rawSentences.length; i += sentencesPerParagraph) {
+                      final chunk = rawSentences.sublist(
+                        i,
+                        (i + sentencesPerParagraph) > rawSentences.length
+                            ? rawSentences.length
+                            : i + sentencesPerParagraph,
+                      );
+                      final para = chunk.where((s) => s.trim().isNotEmpty).join('. ').trim();
+                      if (para.isNotEmpty) {
+                        // Re-add period if the last sentence doesn't already end with punctuation
+                        paragraphs.add(para.endsWith('.') || para.endsWith('!') || para.endsWith('?') ? para : '$para.');
+                      }
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (int i = 0; i < paragraphs.length; i++) ...[
+                          if (i == 0)
+                            // First paragraph gets a decorative green left border
+                            Container(
+                              padding: const EdgeInsets.only(left: 14),
+                              decoration: const BoxDecoration(
+                                border: Border(
+                                  left: BorderSide(color: Color(0xFF2E7D32), width: 3),
+                                ),
+                              ),
+                              child: Text(
+                                paragraphs[i],
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  height: 1.7,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            )
+                          else
+                            Text(
+                              paragraphs[i],
+                              style: TextStyle(
+                                fontSize: 15,
+                                height: 1.7,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          if (i < paragraphs.length - 1) const SizedBox(height: 16),
+                        ],
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -578,53 +668,90 @@ class _WikiScreenState extends State<WikiScreen> {
             ),
           ],
         ),
-        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F5F1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    category,
-                    style: const TextStyle(
-                      color: Color(0xFF2D5A27),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
+            if (localImagePath.isNotEmpty)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: Image.asset(
+                  localImagePath,
+                  height: 160,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 160,
+                    width: double.infinity,
+                    color: const Color(0xFFE8F5E9),
+                    child: const Center(
+                      child: Icon(Icons.article, color: Color(0xFF154212), size: 48),
                     ),
                   ),
                 ),
-                Text(
-                  '$readMinutes min read',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+              )
+            else
+              Container(
+                height: 160,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontFamily: 'serif',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                child: const Center(
+                  child: Icon(Icons.article, color: Color(0xFF154212), size: 48),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              summary,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-                height: 1.4,
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F5F1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          category,
+                          style: const TextStyle(
+                            color: Color(0xFF2D5A27),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '$readMinutes min read',
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'serif',
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    summary,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

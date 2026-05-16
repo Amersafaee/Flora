@@ -163,17 +163,25 @@ class WeeklyReportService {
   }
 
   Future<bool> shouldShowWeeklyReport() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastDateStr = prefs.getString('lastWeeklyReportDate');
-    if (lastDateStr == null) return true;
+    final now = DateTime.now();
+    // Only show on Sundays (weekday == 7)
+    if (now.weekday != DateTime.sunday) return false;
 
-    final lastDate = DateTime.parse(lastDateStr);
-    final diff = DateTime.now().difference(lastDate).inDays;
-    return diff >= 7;
+    final prefs = await SharedPreferences.getInstance();
+    final todayStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final lastDateStr = prefs.getString('last_weekly_report_date');
+
+    // Guard: already shown today
+    if (lastDateStr == todayStr) return false;
+    return true;
   }
 
   Future<void> markWeeklyReportShown() async {
+    final now = DateTime.now();
+    final todayStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('lastWeeklyReportDate', DateTime.now().toIso8601String());
+    await prefs.setString('last_weekly_report_date', todayStr);
   }
 }
