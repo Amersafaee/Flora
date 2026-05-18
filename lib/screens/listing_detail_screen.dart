@@ -259,35 +259,40 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       const SizedBox(height: 8),
                       Text(description, style: TextStyle(color: AppColors.bone700, fontSize: 15, height: 1.5)),
                       const SizedBox(height: 24),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3F1),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Color(0x338D3220)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.swap_horiz, color: AppColors.terracotta900),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Looking to swap for', style: TextStyle(color: AppColors.terracotta900, fontSize: 12, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text(lookingFor, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                                ],
-                              ),
+                      Builder(
+                        builder: (context) {
+                          final isDark = Theme.of(context).brightness == Brightness.dark;
+                          return Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: isDark ? AppColors.darkBorderDefault : AppColors.terracotta500),
                             ),
-                          ],
-                        ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.swap_horiz, color: isDark ? AppColors.darkTerracotta : AppColors.terracotta900),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Looking to swap for', style: TextStyle(color: isDark ? AppColors.darkTerracotta : AppColors.terracotta900, fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 4),
+                                      Text(lookingFor, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 24),
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
                         ),
@@ -308,17 +313,22 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                     Text(ownerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                     if (careStreak > 0) ...[
                                       const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.orange.shade50,
-                                          borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: Colors.orange.shade200),
-                                        ),
-                                        child: Text(
-                                          '🔥 $careStreak day care streak',
-                                          style: TextStyle(color: Colors.orange.shade800, fontSize: 10, fontWeight: FontWeight.bold),
-                                        ),
+                                      Builder(
+                                        builder: (context) {
+                                          final isDark = Theme.of(context).brightness == Brightness.dark;
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: isDark ? AppColors.darkSurfaceElevated : AppColors.terracotta100,
+                                              borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(color: isDark ? AppColors.darkBorderDefault : AppColors.terracotta500),
+                                            ),
+                                            child: Text(
+                                              '🔥 $careStreak day care streak',
+                                              style: TextStyle(color: isDark ? AppColors.darkTerracotta : AppColors.terracotta700, fontSize: 10, fontWeight: FontWeight.bold),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ],
                                   ],
@@ -370,13 +380,14 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     Widget healthBadge;
     if (healthScore is num) {
       final score = healthScore.toInt();
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       Color badgeColor;
       if (score >= 70) {
-        badgeColor = Colors.green;
+        badgeColor = isDark ? AppColors.successDark : AppColors.successLight;
       } else if (score >= 40) {
-        badgeColor = Colors.amber;
+        badgeColor = isDark ? AppColors.warningDark : AppColors.warningLight;
       } else {
-        badgeColor = Colors.red;
+        badgeColor = isDark ? AppColors.errorDark : AppColors.errorLight;
       }
       
       healthBadge = Container(

@@ -449,17 +449,18 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                   ...tasks.map((task) {
                                     final type = task['taskType'] as String;
                                     
-                                    Color iconBg = AppColors.forest100;
-                                    Color iconColor = const Color(0xFF4CAF50);
+                                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                                    Color iconBg = isDark ? AppColors.darkForestSubtle : AppColors.forest100;
+                                    Color iconColor = isDark ? AppColors.darkForestPrimary : AppColors.forest500;
                                     IconData iconData = Icons.water_drop;
                                     
                                     if (type.contains('Fertiliz')) {
-                                      iconBg = const Color(0xFFFFEBEE);
-                                      iconColor = const Color(0xFFF44336);
+                                      iconBg = isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100;
+                                      iconColor = isDark ? AppColors.errorDark : AppColors.errorLight;
                                       iconData = Icons.science;
                                     } else if (type.contains('Repot')) {
-                                      iconBg = const Color(0xFFE3F2FD);
-                                      iconColor = const Color(0xFF2196F3);
+                                      iconBg = isDark ? AppColors.darkSurfaceElevated : AppColors.forest50;
+                                      iconColor = isDark ? AppColors.darkForestPrimary : AppColors.forest600;
                                       iconData = Icons.yard;
                                     }
 

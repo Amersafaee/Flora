@@ -9,9 +9,13 @@ class MemorialGardenScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const sepiaBg = Color(0xFFFAF8F5);
-    const sepiaCard = Color(0xFFF3EFE9);
-    const sepiaText = Color(0xFF5D4037);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sepiaBg = isDark ? AppColors.darkCanvas : AppColors.bone25;
+    final sepiaCard = isDark ? AppColors.darkSurface : AppColors.bone50;
+    final sepiaText = isDark ? AppColors.darkTextPrimary : AppColors.bone900;
+    final sepiaMuted = isDark ? AppColors.darkTextSecondary : AppColors.bone500;
+    final sepiaBorder = isDark ? AppColors.darkBorderDefault : AppColors.bone200;
+    final sepiaQuoteBg = isDark ? AppColors.darkSurfaceElevated : AppColors.bone25;
 
     return Scaffold(
       backgroundColor: sepiaBg,
@@ -19,8 +23,8 @@ class MemorialGardenScreen extends StatelessWidget {
         title: const Text('Memorial Garden'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: sepiaText),
-        titleTextStyle: const TextStyle(
+        iconTheme: IconThemeData(color: sepiaText),
+        titleTextStyle: TextStyle(
           color: sepiaText,
           fontSize: 20,
           fontWeight: FontWeight.bold,
@@ -41,13 +45,13 @@ class MemorialGardenScreen extends StatelessWidget {
             final deceasedPlants = (snapshot.data ?? []).where((p) => p.isDeceased).toList();
             
             if (deceasedPlants.isEmpty) {
-              return const Center(
+              return Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.all(24.0),
                   child: Text(
                     'No plants in the memorial garden yet — every plant lives a full life here first 🌿',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xFF8D6E63), fontSize: 16, fontStyle: FontStyle.italic),
+                    style: TextStyle(color: sepiaMuted, fontSize: 16, fontStyle: FontStyle.italic),
                   ),
                 ),
               );
@@ -79,7 +83,7 @@ class MemorialGardenScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: sepiaCard,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE8DCC4)),
+                    border: Border.all(color: sepiaBorder),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.05),
@@ -93,16 +97,16 @@ class MemorialGardenScreen extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.local_florist, color: Color(0xFF8D6E63)),
+                          Icon(Icons.local_florist, color: sepiaMuted),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               plant.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'serif',
-                                color: Color(0xFF5D4037),
+                                color: sepiaText,
                               ),
                             ),
                           ),
@@ -114,15 +118,15 @@ class MemorialGardenScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Joined: $dateJoinedStr',
-                            style: const TextStyle(
-                              color: Color(0xFF8D6E63),
+                            style: TextStyle(
+                              color: sepiaMuted,
                               fontSize: 12,
                             ),
                           ),
                           Text(
                             'Passed: $datePassedStr',
-                            style: const TextStyle(
-                              color: Color(0xFF8D6E63),
+                            style: TextStyle(
+                              color: sepiaMuted,
                               fontSize: 12,
                             ),
                           ),
@@ -132,13 +136,13 @@ class MemorialGardenScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFAF8F5).withValues(alpha: 0.5),
+                          color: sepiaQuoteBg.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           '"$note"',
-                          style: const TextStyle(
-                            color: Color(0xFF5D4037),
+                          style: TextStyle(
+                            color: sepiaText,
                             height: 1.5,
                             fontStyle: FontStyle.italic,
                             fontSize: 15,

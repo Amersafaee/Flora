@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
@@ -57,7 +57,7 @@ class _ZonesScreenState extends State<ZonesScreen> {
                     Navigator.pop(dialogCtx);
                   }
                   messenger.showSnackBar(
-                    const SnackBar(content: Text('Zone updated'), backgroundColor: Colors.green),
+                    SnackBar(content: const Text('Zone updated'), backgroundColor: AppColors.successLight),
                   );
                 }
               }
@@ -183,11 +183,11 @@ class _ZonesScreenState extends State<ZonesScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
                               onPressed: () => _editZone(id, name),
                             ),
                             IconButton(
-                              icon: Icon(Icons.delete_outline, color: Colors.red),
+                              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                               onPressed: () => _deleteZone(id),
                             ),
                           ],

@@ -21,22 +21,28 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
       emoji: '🌿',
       title: 'Identify any plant',
       subtitle: 'Point your camera and Flora names it.',
-      bgColor: Color(0xFFF5F0E8), // cream
+      bgColor: Color(0xFFF5F0E8),
+      darkBgColor: AppColors.darkCanvas,
       accentColor: AppColors.forest900,
+      darkAccentColor: AppColors.darkForestPrimary,
     ),
     _Slide(
       emoji: '📅',
       title: 'Never miss a watering',
       subtitle: 'Flora reminds you exactly when to care.',
       bgColor: Color(0xFFE8F4E8),
+      darkBgColor: AppColors.darkCanvas,
       accentColor: AppColors.forest900,
+      darkAccentColor: AppColors.darkForestPrimary,
     ),
     _Slide(
       emoji: '👥',
       title: 'Swap with plant lovers',
       subtitle: 'Trade cuttings and seeds locally.',
       bgColor: Color(0xFFF0EDE8),
+      darkBgColor: AppColors.darkCanvas,
       accentColor: Color(0xFF5C4033),
+      darkAccentColor: AppColors.darkTerracotta,
     ),
   ];
 
@@ -68,8 +74,12 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
     final slide = _slides[_page];
     final isLast = _page == _slides.length - 1;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveBg = isDark ? slide.darkBgColor : slide.bgColor;
+    final effectiveAccent = isDark ? slide.darkAccentColor : slide.accentColor;
+
     return Scaffold(
-      backgroundColor: slide.bgColor,
+      backgroundColor: effectiveBg,
       body: SafeArea(
         child: Stack(
           children: [
@@ -100,8 +110,8 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
                         height: 8,
                         decoration: BoxDecoration(
                           color: active
-                              ? slide.accentColor
-                              : slide.accentColor.withAlpha(60),
+                              ? effectiveAccent
+                              : effectiveAccent.withAlpha(60),
                           borderRadius: AppRadius.borderPill,
                         ),
                       );
@@ -115,12 +125,12 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
                   child: isLast
                       ? _PrimaryButton(
                           label: 'Get Started',
-                          color: slide.accentColor,
+                          color: effectiveAccent,
                           onPressed: _finish,
                         )
                       : _PrimaryButton(
                           label: 'Next',
-                          color: slide.accentColor,
+                          color: effectiveAccent,
                           onPressed: _next,
                         ),
                 ),
@@ -137,7 +147,7 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
                   child: Text(
                     'Skip',
                     style: TextStyle(
-                      color: slide.accentColor.withAlpha(180),
+                      color: effectiveAccent.withAlpha(180),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -156,13 +166,17 @@ class _Slide {
   final String title;
   final String subtitle;
   final Color  bgColor;
+  final Color  darkBgColor;
   final Color  accentColor;
+  final Color  darkAccentColor;
   const _Slide({
     required this.emoji,
     required this.title,
     required this.subtitle,
     required this.bgColor,
+    required this.darkBgColor,
     required this.accentColor,
+    required this.darkAccentColor,
   });
 }
 
@@ -172,6 +186,9 @@ class _SlideView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isDark ? slide.darkAccentColor : slide.accentColor;
+
     final tt = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -183,10 +200,10 @@ class _SlideView extends StatelessWidget {
             width: 140,
             height: 140,
             decoration: BoxDecoration(
-              color: slide.accentColor.withAlpha(20),
+              color: accent.withAlpha(20),
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
-                color: slide.accentColor.withAlpha(40),
+                color: accent.withAlpha(40),
                 width: 1.5,
               ),
             ),
@@ -204,7 +221,7 @@ class _SlideView extends StatelessWidget {
               fontFamily: 'NotoSerif',
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: slide.accentColor,
+              color: accent,
             ),
             textAlign: TextAlign.center,
           ),
@@ -212,7 +229,7 @@ class _SlideView extends StatelessWidget {
           Text(
             slide.subtitle,
             style: tt.bodyLarge?.copyWith(
-              color: slide.accentColor.withAlpha(180),
+              color: accent.withAlpha(180),
               height: 1.5,
             ),
             textAlign: TextAlign.center,

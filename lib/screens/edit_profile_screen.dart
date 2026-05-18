@@ -62,13 +62,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Photo updated successfully.'), backgroundColor: Colors.green),
+          SnackBar(content: const Text('Photo updated successfully.'), backgroundColor: AppColors.successLight),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update photo.'), backgroundColor: Colors.red),
+          SnackBar(content: const Text('Failed to update photo.'), backgroundColor: AppColors.errorLight),
         );
       }
     } finally {
@@ -82,7 +82,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Display name cannot be empty.'), backgroundColor: Colors.red),
+        SnackBar(content: const Text('Display name cannot be empty.'), backgroundColor: AppColors.errorLight),
       );
       return;
     }
@@ -100,13 +100,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully'), backgroundColor: Colors.green),
+          SnackBar(content: const Text('Profile updated successfully'), backgroundColor: AppColors.successLight),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update profile.'), backgroundColor: Colors.red),
+          SnackBar(content: const Text('Failed to update profile.'), backgroundColor: AppColors.errorLight),
         );
       }
     } finally {
@@ -157,7 +157,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFA1D494), AppColors.forest900],
+                      colors: [AppColors.forest500, AppColors.forest900],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),

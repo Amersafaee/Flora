@@ -7,10 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+// TODO: import 'package:digital_conservatory/l10n/app_localizations.dart';
 
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
 import 'services/theme_service.dart';
+import 'services/locale_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/wiki_screen.dart';
@@ -65,6 +68,7 @@ class DigitalConservatoryApp extends StatefulWidget {
 
 class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
   ThemeMode _themeMode = ThemeMode.light;
+  Locale _locale = const Locale('en');
   late final Stream<User?> _authStream;
 
   @override
@@ -75,6 +79,9 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
     // which was the root cause of the "sign-in spins forever" bug.
     _authStream = FirebaseAuth.instance.authStateChanges();
     _loadTheme();
+    LocaleService.getInitialLocale().then((loc) {
+      if (mounted) setState(() => _locale = loc);
+    });
   }
 
   Future<void> _loadTheme() async {
@@ -91,6 +98,13 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
       _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
     });
     _applySystemUiOverlay(isDark);
+  }
+
+  void _onLocaleChanged(Locale locale) {
+    setState(() {
+      _locale = locale;
+    });
+    LocaleService.saveLocale(locale.languageCode);
   }
 
   /// Keeps status bar icon brightness in sync with the app theme so that
@@ -115,6 +129,17 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: _themeMode,
+      locale: _locale,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        // TODO: AppLocalizations.delegate
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        // TODO: AppLocalizations.supportedLocales
+      ],
       home: StreamBuilder<User?>(
         stream: _authStream,
         builder: (context, snapshot) {
@@ -124,9 +149,9 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
             );
           }
           if (snapshot.hasData && snapshot.data != null) {
-            return MainTabScreen(onThemeChanged: _onThemeChanged);
+            return MainTabScreen(onThemeChanged: _onThemeChanged, onLocaleChanged: _onLocaleChanged);
           }
-          return SignupScreen(onThemeChanged: _onThemeChanged);
+          return SignupScreen(onThemeChanged: _onThemeChanged, onLocaleChanged: _onLocaleChanged);
         },
       ),
     );
@@ -135,7 +160,8 @@ class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
 
 class MainTabScreen extends StatefulWidget {
   final ValueChanged<bool> onThemeChanged;
-  const MainTabScreen({super.key, required this.onThemeChanged});
+  final ValueChanged<Locale> onLocaleChanged;
+  const MainTabScreen({super.key, required this.onThemeChanged, required this.onLocaleChanged});
 
   @override
   State<MainTabScreen> createState() => _MainTabScreenState();
@@ -199,26 +225,31 @@ class _MainTabScreenState extends State<MainTabScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
               activeIcon: Icon(Icons.home),
+              // TODO: AppLocalizations.of(context).navHome
               label: 'Home',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.yard_outlined),
               activeIcon: Icon(Icons.yard),
+              // TODO: AppLocalizations.of(context).navGarden
               label: 'Garden',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.eco_outlined),
               activeIcon: Icon(Icons.eco),
+              // TODO: AppLocalizations.of(context).navFlora
               label: 'Flora',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.explore_outlined),
               activeIcon: Icon(Icons.explore),
+              // TODO: AppLocalizations.of(context).navDiscover
               label: 'Discover',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
+              // TODO: AppLocalizations.of(context).navProfile
               label: 'Profile',
             ),
           ],

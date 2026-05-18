@@ -10,6 +10,7 @@ class WeeklyReportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final start = reportData['weekStartDate'] as DateTime;
     final end = reportData['weekEndDate'] as DateTime;
     final dateRangeStr = '${DateFormat.MMMd().format(start)} - ${DateFormat.MMMd().format(end)}';
@@ -103,16 +104,16 @@ class WeeklyReportScreen extends StatelessWidget {
                   children: [
                     _buildStatBox(
                       icon: Icons.check_circle,
-                      iconColor: Colors.green,
+                      iconColor: isDark ? AppColors.successDark : AppColors.successLight,
                       value: reportData['completedTasks'].toString(),
-                      valueColor: Colors.green,
+                      valueColor: isDark ? AppColors.successDark : AppColors.successLight,
                       label: 'Tasks Done',
                     ),
                     _buildStatBox(
                       icon: Icons.cancel,
-                      iconColor: Colors.red,
+                      iconColor: isDark ? AppColors.errorDark : AppColors.errorLight,
                       value: reportData['skippedTasks'].toString(),
-                      valueColor: Colors.red,
+                      valueColor: isDark ? AppColors.errorDark : AppColors.errorLight,
                       label: 'Skipped',
                     ),
                     _buildStatBox(
@@ -124,9 +125,9 @@ class WeeklyReportScreen extends StatelessWidget {
                     ),
                     _buildStatBox(
                       icon: Icons.favorite,
-                      iconColor: _getScoreColor(reportData['collectionHealthAvg'] as int),
+                      iconColor: _getScoreColor(reportData['collectionHealthAvg'] as int, context),
                       value: '${reportData['collectionHealthAvg']}%',
-                      valueColor: _getScoreColor(reportData['collectionHealthAvg'] as int),
+                      valueColor: _getScoreColor(reportData['collectionHealthAvg'] as int, context),
                       label: 'Collection Health',
                     ),
                   ],
@@ -138,13 +139,13 @@ class WeeklyReportScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF8E1),
+                    color: isDark ? AppColors.darkSurfaceElevated : AppColors.bone50,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFFFD54F), width: 1),
+                    border: Border.all(color: isDark ? AppColors.darkBorderDefault : AppColors.warningLight, width: 1),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.star, color: Color(0xFFFFA000)),
+                      Icon(Icons.star, color: isDark ? AppColors.warningDark : AppColors.warningLight),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -265,9 +266,10 @@ class WeeklyReportScreen extends StatelessWidget {
     );
   }
 
-  Color _getScoreColor(int score) {
-    if (score >= 80) return Colors.green;
-    if (score >= 60) return AppColors.terracotta900; // Terracotta for okay
-    return Colors.red;
+  Color _getScoreColor(int score, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (score >= 80) return isDark ? AppColors.successDark : AppColors.successLight;
+    if (score >= 60) return isDark ? AppColors.darkTerracotta : AppColors.terracotta700;
+    return isDark ? AppColors.errorDark : AppColors.errorLight;
   }
 }

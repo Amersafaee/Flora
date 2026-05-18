@@ -10,6 +10,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final String name = plantData['name'] ?? 'Unknown';
     final String commonName = plantData['commonName'] ?? '';
     final String category = plantData['category'] ?? '';
@@ -35,14 +36,14 @@ class WikiPlantDetailScreen extends StatelessWidget {
                 Container(
                   height: 300,
                   width: double.infinity,
-                  color: const Color(0xFFC8E6C9), // soft green
+                  color: isDark ? AppColors.darkForestSubtle : AppColors.forest100, // soft green
                   // If we had image we could display it here
                 ),
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: IconButton(
-                      icon: Icon(Icons.arrow_back, color: Colors.black87),
+                      icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -99,7 +100,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFBE9E7),
+                            color: isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -119,13 +120,13 @@ class WikiPlantDetailScreen extends StatelessWidget {
                             children: tags.map((t) => Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: AppColors.forest100,
+                                color: isDark ? AppColors.darkForestSubtle : AppColors.forest100,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 t,
-                                style: const TextStyle(
-                                  color: AppColors.forest600,
+                                style: TextStyle(
+                                  color: isDark ? AppColors.darkForestPrimary : AppColors.forest600,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -175,7 +176,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF9E6), // Light yellow for fun fact
+                        color: isDark ? AppColors.darkSurfaceElevated : AppColors.bone50, // Light yellow for fun fact
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -184,21 +185,21 @@ class WikiPlantDetailScreen extends StatelessWidget {
                             offset: const Offset(0, 4),
                           ),
                         ],
-                        border: Border.all(color: const Color(0xFFFFD54F), width: 1),
+                        border: Border.all(color: isDark ? AppColors.darkBorderDefault : AppColors.warningLight, width: 1),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.lightbulb_outline, color: Color(0xFFF57F17), size: 28),
+                          Icon(Icons.lightbulb_outline, color: isDark ? AppColors.warningDark : AppColors.warningLight, size: 28),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Did You Know?',
                                   style: TextStyle(
-                                    color: Color(0xFFF57F17),
+                                    color: isDark ? AppColors.warningDark : AppColors.warningLight,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -207,7 +208,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
                                 Text(
                                   funFact,
                                   style: TextStyle(
-                                    color: Colors.orange.shade900,
+                                    color: isDark ? AppColors.darkTextSecondary : AppColors.bone700,
                                     fontSize: 14,
                                     height: 1.5,
                                   ),

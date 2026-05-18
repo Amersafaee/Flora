@@ -9,8 +9,9 @@ import '../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
+  final ValueChanged<Locale>? onLocaleChanged;
 
-  const LoginScreen({super.key, this.onThemeChanged});
+  const LoginScreen({super.key, this.onThemeChanged, this.onLocaleChanged});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -104,7 +105,10 @@ class _LoginScreenState extends State<LoginScreen> {
         // Auth succeeded - StreamBuilder should handle this but add explicit
         // navigation as fallback to prevent the stuck spinner issue
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => MainTabScreen(onThemeChanged: widget.onThemeChanged ?? (_) {})),
+          MaterialPageRoute(builder: (_) => MainTabScreen(
+            onThemeChanged: widget.onThemeChanged ?? (_) {},
+            onLocaleChanged: widget.onLocaleChanged ?? (_) {},
+          )),
           (route) => false,
         );
         return;
@@ -140,18 +144,22 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
+    final colorScheme = Theme.of(context).colorScheme;
     setState(() => _isLoading = true);
     try {
       final result = await _authService.signInWithGoogle();
       if (!mounted) return;
       if (result == 'Success') {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => MainTabScreen(onThemeChanged: widget.onThemeChanged ?? (_) {})),
+          MaterialPageRoute(builder: (_) => MainTabScreen(
+            onThemeChanged: widget.onThemeChanged ?? (_) {},
+            onLocaleChanged: widget.onLocaleChanged ?? (_) {},
+          )),
           (route) => false,
         );
       } else if (result != 'cancelled') {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Google sign in failed. Please try again.'), backgroundColor: Colors.red),
+          SnackBar(content: const Text('Google sign in failed. Please try again.'), backgroundColor: colorScheme.error),
         );
       }
     } finally {
@@ -227,11 +235,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   fillColor: Theme.of(context).cardColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -270,11 +278,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -319,12 +327,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
               Row(
                 children: [
-                  const Expanded(child: Divider(color: Color(0xFFE0E0E0), thickness: 1)),
+                  Expanded(child: Divider(color: Theme.of(context).colorScheme.outline, thickness: 1)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: const Text('or', style: TextStyle(color: AppColors.bone500)),
                   ),
-                  const Expanded(child: Divider(color: Color(0xFFE0E0E0), thickness: 1)),
+                  Expanded(child: Divider(color: Theme.of(context).colorScheme.outline, thickness: 1)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -343,7 +351,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
                       ),
@@ -376,6 +384,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               MaterialPageRoute(
                                 builder: (context) => SignupScreen(
                                   onThemeChanged: widget.onThemeChanged,
+                                  onLocaleChanged: widget.onLocaleChanged,
                                 ),
                               ),
                             );

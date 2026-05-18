@@ -39,10 +39,11 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
     return null;
   }
 
-  Color _scoreColor(int score) {
-    if (score > 70) return AppColors.forest600;
-    if (score >= 40) return const Color(0xFFE65100);
-    return const Color(0xFFC62828);
+  Color _scoreColor(int score, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (score > 70) return isDark ? AppColors.successDark : AppColors.successLight;
+    if (score >= 40) return isDark ? AppColors.warningDark : AppColors.warningLight;
+    return isDark ? AppColors.errorDark : AppColors.errorLight;
   }
 
   String _scoreLabel(int score) {
@@ -303,7 +304,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 14, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: _scoreColor(healthScore)
+                                      color: _scoreColor(healthScore, context)
                                           .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(40),
                                     ),
@@ -315,7 +316,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                           style: TextStyle(
                                             fontSize: 28,
                                             fontWeight: FontWeight.bold,
-                                            color: _scoreColor(healthScore),
+                                            color: _scoreColor(healthScore, context),
                                             height: 1,
                                           ),
                                         ),
@@ -323,7 +324,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                           '/100',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: _scoreColor(healthScore)
+                                            color: _scoreColor(healthScore, context)
                                                 .withValues(alpha: 0.7),
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -334,7 +335,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
-                                            color: _scoreColor(healthScore),
+                                            color: _scoreColor(healthScore, context),
                                           ),
                                         ),
                                       ],

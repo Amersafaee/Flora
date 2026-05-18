@@ -500,6 +500,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             );
                           }
 
+                          final isDark = Theme.of(context).brightness == Brightness.dark;
+
                           return Column(
                             children: [
                               card,
@@ -508,13 +510,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF3ED),
+                                  color: isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: const Color(0xFFFF6B35).withValues(alpha: 0.3)),
+                                  border: Border.all(color: (isDark ? AppColors.darkTerracotta : AppColors.terracotta500).withValues(alpha: 0.3)),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.local_fire_department, color: Color(0xFFFF6B35), size: 36),
+                                    Icon(Icons.local_fire_department, color: isDark ? AppColors.darkTerracotta : AppColors.terracotta500, size: 36),
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Column(
@@ -522,14 +524,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         children: [
                                           Text(
                                             '$careStreak day care streak',
-                                            style: const TextStyle(color: Color(0xFF8D3A15), fontWeight: FontWeight.bold, fontSize: 18),
+                                            style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.terracotta900, fontWeight: FontWeight.bold, fontSize: 18),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
                                             careStreak == 0 
                                               ? 'Start your streak — complete a care task today'
                                               : (tasksToday > 0 ? 'Keep it going — you have tasks today' : 'Perfect — nothing due today'),
-                                            style: const TextStyle(color: Color(0xFFB55730), fontSize: 13),
+                                            style: TextStyle(color: isDark ? AppColors.darkTerracotta : AppColors.terracotta700, fontSize: 13),
                                           ),
                                         ],
                                       ),

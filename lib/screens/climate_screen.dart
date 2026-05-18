@@ -109,7 +109,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
         _humController.clear();
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reading saved'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('Reading saved'), backgroundColor: AppColors.successLight),
       );
     }
   }
@@ -118,6 +118,8 @@ class _ClimateScreenState extends State<ClimateScreen> {
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color humidityColor = isDark ? AppColors.darkTerracotta : AppColors.terracotta500;
     const Color terracotta = AppColors.terracotta900;
     
     return Scaffold(
@@ -246,7 +248,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
                             children: [
                               _buildLegendDot('Temp', primaryColor),
                               const SizedBox(width: 12),
-                              _buildLegendDot('Humidity', Colors.redAccent),
+                              _buildLegendDot('Humidity', humidityColor),
                             ],
                           ),
                         ],
@@ -286,7 +288,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
                                     size: const Size(double.infinity, 200),
                                     painter: RealChartPainter(
                                       tempColor: primaryColor,
-                                      humidityColor: Colors.redAccent,
+                                      humidityColor: humidityColor,
                                       tempReadings: _tempReadings,
                                       humReadings: _humReadings,
                                     ),

@@ -15,6 +15,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
   CameraController? _controller;
   bool _isInitialized = false;
   bool _isMeasuring = false;
+  bool _isDark = false;
   double _luxValue = 0;
   String _lightLevel = 'Tap Measure to start';
   String _lightDescription = 'Point your camera at the light source';
@@ -91,23 +92,28 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
     if (lux < 500) {
       _lightLevel = 'Low Light';
       _lightDescription = 'Good for shade-tolerant plants like Pothos and Snake Plant';
-      _levelColor = Colors.blueGrey;
+      // Low light → cool blue-toned neutral
+      _levelColor = _isDark ? AppColors.darkTextSecondary : AppColors.bone500;
     } else if (lux < 2500) {
       _lightLevel = 'Medium Light';
       _lightDescription = 'Ideal for Peace Lily, Philodendron and most Ferns';
-      _levelColor = Colors.orange;
+      // Medium light → warm amber/warning
+      _levelColor = _isDark ? AppColors.warningDark : AppColors.warningLight;
     } else if (lux < 10000) {
       _lightLevel = 'Bright Indirect';
       _lightDescription = 'Perfect for Monstera, Pothos and most tropical plants';
-      _levelColor = AppColors.forest900;
+      // Bright indirect → healthy forest green
+      _levelColor = _isDark ? AppColors.darkForestPrimary : AppColors.forest600;
     } else if (lux < 25000) {
       _lightLevel = 'Bright Direct';
       _lightDescription = 'Great for succulents, cacti and herbs';
-      _levelColor = Colors.amber.shade700;
+      // Bright direct → strong warning
+      _levelColor = _isDark ? AppColors.warningDark : AppColors.warning;
     } else {
       _lightLevel = 'Very Intense';
       _lightDescription = 'Too bright for most houseplants — risk of leaf scorch';
-      _levelColor = Colors.red;
+      // Very intense → error/danger
+      _levelColor = _isDark ? AppColors.errorDark : AppColors.errorLight;
     }
   }
 
@@ -138,6 +144,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
   @override
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
+    _isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -266,7 +273,9 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                   child: ElevatedButton(
                     onPressed: _isMeasuring ? _stopMeasuring : _startMeasuring,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isMeasuring ? Colors.red.shade400 : primaryColor,
+                      backgroundColor: _isMeasuring
+                          ? (_isDark ? AppColors.errorDark : AppColors.errorLight)
+                          : primaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 0,

@@ -14,13 +14,15 @@ class VitalsDashboardScreen extends StatefulWidget {
 
 class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
   Color _getScoreColor(int score) {
-    if (score > 70) return AppColors.forest900; // Green
-    if (score >= 40) return Colors.orange.shade600;
-    return Colors.red.shade600;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (score > 70) return isDark ? AppColors.successDark : AppColors.successLight;
+    if (score >= 40) return isDark ? AppColors.warningDark : AppColors.warningLight;
+    return isDark ? AppColors.errorDark : AppColors.errorLight;
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       return const Scaffold(body: Center(child: Text('Not logged in')));
@@ -123,21 +125,21 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                         Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                         _buildStatColumn(thrivingCount.toString(), 'Thriving', AppColors.forest900),
                         Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                        _buildStatColumn(needHelpCount.toString(), 'Need Help', Colors.red.shade600),
+                        _buildStatColumn(needHelpCount.toString(), 'Need Help', isDark ? AppColors.errorDark : AppColors.errorLight),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
                 
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Text(
                     'Your Plants',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.bone900,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                     ),
                   ),
                 ),
@@ -159,7 +161,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                         if (score > prevScore + 5) {
                           trendIcon = const Icon(Icons.arrow_upward, color: AppColors.forest900, size: 20);
                         } else if (score < prevScore - 5) {
-                          trendIcon = Icon(Icons.arrow_downward, color: Colors.red.shade600, size: 20);
+                          trendIcon = Icon(Icons.arrow_downward, color: isDark ? AppColors.errorDark : AppColors.errorLight, size: 20);
                         }
                       }
 

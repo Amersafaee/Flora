@@ -621,7 +621,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Color(0x1A8D3220),
+                                color: AppColors.terracotta100,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(Icons.local_hospital,
@@ -1126,7 +1126,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Color(0xFFFFFFFF),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -1280,11 +1280,12 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         : '';
 
     // Score colour
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color scoreColor = score > 70
-        ? AppColors.forest900
+        ? (isDark ? AppColors.successDark : AppColors.successLight)
         : score >= 40
-            ? Colors.orange.shade700
-            : Colors.red.shade700;
+            ? (isDark ? AppColors.warningDark : AppColors.warningLight)
+            : (isDark ? AppColors.errorDark : AppColors.errorLight);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -1421,15 +1422,15 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.red.shade50,
+                              color: isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100,
                               border: Border.all(
-                                  color: Colors.red.shade200, width: 1),
+                                  color: isDark ? AppColors.darkTerracotta : AppColors.terracotta500, width: 1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               issue,
                               style: TextStyle(
-                                color: Colors.red.shade700,
+                                color: isDark ? AppColors.errorDark : AppColors.errorLight,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1854,7 +1855,7 @@ class _MemorialSlideshowDialogState extends State<_MemorialSlideshowDialog> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       child: _isSaving 
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Color(0xFF1E1E1E), strokeWidth: 2))
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: AppColors.darkCanvas, strokeWidth: 2))
                         : const Text('Move to Memorial Garden', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
