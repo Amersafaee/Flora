@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/species_providers.dart';
 import '../../data/wishlist_providers.dart';
 import '../../data/plant_providers.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class SpeciesDetailScreen extends ConsumerStatefulWidget {
   final String speciesId;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../auth/auth_provider.dart';
+import '../../theme/app_theme.dart';
 
 // ─── Splash / Welcome screen ───────────────────────────────────────────────────
 // Shown for 600 ms, then routes to the correct next screen.
@@ -71,7 +72,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0E8), // AppColors.cream
+      backgroundColor: AppColors.bone50, // AppColors.cream
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnim,
@@ -85,11 +86,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                   width: 96,
                   height: 96,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2D5016),
+                    color: AppColors.forest900,
                     borderRadius: BorderRadius.circular(28),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x332D5016),
+                        color: Color(0x3314301E),
                         blurRadius: 24,
                         offset: Offset(0, 8),
                       ),
@@ -107,11 +108,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                     fontFamily: 'NotoSerif',
                     fontSize: 42,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF2D5016),
+                    color: AppColors.forest900,
                     letterSpacing: 1.5,
                     shadows: [
                       Shadow(
-                        color: const Color(0xFF2D5016).withAlpha(40),
+                        color: AppColors.forest900.withAlpha(40),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -123,7 +124,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                   'Your personal plant companion',
                   style: TextStyle(
                     fontSize: 14,
-                    color: const Color(0xFF6B8F5E),
+                    color: AppColors.forest500,
                     letterSpacing: 0.3,
                   ),
                 ),

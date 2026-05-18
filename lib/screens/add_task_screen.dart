@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 import '../models/task_model.dart';
+import '../theme/app_theme.dart';
 
 class AddTaskScreen extends StatefulWidget {
   final Task? task;
@@ -116,7 +117,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Something went wrong. Please try again.'),
-            backgroundColor: Colors.grey,
+            backgroundColor: AppColors.bone500,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -190,13 +191,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 controller: _plantNameController,
                 decoration: InputDecoration(
                   hintText: 'e.g. Monstera Deliciosa',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  hintStyle: TextStyle(color: AppColors.bone300),
                   filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E211E) : const Color(0xFFFFFFFF),
+                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCCCCCC))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCCCCCC))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF154212), width: 2)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
                 ),
               ),
               if (_showNameError)
@@ -224,12 +225,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 onTap: () => _selectDate(context),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)),
+                  decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(_formatDate(_selectedDate), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
-                      Icon(Icons.calendar_today, color: Colors.grey.shade500, size: 20),
+                      Icon(Icons.calendar_today, color: AppColors.bone500, size: 20),
                     ],
                   ),
                 ),
@@ -265,13 +266,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 maxLines: 4,
                 decoration: InputDecoration(
                   hintText: 'Any additional notes...',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  hintStyle: TextStyle(color: AppColors.bone300),
                   filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E211E) : const Color(0xFFFFFFFF),
+                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCCCCCC))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCCCCCC))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF154212), width: 2)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
                 ),
               ),
               const SizedBox(height: 48),
@@ -315,7 +316,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         decoration: BoxDecoration(
           color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300),
+          border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
         ),
         child: Text(
           label,
@@ -338,7 +339,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         decoration: BoxDecoration(
           color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300),
+          border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
         ),
         child: Text(
           label,

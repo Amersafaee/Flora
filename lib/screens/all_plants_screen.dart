@@ -4,6 +4,7 @@ import '../models/plant_model.dart';
 import '../services/firestore_service.dart';
 import 'plant_detail_screen.dart';
 import 'add_plant_screen.dart';
+import '../theme/app_theme.dart';
 
 class AllPlantsScreen extends StatelessWidget {
   const AllPlantsScreen({super.key});
@@ -96,7 +97,7 @@ class AllPlantsScreen extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     category,
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                    style: const TextStyle(color: AppColors.bone500, fontSize: 12),
                                   ),
                                 ],
                               ),
@@ -113,7 +114,7 @@ class AllPlantsScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            const Icon(Icons.chevron_right, color: Colors.grey),
+                            const Icon(Icons.chevron_right, color: AppColors.bone500),
                           ],
                         ),
                       ),

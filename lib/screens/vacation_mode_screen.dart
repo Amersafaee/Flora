@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 import '../models/task_model.dart';
+import '../theme/app_theme.dart';
 
 class VacationModeScreen extends StatefulWidget {
   const VacationModeScreen({super.key});
@@ -133,9 +134,9 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF154212),
+              primary: AppColors.forest900,
               onPrimary: Colors.white,
-              onSurface: Color(0xFF191C1B),
+              onSurface: AppColors.bone900,
             ),
           ),
           child: child!,
@@ -274,11 +275,11 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryColor = Color(0xFF154212);
+    const Color primaryColor = AppColors.forest900;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-    const Color terracotta = Color(0xFF8D3220);
+    const Color terracotta = AppColors.terracotta900;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
-    const Color lightGreen = Color(0xFFE8F3EA);
+    const Color lightGreen = AppColors.forest100;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -319,7 +320,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                 'We will take care of your reminders while you are away.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: AppColors.bone500,
                   fontSize: 14,
                 ),
               ),
@@ -355,7 +356,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                           Text(
                             'Pauses all plant care notifications.',
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: AppColors.bone500,
                               fontSize: 13,
                             ),
                           ),
@@ -393,7 +394,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                       Text(
                         'YOUR TRIP',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: AppColors.bone500,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.2,
@@ -403,7 +404,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                       // Start Date
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today, color: Colors.grey, size: 20),
+                          const Icon(Icons.calendar_today, color: AppColors.bone500, size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -420,7 +421,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                             child: Text(
                               _startDate != null ? DateFormat('MMM d, yyyy').format(_startDate!) : 'Select Date',
                               style: TextStyle(
-                                color: _startDate != null ? primaryColor : Colors.grey.shade500,
+                                color: _startDate != null ? primaryColor : AppColors.bone500,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
                               ),
@@ -432,7 +433,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                       // End Date
                       Row(
                         children: [
-                          const Icon(Icons.event, color: Colors.grey, size: 20),
+                          const Icon(Icons.event, color: AppColors.bone500, size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -449,7 +450,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                             child: Text(
                               _endDate != null ? DateFormat('MMM d, yyyy').format(_endDate!) : 'Select Date',
                               style: TextStyle(
-                                color: _endDate != null ? primaryColor : Colors.grey.shade500,
+                                color: _endDate != null ? primaryColor : AppColors.bone500,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
                               ),
@@ -537,7 +538,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                             final messenger = ScaffoldMessenger.of(context);
                             await Clipboard.setData(ClipboardData(text: _generatedPlanController.text));
                             messenger.showSnackBar(
-                              const SnackBar(content: Text('Copied to clipboard 📋'), backgroundColor: Color(0xFF154212)),
+                              const SnackBar(content: Text('Copied to clipboard 📋'), backgroundColor: AppColors.forest900),
                             );
                           },
                         ),

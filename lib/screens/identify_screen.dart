@@ -5,6 +5,7 @@ import '../services/gemini_service.dart';
 import 'identify_result_screen.dart';
 import '../services/onboarding_service.dart';
 import 'onboarding_overlay_screen.dart';
+import '../theme/app_theme.dart';
 
 class IdentifyScreen extends StatefulWidget {
   const IdentifyScreen({super.key});
@@ -14,8 +15,8 @@ class IdentifyScreen extends StatefulWidget {
 }
 
 class _IdentifyScreenState extends State<IdentifyScreen> {
-  static const Color _darkGreen = Color(0xFF154212);
-  static const Color _softGreen = Color(0xFFE8F5E9);
+  static const Color _darkGreen = AppColors.forest900;
+  static const Color _softGreen = AppColors.forest100;
 
   File? _selectedImage;
   bool _isAnalyzing = false;
@@ -319,7 +320,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 width: 40,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -343,14 +344,14 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
       // Disabled state
       return Container(
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
           child: Text(
             'Select a Photo to Analyze',
             style: TextStyle(
-              color: Colors.grey.shade500,
+              color: AppColors.bone500,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -363,18 +364,18 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
     return ElevatedButton(
       onPressed: _isAnalyzing ? null : _analyzeImage,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF154212),
-        disabledBackgroundColor: const Color(0xFF154212),
+        backgroundColor: AppColors.forest900,
+        disabledBackgroundColor: AppColors.forest900,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         elevation: 0,
       ),
       child: _isAnalyzing
-          ? const Row(
+          ? Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
@@ -382,8 +383,8 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                     strokeWidth: 2.5,
                   ),
                 ),
-                SizedBox(width: 12),
-                Text(
+                const SizedBox(width: 12),
+                const Text(
                   'Analyzing...',
                   style: TextStyle(
                     color: Colors.white,
@@ -399,7 +400,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 Icon(Icons.auto_awesome, color: Colors.white, size: 20),
                 SizedBox(width: 10),
                 Text(
-                  'Analyze with Flora 🌿',
+                  'Analyze with Flora',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,

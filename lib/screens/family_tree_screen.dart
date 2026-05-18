@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'create_listing_screen.dart';
+import '../theme/app_theme.dart';
 
 class FamilyTreeScreen extends StatefulWidget {
   final String plantId;
@@ -27,26 +28,26 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
       builder: (context) {
         return AlertDialog(
           title: Text('Record Parent Plant', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          backgroundColor: const Color(0xFFFFFFFF),
+          backgroundColor: AppColors.white,
           content: TextField(
             controller: parentNameController,
             decoration: InputDecoration(
               hintText: 'e.g. Grandma\'s Monstera',
-              hintStyle: TextStyle(color: Colors.grey.shade400),
+              hintStyle: TextStyle(color: AppColors.bone300),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF154212), width: 2),
+                borderSide: const BorderSide(color: AppColors.forest900, width: 2),
               ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.bone500)),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -63,7 +64,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                 if (context.mounted) Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF154212),
+                backgroundColor: AppColors.forest900,
               ),
               child: const Text('Save', style: TextStyle(color: Colors.white)),
             ),
@@ -81,26 +82,26 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
       builder: (context) {
         return AlertDialog(
           title: Text('Add Propagation', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          backgroundColor: const Color(0xFFFFFFFF),
+          backgroundColor: AppColors.white,
           content: TextField(
             controller: childNameController,
             decoration: InputDecoration(
               hintText: 'e.g. Propagation #1',
-              hintStyle: TextStyle(color: Colors.grey.shade400),
+              hintStyle: TextStyle(color: AppColors.bone300),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF154212), width: 2),
+                borderSide: const BorderSide(color: AppColors.forest900, width: 2),
               ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.bone500)),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -128,7 +129,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                             children: [
                               const Text('List this cutting for swap? 🔄', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 8),
-                              Text('Share your ${widget.plantName} cutting with the community', style: const TextStyle(color: Colors.grey, fontSize: 16)),
+                              Text('Share your ${widget.plantName} cutting with the community', style: const TextStyle(color: AppColors.bone500, fontSize: 16)),
                               const SizedBox(height: 24),
                               ElevatedButton(
                                 onPressed: () {
@@ -136,7 +137,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => CreateListingScreen(initialPlantName: name)));
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF154212),
+                                  backgroundColor: AppColors.forest900,
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
@@ -145,7 +146,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                               const SizedBox(height: 12),
                               TextButton(
                                 onPressed: () => Navigator.pop(sheetContext),
-                                child: const Text('Not now', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                                child: const Text('Not now', style: TextStyle(color: AppColors.bone500, fontWeight: FontWeight.bold)),
                               ),
                             ],
                           ),
@@ -158,9 +159,9 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF154212),
+                backgroundColor: AppColors.forest900,
               ),
-              child: const Text('Save', style: TextStyle(color: Colors.white)),
+              child: Text('Save', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -170,9 +171,9 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryColor = Color(0xFF154212);
-    const Color backgroundColor = Color(0xFFF8FAF8);
-    const Color softGreen = Color(0xFFE8F3EA);
+    const Color primaryColor = AppColors.forest900;
+    const Color backgroundColor = AppColors.bone25;
+    const Color softGreen = AppColors.forest100;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
 
     return Scaffold(
@@ -199,7 +200,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
             Text(
               widget.plantName,
               style: TextStyle(
-                color: Colors.grey.shade600,
+                color: AppColors.bone500,
                 fontSize: 14,
               ),
             ),
@@ -210,7 +211,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return const Center(
-                      child: Text('Could not load family tree.', style: TextStyle(color: Colors.grey)),
+                      child: Text('Could not load family tree.', style: TextStyle(color: AppColors.bone500)),
                     );
                   }
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -235,7 +236,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                           if (parentData != null)
                             Column(
                               children: [
-                                Text('Parent Plant', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                Text('Parent Plant', style: TextStyle(color: AppColors.bone500, fontSize: 12)),
                                 const SizedBox(height: 4),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -279,7 +280,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                             ),
                             child: Text(
                               widget.plantName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
@@ -295,12 +296,12 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                                 // If multiple children, we can just show them in a column
                                 // Alternatively, draw a horizontal line and branch out, but column is safer and works cleanly.
                                 for (var child in childDocs) ...[
-                                  Text('Propagated From This', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                  Text('Propagated From This', style: TextStyle(color: AppColors.bone500, fontSize: 12)),
                                   const SizedBox(height: 4),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: Theme.of(context).cardColor,
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(color: primaryColor, width: 1.5),
                                     ),
@@ -371,10 +372,10 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
+                      child: Text(
                         'Add Propagation',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -394,7 +395,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     return Container(
       width: 2,
       height: 30,
-      color: Colors.grey.shade400,
+      color: AppColors.bone300,
     );
   }
 
@@ -410,12 +411,12 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
       decoration: BoxDecoration(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade400, width: 1, style: BorderStyle.solid),
+        border: Border.all(color: AppColors.bone300, width: 1, style: BorderStyle.solid),
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: Colors.grey.shade500,
+          color: AppColors.bone500,
           fontStyle: FontStyle.italic,
           fontSize: 14,
         ),

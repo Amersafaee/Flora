@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -120,7 +120,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   labelText: 'Your name',
                   prefixIcon: const Icon(Icons.person_outline),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppColors.white,
                   border: OutlineInputBorder(
                     borderRadius: AppRadius.borderMd,
                     borderSide: BorderSide.none,

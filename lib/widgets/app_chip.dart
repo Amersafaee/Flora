@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
+import '../theme/app_theme.dart';
 
 /// A small pill-shaped chip with leaf-green background.
 /// Use for tags like plant categories, care types, or status labels.

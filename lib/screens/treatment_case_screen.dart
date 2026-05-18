@@ -10,6 +10,7 @@ import '../services/firestore_service.dart';
 import '../services/gemini_service.dart';
 import '../services/storage_service.dart';
 import 'create_post_screen.dart' as import_create_post;
+import '../theme/app_theme.dart';
 
 class TreatmentCaseScreen extends StatefulWidget {
   final String plantId;
@@ -166,7 +167,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                         'out of 100',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: AppColors.bone500,
                         ),
                       ),
                     ],
@@ -185,7 +186,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                 const SizedBox(height: 8),
                 Text(
                   observation,
-                  style: TextStyle(color: Colors.grey.shade700, height: 1.5),
+                  style: TextStyle(color: AppColors.bone700, height: 1.5),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -200,13 +201,13 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                 const SizedBox(height: 8),
                 Text(
                   recommendation,
-                  style: TextStyle(color: Colors.grey.shade700, height: 1.5),
+                  style: TextStyle(color: AppColors.bone700, height: 1.5),
                 ),
                 const SizedBox(height: 24),
               ],
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF154212),
+                  backgroundColor: AppColors.forest900,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -221,10 +222,10 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                     newStatus: 'Monitoring',
                   );
                 },
-                child: const Text(
+                child: Text(
                   'Save Progress',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -324,7 +325,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                 margin: const EdgeInsets.all(24),
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
+                  color: AppColors.forest100,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Column(
@@ -332,13 +333,13 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.check_circle_outline,
-                        color: Color(0xFF154212),
+                        color: AppColors.forest900,
                         size: 48,
                       ),
                     ),
@@ -347,7 +348,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                       'No health issues recorded.\nYour plant appears to be doing well.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Color(0xFF154212),
+                        color: AppColors.forest900,
                         fontSize: 16,
                         height: 1.5,
                       ),
@@ -378,7 +379,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
               return Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
@@ -413,7 +414,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                           ),
                           child: Text(
                             tCase.status,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -426,7 +427,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                     Text(
                       'Detected ${DateFormat('MMM d, yyyy').format(tCase.detectedDate)}',
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: AppColors.bone500,
                         fontSize: 13,
                       ),
                     ),
@@ -440,13 +441,13 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE8F5E9),
+                              color: AppColors.forest100,
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
                               '${e.key + 1}. ${e.value}',
                               style: const TextStyle(
-                                color: Color(0xFF154212),
+                                color: AppColors.forest900,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -476,7 +477,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                                 Text('Before',
                                     style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey.shade500)),
+                                        color: AppColors.bone500)),
                               ],
                             ),
                           ),
@@ -497,7 +498,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                                 Text('After',
                                     style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey.shade500)),
+                                        color: AppColors.bone500)),
                               ],
                             ),
                           ),
@@ -508,7 +509,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                       Text(
                         '"${tCase.progressNotes.last}"',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: AppColors.bone500,
                           fontSize: 13,
                           fontStyle: FontStyle.italic,
                         ),
@@ -520,19 +521,19 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                         padding: const EdgeInsets.symmetric(
                             vertical: 12, horizontal: 16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5E9),
+                          color: AppColors.forest100,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Icon(Icons.celebration,
-                                color: Color(0xFF154212), size: 18),
+                                color: AppColors.forest900, size: 18),
                             const SizedBox(width: 8),
                             Text(
                               'Recovered in ${tCase.resolvedDate!.difference(tCase.detectedDate).inDays} days',
                               style: const TextStyle(
-                                color: Color(0xFF154212),
+                                color: AppColors.forest900,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -542,17 +543,17 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                     else
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF154212),
+                          backgroundColor: AppColors.forest900,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         onPressed: () => _checkProgress(tCase),
-                        child: const Text(
+                        child: Text(
                           'Check Progress',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -561,7 +562,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: const Color(0xFF154212), width: 1.5),
+                          side: BorderSide(color: AppColors.forest900, width: 1.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -580,7 +581,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                         child: const Text(
                           'Ask the Community 🌿',
                           style: TextStyle(
-                            color: Color(0xFF154212),
+                            color: AppColors.forest900,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -634,7 +635,7 @@ class _RecoveryCelebrationDialogState extends State<_RecoveryCelebrationDialog> 
   @override
   Widget build(BuildContext context) {
     return Dialog.fullscreen(
-      backgroundColor: const Color(0xFFE8F5E9),
+      backgroundColor: AppColors.forest100,
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -643,10 +644,10 @@ class _RecoveryCelebrationDialogState extends State<_RecoveryCelebrationDialog> 
             children: [
               ScaleTransition(
                 scale: _scaleAnimation,
-                child: const Icon(Icons.check_circle, color: Color(0xFF154212), size: 100),
+                child: const Icon(Icons.check_circle, color: AppColors.forest900, size: 100),
               ),
               const SizedBox(height: 32),
-              const Text('Recovery Complete! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF154212))),
+              const Text('Recovery Complete! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.forest900)),
               const SizedBox(height: 32),
               if (widget.initialPhotoUrl.isNotEmpty && widget.latestPhotoUrl.isNotEmpty)
                 Row(
@@ -659,7 +660,7 @@ class _RecoveryCelebrationDialogState extends State<_RecoveryCelebrationDialog> 
                             child: Image.network(widget.initialPhotoUrl, height: 150, width: double.infinity, fit: BoxFit.cover),
                           ),
                           const SizedBox(height: 8),
-                          Text('Before', style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold)),
+                          Text('Before', style: TextStyle(color: AppColors.bone700, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -672,7 +673,7 @@ class _RecoveryCelebrationDialogState extends State<_RecoveryCelebrationDialog> 
                             child: Image.network(widget.latestPhotoUrl, height: 150, width: double.infinity, fit: BoxFit.cover),
                           ),
                           const SizedBox(height: 8),
-                          Text('After', style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold)),
+                          Text('After', style: TextStyle(color: AppColors.bone700, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -682,9 +683,9 @@ class _RecoveryCelebrationDialogState extends State<_RecoveryCelebrationDialog> 
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF154212).withValues(alpha: 0.2)),
+                  border: Border.all(color: Color(0x3314301E)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -694,7 +695,7 @@ class _RecoveryCelebrationDialogState extends State<_RecoveryCelebrationDialog> 
                     Expanded(
                       child: Text(
                         'Your ${widget.plantName} fought back from ${widget.diagnosis} and won. You did that. 🌿',
-                        style: const TextStyle(color: Color(0xFF154212), fontSize: 16, height: 1.5, fontStyle: FontStyle.italic),
+                        style: const TextStyle(color: AppColors.forest900, fontSize: 16, height: 1.5, fontStyle: FontStyle.italic),
                       ),
                     ),
                   ],
@@ -707,7 +708,7 @@ class _RecoveryCelebrationDialogState extends State<_RecoveryCelebrationDialog> 
                   icon: const Icon(Icons.share, color: Colors.white),
                   label: const Text('Share Recovery Story', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF154212),
+                    backgroundColor: AppColors.forest900,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
@@ -723,7 +724,7 @@ class _RecoveryCelebrationDialogState extends State<_RecoveryCelebrationDialog> 
                   Navigator.pop(context); // pop dialog
                   Navigator.pop(context); // pop screen
                 },
-                child: const Text('Continue', style: TextStyle(color: Color(0xFF154212), fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text('Continue', style: TextStyle(color: AppColors.forest900, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

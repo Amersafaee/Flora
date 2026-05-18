@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_plant_screen.dart';
 import 'flora_chats_list_screen.dart';
+import '../theme/app_theme.dart';
 
 class WikiPlantDetailScreen extends StatelessWidget {
   final Map<String, dynamic> plantData;
@@ -41,7 +42,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                      icon: Icon(Icons.arrow_back, color: Colors.black87),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -89,7 +90,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
                           Text(
                             commonName,
                             style: const TextStyle(
-                              color: Colors.grey,
+                              color: AppColors.bone500,
                               fontSize: 16,
                               fontStyle: FontStyle.italic,
                             ),
@@ -104,7 +105,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
                           child: Text(
                             category,
                             style: const TextStyle(
-                              color: Color(0xFF8D3220),
+                              color: AppColors.terracotta900,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
@@ -118,13 +119,13 @@ class WikiPlantDetailScreen extends StatelessWidget {
                             children: tags.map((t) => Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE8F5E9),
+                                color: AppColors.forest100,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 t,
                                 style: const TextStyle(
-                                  color: Color(0xFF2E7D32),
+                                  color: AppColors.forest600,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -252,13 +253,13 @@ class WikiPlantDetailScreen extends StatelessWidget {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 20),
+                                const Icon(Icons.check_circle, color: AppColors.forest600, size: 20),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
                                     tip,
                                     style: TextStyle(
-                                      color: Colors.grey.shade800,
+                                      color: AppColors.bone900,
                                       fontSize: 14,
                                       height: 1.4,
                                     ),
@@ -339,14 +340,14 @@ class WikiPlantDetailScreen extends StatelessWidget {
   Widget _buildInfoRow(IconData icon, String label, String value, Color textColor) {
     return Row(
       children: [
-        Icon(icon, color: Colors.grey, size: 24),
+        Icon(icon, color: AppColors.bone500, size: 24),
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: AppColors.bone500, fontSize: 12, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(

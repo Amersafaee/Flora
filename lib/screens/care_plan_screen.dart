@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../services/firestore_service.dart';
 import '../services/gemini_service.dart';
 import '../models/plant_model.dart';
+import '../theme/app_theme.dart';
 
 class CarePlanScreen extends StatefulWidget {
   const CarePlanScreen({super.key});
@@ -50,7 +51,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF154212)),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.forest900),
                   child: const Text('Close', style: TextStyle(color: Colors.white)),
                 ),
               ],
@@ -70,7 +71,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
     if (type.toLowerCase() == 'watering') return Colors.blue;
     if (type.toLowerCase() == 'fertilizing') return Colors.green;
     if (type.toLowerCase() == 'repotting') return Colors.brown;
-    return Colors.grey;
+    return AppColors.bone500;
   }
 
   @override
@@ -81,7 +82,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('My Care Plan'),
+        title: Text('My Care Plan'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
@@ -97,7 +98,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
                 icon: _isGenerating ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.auto_awesome),
                 label: Text(_isGenerating ? 'Generating...' : 'Regenerate Plan'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF154212),
+                  backgroundColor: AppColors.forest900,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -110,7 +111,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
               builder: (context, plantSnapshot) {
                 if (plantSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
                 if (!plantSnapshot.hasData || plantSnapshot.data!.isEmpty) {
-                  return const Center(child: Text('Add plants to see your care plan', style: TextStyle(fontSize: 16, color: Colors.grey)));
+                  return const Center(child: Text('Add plants to see your care plan', style: TextStyle(fontSize: 16, color: AppColors.bone500)));
                 }
 
                 final plants = plantSnapshot.data!;
@@ -131,7 +132,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              child: Text(plant.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF154212))),
+                              child: Text(plant.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.forest900)),
                             ),
                             ...tasks.map((doc) {
                               final taskData = doc.data() as Map<String, dynamic>;
@@ -145,7 +146,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
                                   decoration: BoxDecoration(shape: BoxShape.circle, color: _getTaskColor(type)),
                                 ),
                                 title: Text(type),
-                                trailing: Text(dateStr, style: const TextStyle(color: Colors.grey)),
+                                trailing: Text(dateStr, style: const TextStyle(color: AppColors.bone500)),
                               );
                             }),
                             const Divider(),

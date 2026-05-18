@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../services/firestore_service.dart';
+import '../theme/app_theme.dart';
 
 class CollectionPersonalityScreen extends StatefulWidget {
   const CollectionPersonalityScreen({super.key});
@@ -102,7 +103,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFF154212),
+        backgroundColor: AppColors.forest900,
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
@@ -115,7 +116,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF2D5A27), Color(0xFF154212)],
+            colors: [AppColors.forest700, AppColors.forest900],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -141,7 +142,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                       const SizedBox(height: 32),
                       Text(
                         _personalityTitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -173,10 +174,10 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Top Categories',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Theme.of(context).cardColor,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -210,7 +211,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                                             child: Container(
                                               width: (MediaQuery.of(context).size.width - 200) * ratio,
                                               decoration: BoxDecoration(
-                                                color: Colors.white,
+                                                color: Theme.of(context).cardColor,
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                             ),
@@ -239,7 +240,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                         onPressed: _sharePersonality,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF154212),
+                          foregroundColor: AppColors.forest900,
                           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                         ),

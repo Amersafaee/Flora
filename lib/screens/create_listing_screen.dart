@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import '../theme/app_theme.dart';
 
 class CreateListingScreen extends StatefulWidget {
   final String? initialPlantName;
@@ -237,7 +238,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('List Your Plant', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('List Your Plant', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         actions: [
@@ -260,10 +261,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               child: Container(
                 height: 200,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
+                  color: AppColors.forest100,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: hasImage ? Colors.transparent : Colors.grey.shade300,
+                    color: hasImage ? Colors.transparent : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
                     width: 1.5,
                   ),
                 ),
@@ -303,7 +304,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                   _existingImageUrl,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => const Center(
-                                    child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                    child: Icon(Icons.broken_image, size: 40, color: AppColors.bone500),
                                   ),
                                 ),
                                 Positioned(
@@ -330,16 +331,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                           : const Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.add_photo_alternate_outlined, size: 40, color: Color(0xFF154212)),
+                                Icon(Icons.add_photo_alternate_outlined, size: 40, color: AppColors.forest900),
                                 SizedBox(height: 8),
                                 Text(
                                   'Add a photo',
-                                  style: TextStyle(color: Color(0xFF154212), fontWeight: FontWeight.w500),
+                                  style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.w500),
                                 ),
                                 SizedBox(height: 4),
                                 Text(
                                   'Tap to choose from gallery or camera',
-                                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                                  style: TextStyle(color: AppColors.bone500, fontSize: 12),
                                 ),
                               ],
                             ),
@@ -356,8 +357,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 hintText: 'e.g. Monstera Albo cutting',
                 filled: true,
                 fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.grey)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
               ),
             ),
             const SizedBox(height: 24),
@@ -388,8 +389,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 hintText: 'Describe your plant or cutting',
                 filled: true,
                 fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.grey)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
               ),
             ),
             const SizedBox(height: 24),
@@ -402,8 +403,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 hintText: 'e.g. Rare Philodendrons or leave empty if free',
                 filled: true,
                 fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.grey)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
               ),
             ),
             const SizedBox(height: 24),
@@ -416,8 +417,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 hintText: 'e.g. North London',
                 filled: true,
                 fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.grey)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
               ),
             ),
             const SizedBox(height: 40),

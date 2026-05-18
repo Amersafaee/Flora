@@ -10,6 +10,7 @@ import '../services/gemini_service.dart';
 import 'package:intl/intl.dart';
 import '../services/onboarding_service.dart';
 import 'onboarding_overlay_screen.dart';
+import '../theme/app_theme.dart';
 
 class ChatMessage {
   final String role;
@@ -288,19 +289,19 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: Color(0xFF154212)),
+              leading: const Icon(Icons.camera_alt, color: AppColors.forest900),
               title: const Text('Take Photo',
                   style: TextStyle(fontWeight: FontWeight.w500)),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF154212)),
+              leading: const Icon(Icons.photo_library, color: AppColors.forest900),
               title: const Text('Choose from Gallery',
                   style: TextStyle(fontWeight: FontWeight.w500)),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
@@ -317,8 +318,12 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
     if (pickedFile == null) return;
 
     final File imageFile = File(pickedFile.path);
-    final String typedPrompt = _textController.text.trim();
-    _textController.clear();
+
+    // Show caption bottom sheet before sending
+    if (!mounted) return;
+    final String? caption = await _showImageCaptionSheet(imageFile);
+    // null means user cancelled
+    if (caption == null) return;
 
     setState(() => _isTyping = true);
 
@@ -334,13 +339,13 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
 
     final userMsg = ChatMessage(
       role: 'user',
-      text: typedPrompt,
+      text: caption,
       imageUrl: imageUrl,
       imageFile: imageFile,
       timestamp: DateTime.now(),
     );
     await _saveMessageToFirestore(userMsg);
-    final previewText = typedPrompt.isNotEmpty ? typedPrompt : '📷 Image';
+    final previewText = caption.isNotEmpty ? caption : '📷 Image';
     await _updateConversationMeta(
       lastMessage: previewText,
       newTitle: wasFirst ? previewText.substring(0, previewText.length > 30 ? 30 : previewText.length) : null,
@@ -348,7 +353,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
     _scrollToBottom();
 
     final response = await _geminiService.analyzeePlantImage(
-        imageFile, typedPrompt.isNotEmpty ? typedPrompt : null);
+        imageFile, caption.isNotEmpty ? caption : null);
 
     if (mounted) {
       setState(() => _isTyping = false);
@@ -364,6 +369,115 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
               0, floraPreview.length > 60 ? 60 : floraPreview.length));
       _scrollToBottom();
     }
+  }
+
+  /// Shows a bottom sheet with the picked image preview and an optional caption
+  /// input. Returns the caption string (may be empty) when the user taps Send,
+  /// or null when the user cancels.
+  Future<String?> _showImageCaptionSheet(File imageFile) async {
+    final captionController = TextEditingController();
+    String? result; // stays null unless user taps Send
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Image preview
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.file(
+                      imageFile,
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Caption text field
+                  TextField(
+                    controller: captionController,
+                    autofocus: false,
+                    maxLines: 3,
+                    minLines: 1,
+                    decoration: InputDecoration(
+                      hintText: 'Add a caption or question... (optional)',
+                      hintStyle: TextStyle(color: AppColors.bone500, fontSize: 14),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Send button
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        result = captionController.text.trim();
+                        Navigator.pop(ctx);
+                      },
+                      icon: const Icon(Icons.send, color: Colors.white, size: 18),
+                      label: const Text(
+                        'Send',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.forest900,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Cancel button
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(color: AppColors.bone500, fontSize: 15),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    captionController.dispose();
+    return result;
   }
 
   Future<void> _clearChatHistory() async {
@@ -393,7 +507,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
-    final Color backgroundColor = Theme.of(context).brightness == Brightness.dark ? const Color(0xFF121212) : const Color(0xFFF8FAF8);
+    final Color backgroundColor = Theme.of(context).brightness == Brightness.dark ? AppColors.darkCanvas : AppColors.bone25;
     
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -438,7 +552,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                             Text(
                               'AI Plant Consultant',
                               style: TextStyle(
-                                color: Colors.grey.shade600,
+                                color: AppColors.bone500,
                                 fontSize: 12,
                               ),
                             ),
@@ -458,8 +572,8 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 ListTile(
-                                  leading: const Icon(Icons.delete_outline, color: Color(0xFF8D3220)),
-                                  title: const Text('Clear Chat History', style: TextStyle(color: Color(0xFF8D3220))),
+                                  leading: const Icon(Icons.delete_outline, color: AppColors.terracotta900),
+                                  title: const Text('Clear Chat History', style: TextStyle(color: AppColors.terracotta900)),
                                   onTap: () {
                                     Navigator.pop(context);
                                     _clearChatHistory();
@@ -482,11 +596,11 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                                             child: Column(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                const Icon(Icons.eco, color: Color(0xFF154212), size: 48),
+                                                const Icon(Icons.eco, color: AppColors.forest900, size: 48),
                                                 const SizedBox(height: 16),
-                                                const Text('Flora', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF154212))),
+                                                const Text('Flora', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.forest900)),
                                                 const SizedBox(height: 4),
-                                                const Text('Your AI Plant Care Consultant', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey)),
+                                                const Text('Your AI Plant Care Consultant', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.bone500)),
                                                 const SizedBox(height: 24),
                                                 const Text(
                                                   'Flora knows your entire plant collection and uses that knowledge to give you personalised care advice. She learns from your journal entries, tracks your plant health over time, and is always here when your plants need attention.',
@@ -494,14 +608,14 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                                                   style: TextStyle(fontSize: 14, height: 1.5),
                                                 ),
                                                 const SizedBox(height: 32),
-                                                const Text('Version 1.0.0', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                                const Text('Version 1.0.0', style: TextStyle(fontSize: 12, color: AppColors.bone500)),
                                                 const SizedBox(height: 24),
                                                 SizedBox(
                                                   width: double.infinity,
                                                   child: ElevatedButton(
                                                     onPressed: () => Navigator.pop(context),
                                                     style: ElevatedButton.styleFrom(
-                                                      backgroundColor: const Color(0xFF154212),
+                                                      backgroundColor: AppColors.forest900,
                                                       padding: const EdgeInsets.symmetric(vertical: 16),
                                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                                     ),
@@ -526,15 +640,15 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                 ],
               ),
             ),
-            const Divider(height: 1, thickness: 1, color: Colors.black12),
+            Divider(height: 1, thickness: 1, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
 
             // Context-loading banner — shown briefly when Flora first opens
             if (_isContextLoading)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF1A2B1A)
-                    : const Color(0xFFF0F7F0),
+                    ? AppColors.darkSurface
+                    : AppColors.forest100,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -544,14 +658,14 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                       height: 12,
                       child: CircularProgressIndicator(
                         strokeWidth: 1.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF154212)),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.forest900),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Flora is reviewing your plants…',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: AppColors.bone500,
                         fontSize: 12,
                       ),
                     ),
@@ -573,13 +687,13 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
                                   'Today, ${DateFormat('h:mm a').format(DateTime.now())}',
                                   style: TextStyle(
-                                    color: Colors.grey.shade600,
+                                    color: AppColors.bone500,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -638,7 +752,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
             // Bottom Input Area
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E211E) : const Color(0xFFFFFFFF),
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
@@ -655,10 +769,10 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.image_outlined, color: Colors.grey.shade600),
+                      child: Icon(Icons.image_outlined, color: AppColors.bone500),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -666,7 +780,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: TextField(
@@ -677,7 +791,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                         },
                         decoration: InputDecoration(
                           hintText: 'Ask Flora anything about plants',
-                          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                          hintStyle: TextStyle(color: AppColors.bone500, fontSize: 14),
                           border: InputBorder.none,
                         ),
                       ),
@@ -689,10 +803,10 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _hasText ? const Color(0xFF154212) : const Color(0xFFCCCCCC),
+                        color: _hasText ? AppColors.forest900 : AppColors.bone300,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.send, color: Colors.white, size: 20),
+                      child: Icon(Icons.send, color: Colors.white, size: 20),
                     ),
                   ),
                 ],
@@ -735,7 +849,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                 'Your personal plant care assistant',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey,
+                  color: AppColors.bone500,
                 ),
               ),
               const SizedBox(height: 40),
@@ -768,7 +882,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -803,7 +917,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                   color: primaryColor,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.eco, color: Colors.white, size: 16),
+                child: Icon(Icons.eco, color: Colors.white, size: 16),
               )
             else
               const SizedBox(width: 28),
@@ -812,7 +926,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E3A1E) : const Color(0xFFE8F5E9),
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkForestSubtle : AppColors.forest100,
                   borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(20),
                     bottomLeft: Radius.circular(20),
@@ -836,9 +950,9 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                                   : const SizedBox(
                                       width: 200,
                                       height: 150,
-                                      child: Center(child: CircularProgressIndicator(color: Color(0xFF154212), strokeWidth: 2)),
+                                      child: Center(child: CircularProgressIndicator(color: AppColors.forest900, strokeWidth: 2)),
                                     ),
-                          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 40),
+                          errorBuilder: (_, __, ___) => Icon(Icons.broken_image, size: 40),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -849,14 +963,14 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                         styleSheet: MarkdownStyleSheet(
                           p: TextStyle(
                             color: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFFE8F0E8)
+                                ? AppColors.forest100
                                 : Theme.of(context).colorScheme.onSurface,
                             fontSize: 15,
                             height: 1.4,
                           ),
                           listBullet: TextStyle(
                             color: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFFE8F0E8)
+                                ? AppColors.forest100
                                 : Theme.of(context).colorScheme.onSurface,
                             fontSize: 15,
                           ),
@@ -874,7 +988,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
             padding: const EdgeInsets.only(left: 40, top: 4),
             child: Text(
               DateFormat('h:mm a').format(timestamp),
-              style: const TextStyle(color: Colors.grey, fontSize: 11),
+              style: const TextStyle(color: AppColors.bone500, fontSize: 11),
             ),
           ),
       ],
@@ -892,7 +1006,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
               color: primaryColor,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.eco, color: Colors.white, size: 16),
+            child: Icon(Icons.eco, color: Colors.white, size: 16),
           )
         else
           const SizedBox(width: 28),
@@ -900,7 +1014,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E3A1E) : const Color(0xFFE8F5E9),
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkForestSubtle : AppColors.forest100,
             borderRadius: const BorderRadius.only(
               topRight: Radius.circular(20),
               bottomLeft: Radius.circular(20),
@@ -937,7 +1051,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
         width: 6,
         height: 6,
         decoration: BoxDecoration(
-          color: active > 0 ? Colors.grey.shade700 : Colors.grey.shade400,
+          color: active > 0 ? AppColors.bone700 : AppColors.bone300,
           shape: BoxShape.circle,
         ),
       ),
@@ -966,7 +1080,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                   if (imageFile != null || imageUrl.isNotEmpty) ...[
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF154212),
+                        color: AppColors.forest900,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       padding: const EdgeInsets.all(6),
@@ -999,8 +1113,8 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                   if (text.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF154212),
+                      decoration: BoxDecoration(
+                        color: AppColors.forest900,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(20),
                           bottomLeft: Radius.circular(20),
@@ -1009,7 +1123,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                       ),
                       child: Text(
                         text,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           height: 1.4,
@@ -1022,7 +1136,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
             const SizedBox(width: 12),
             if (isLastInGroup)
               const CircleAvatar(
-                backgroundColor: Colors.grey,
+                backgroundColor: AppColors.bone500,
                 radius: 16,
                 child: Icon(Icons.person, color: Colors.white, size: 18),
               )
@@ -1035,7 +1149,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
             padding: const EdgeInsets.only(right: 44, top: 4),
             child: Text(
               DateFormat('h:mm a').format(timestamp),
-              style: const TextStyle(color: Colors.grey, fontSize: 11),
+              style: const TextStyle(color: AppColors.bone500, fontSize: 11),
             ),
           ),
       ],

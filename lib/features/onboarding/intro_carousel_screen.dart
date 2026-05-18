@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 // ─── Intro carousel ────────────────────────────────────────────────────────────
 // Shown only once. Uses SharedPreferences to remember it was seen.
@@ -22,14 +22,14 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
       title: 'Identify any plant',
       subtitle: 'Point your camera and Flora names it.',
       bgColor: Color(0xFFF5F0E8), // cream
-      accentColor: Color(0xFF2D5016),
+      accentColor: AppColors.forest900,
     ),
     _Slide(
       emoji: '📅',
       title: 'Never miss a watering',
       subtitle: 'Flora reminds you exactly when to care.',
       bgColor: Color(0xFFE8F4E8),
-      accentColor: Color(0xFF2D5016),
+      accentColor: AppColors.forest900,
     ),
     _Slide(
       emoji: '👥',

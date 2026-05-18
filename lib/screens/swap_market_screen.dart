@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'create_listing_screen.dart';
 import 'swap_conversations_screen.dart';
+import '../theme/app_theme.dart';
 
 class SwapMarketScreen extends StatefulWidget {
   const SwapMarketScreen({super.key});
@@ -20,7 +21,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-    const Color softGreen = Color(0xFFE8F3EA);
+    const Color softGreen = AppColors.forest100;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -79,11 +80,11 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                                           return const Center(child: CircularProgressIndicator());
                                         }
                                         if (snapshot.hasError || !snapshot.hasData) {
-                                          return const Center(child: Text('No listings available', style: TextStyle(color: Colors.grey)));
+                                          return const Center(child: Text('No listings available', style: TextStyle(color: AppColors.bone500)));
                                         }
                                         final docs = snapshot.data!.docs.where((d) => (d.data() as Map<String, dynamic>)['isAvailable'] == true).toList();
                                         if (docs.isEmpty) {
-                                          return const Center(child: Text('No listings available', style: TextStyle(color: Colors.grey)));
+                                          return const Center(child: Text('No listings available', style: TextStyle(color: AppColors.bone500)));
                                         }
                                         return ListView.builder(
                                           itemCount: docs.length,
@@ -92,7 +93,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                                             final title = data['title'] ?? 'Unknown Plant';
                                             final location = data['location'] ?? 'Unknown Location';
                                             return ListTile(
-                                              leading: const Icon(Icons.location_on, color: Color(0xFF154212)),
+                                              leading: const Icon(Icons.location_on, color: AppColors.forest900),
                                               title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
                                               subtitle: Text(location),
                                               onTap: () {
@@ -141,8 +142,8 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                     onChanged: (val) => setState(() => _searchQuery = val),
                     decoration: InputDecoration(
                       hintText: 'Search plants or cuttings...',
-                      hintStyle: TextStyle(color: Colors.grey.shade500),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey.shade500),
+                      hintStyle: TextStyle(color: AppColors.bone500),
+                      prefixIcon: Icon(Icons.search, color: AppColors.bone500),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
@@ -176,7 +177,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return const Center(child: Text('Error loading listings', style: TextStyle(color: Colors.grey)));
+                      return const Center(child: Text('Error loading listings', style: TextStyle(color: AppColors.bone500)));
                     }
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: Padding(padding: EdgeInsets.all(40.0), child: CircularProgressIndicator()));
@@ -187,7 +188,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(40.0),
-                          child: Text('No listings available right now.', style: TextStyle(color: Colors.grey)),
+                          child: Text('No listings available right now.', style: TextStyle(color: AppColors.bone500)),
                         ),
                       );
                     }
@@ -213,7 +214,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(40.0),
-                          child: Text('No listings found for your search.', style: TextStyle(color: Colors.grey)),
+                          child: Text('No listings found for your search.', style: TextStyle(color: AppColors.bone500)),
                         ),
                       );
                     }
@@ -270,8 +271,8 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          backgroundColor: isSelected ? const Color(0xFF154212) : Colors.transparent,
-          side: isSelected ? BorderSide.none : const BorderSide(color: Color(0xFFCCCCCC)),
+          backgroundColor: isSelected ? AppColors.forest900 : Colors.transparent,
+          side: isSelected ? BorderSide.none : const BorderSide(color: AppColors.bone300),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -340,17 +341,17 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
             Container(
               height: 180,
               width: double.infinity,
-              color: const Color(0xFFE8F5E9),
+              color: AppColors.forest100,
               child: imageUrl.isNotEmpty
                   ? Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Center(
-                        child: Icon(Icons.eco, color: const Color(0xFF154212).withValues(alpha: 0.4), size: 48),
+                        child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
                       ),
                     )
                   : Center(
-                      child: Icon(Icons.eco, color: const Color(0xFF154212).withValues(alpha: 0.4), size: 48),
+                      child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
                     ),
             ),
             
@@ -380,12 +381,12 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       ),
                       Row(
                         children: [
-                          Icon(Icons.location_on, color: Colors.grey.shade500, size: 14),
+                          Icon(Icons.location_on, color: AppColors.bone500, size: 14),
                           const SizedBox(width: 4),
                           Text(
                             '$location · ${distanceKm}km',
                             style: TextStyle(
-                              color: Colors.grey.shade500,
+                              color: AppColors.bone500,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -409,20 +410,20 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: AppColors.bone500,
                       fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Icon(Icons.swap_horiz, color: const Color(0xFF8D3220), size: 16),
+                      Icon(Icons.swap_horiz, color: AppColors.terracotta900, size: 16),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Looking for: $lookingFor',
                           style: TextStyle(
-                            color: const Color(0xFF8D3220),
+                            color: AppColors.terracotta900,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -431,7 +432,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Divider(color: Colors.grey.shade200),
+                  Divider(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -440,7 +441,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                         children: [
                           const CircleAvatar(
                             radius: 12,
-                            backgroundColor: Colors.grey,
+                            backgroundColor: AppColors.bone500,
                             child: Icon(Icons.person, color: Colors.white, size: 14),
                           ),
                           const SizedBox(width: 8),
@@ -457,7 +458,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       Text(
                         timeAgo,
                         style: TextStyle(
-                          color: Colors.grey.shade500,
+                          color: AppColors.bone500,
                           fontSize: 12,
                         ),
                       ),

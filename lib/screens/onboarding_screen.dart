@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_screen.dart';
+import '../theme/app_theme.dart';
 
 
 class OnboardingScreen extends StatefulWidget {
@@ -45,7 +46,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color accentColor = Color(0xFF154212);
+    const Color accentColor = AppColors.forest900;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -96,6 +97,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
               child: Column(
                 children: [
+                  // Dot indicators
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(4, (index) {
@@ -105,35 +107,90 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 8.0,
                         width: _currentPage == index ? 24.0 : 8.0,
                         decoration: BoxDecoration(
-                          color: _currentPage == index ? accentColor : Colors.grey.shade300,
+                          color: _currentPage == index ? accentColor : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(4.0),
                         ),
                       );
                     }),
                   ),
                   const SizedBox(height: 32.0),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56.0,
-                    child: ElevatedButton(
-                      onPressed: _currentPage == 3 ? _completeOnboarding : _nextPage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: accentColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.0),
+                  if (_currentPage == 3)
+                    // Last page: single centered CTA
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56.0,
+                      child: ElevatedButton(
+                        onPressed: _completeOnboarding,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: accentColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16.0),
+                          ),
+                          elevation: 0,
                         ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        _currentPage == 3 ? 'Get Started' : 'Next',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.bold,
+                        child: Text(
+                          'Let\'s grow something 🌱',
+                          style: TextStyle(
+                            color: Theme.of(context).cardColor,
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
+                    )
+                  else
+                    // Pages 1-3: Skip on left, Next on right
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 56.0,
+                            child: OutlinedButton(
+                              onPressed: _completeOnboarding,
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: accentColor),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16.0),
+                                ),
+                              ),
+                              child: Text(
+                                'Skip',
+                                style: TextStyle(
+                                  color: accentColor,
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 2,
+                          child: SizedBox(
+                            height: 56.0,
+                            child: ElevatedButton(
+                              onPressed: _nextPage,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: accentColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16.0),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                'Next',
+                                style: TextStyle(
+                                  color: Theme.of(context).cardColor,
+                                  fontSize: 18.0,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
                 ],
               ),
             ),
@@ -173,7 +230,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 16.0,
-              color: Colors.grey,
+              color: AppColors.bone500,
               height: 1.5,
             ),
           ),
@@ -233,7 +290,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 16.0,
-              color: Colors.grey,
+              color: AppColors.bone500,
               height: 1.5,
             ),
           ),

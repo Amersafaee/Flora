@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
+import '../theme/app_theme.dart';
 
 /// A white rounded card with a soft shadow.
 /// Wrap any content in this to give it the Flora card look.
@@ -21,7 +21,7 @@ class AppCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
+        color: isDark ? AppColors.darkSurface : AppColors.white,
         borderRadius: AppRadius.borderMd,
         boxShadow: AppShadows.cardShadow,
       ),
@@ -31,7 +31,7 @@ class AppCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: AppRadius.borderMd,
-          splashColor: AppColors.dew.withValues(alpha: 0.3),
+          splashColor: Color(0x4CE8F3EA),
           child: Padding(
             padding: padding ?? const EdgeInsets.all(AppSpacing.md),
             child: child,

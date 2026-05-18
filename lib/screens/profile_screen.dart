@@ -16,6 +16,8 @@ import 'edit_profile_screen.dart';
 import 'collection_personality_screen.dart';
 import 'memorial_garden_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../theme/app_theme.dart';
+import '../services/weather_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -83,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -143,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile photo updated!'),
-            backgroundColor: Color(0xFF154212),
+            backgroundColor: AppColors.forest900,
           ),
         );
       }
@@ -180,7 +182,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-    const Color softGreen = Color(0xFFE8F3EA);
+    const Color softGreen = AppColors.forest100;
     
     final user = _auth.currentUser;
     final email = user?.email ?? 'No email';
@@ -281,14 +283,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 48,
-                                backgroundColor: (_profilePhotoUrl == null && user?.photoURL == null) ? Colors.grey : primaryColor,
+                                backgroundColor: (_profilePhotoUrl == null && user?.photoURL == null) ? AppColors.bone500 : primaryColor,
                                 backgroundImage: _profilePhotoUrl != null
                                     ? NetworkImage(_profilePhotoUrl!)
                                     : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
                                 child: (_profilePhotoUrl == null && user?.photoURL == null)
                                     ? Text(
                                         resolvedInitials,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 32,
                                           fontWeight: FontWeight.bold,
@@ -320,9 +322,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     decoration: BoxDecoration(
                                       color: primaryColor,
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 2),
+                                      border: Border.all(color: Theme.of(context).cardColor, width: 2),
                                     ),
-                                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                                    child: Icon(Icons.camera_alt, color: Colors.white, size: 14),
                                   ),
                                 ),
                             ],
@@ -342,7 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           email,
                           style: const TextStyle(
                             fontSize: 14,
-                            color: Colors.grey,
+                            color: AppColors.bone500,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -392,7 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                     ),
-                    Container(width: 1, height: 40, color: Colors.grey.shade200),
+                    Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                     FutureBuilder<int>(
                       future: _firestoreService.getCompletedTasksCount(),
                       builder: (context, snapshot) {
@@ -403,7 +405,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                     ),
-                    Container(width: 1, height: 40, color: Colors.grey.shade200),
+                    Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                     FutureBuilder<int>(
                       future: _firestoreService.getTotalJournalEntriesCount(),
                       builder: (context, snapshot) {
@@ -425,7 +427,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: AppColors.bone500,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -484,9 +486,123 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                 },
               ),
+              const SizedBox(height: 12),
+              FutureBuilder<(String?, WeatherData?)>(
+                future: () async {
+                  final ws = WeatherService();
+                  final city = await ws.getSavedCity();
+                  final weather = await ws.getCurrentWeather();
+                  return (city, weather);
+                }(),
+                builder: (context, snapshot) {
+                  final city = snapshot.data?.$1;
+                  final weather = snapshot.data?.$2;
+                  String subtitle = 'Tap to set your city';
+                  if (city != null && city.isNotEmpty) {
+                    if (weather != null) {
+                      subtitle = '$city · ${weather.temperatureCelsius.toStringAsFixed(1)}°C · ${weather.humidity.toStringAsFixed(0)}% humidity';
+                    } else {
+                      subtitle = city;
+                    }
+                  }
+                  return GestureDetector(
+                    onTap: () async {
+                      final cityController = TextEditingController(text: city ?? '');
+                      await showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('My City'),
+                          content: TextField(
+                            controller: cityController,
+                            decoration: const InputDecoration(
+                              hintText: 'e.g. London, Tokyo, New York',
+                              prefixIcon: Icon(Icons.location_city),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                final newCity = cityController.text.trim();
+                                if (newCity.isNotEmpty) {
+                                  final nav = Navigator.of(ctx);
+                                  final messenger = ScaffoldMessenger.of(context);
+                                  await WeatherService().saveCity(newCity);
+                                  if (mounted) {
+                                    nav.pop();
+                                    setState(() {});
+                                    messenger.showSnackBar(
+                                      SnackBar(content: Text('City set to $newCity 🌤️')),
+                                    );
+                                  }
+                                }
+                              },
+                              child: const Text('Save'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: softGreen,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.location_city, color: primaryColor, size: 20),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'My City',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitle,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.bone500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, color: AppColors.bone500),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(Icons.history, color: Color(0xFF154212)),
+                leading: const Icon(Icons.history, color: AppColors.forest900),
                 title: const Text('Plant History'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
@@ -496,7 +612,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.psychology, color: Color(0xFF154212)),
+                leading: const Icon(Icons.psychology, color: AppColors.forest900),
                 title: const Text('My Collection Personality'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
@@ -513,7 +629,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: AppColors.bone500,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -604,7 +720,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           label,
           style: const TextStyle(
             fontSize: 12,
-            color: Colors.grey,
+            color: AppColors.bone500,
           ),
         ),
       ],
@@ -665,7 +781,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               activeColor: primaryColor,
             )
           else if (!isInfo)
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            const Icon(Icons.chevron_right, color: AppColors.bone500),
         ],
       ),
       ),
@@ -712,7 +828,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                       final docs = snapshot.data!.docs;
                       if (docs.isEmpty) {
-                        return const Center(child: Text('No new notifications 🌿', style: TextStyle(color: Colors.grey)));
+                        return const Center(child: Text('No new notifications 🌿', style: TextStyle(color: AppColors.bone500)));
                       }
                       return ListView.builder(
                         itemCount: docs.length,
@@ -723,7 +839,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final timestamp = data['timestamp'] as Timestamp?;
                           final timeAgo = timestamp != null ? _formatTimestampForNotification(timestamp.toDate()) : 'Just now';
                           return ListTile(
-                            leading: Icon(Icons.notifications, color: isRead ? Colors.grey : Theme.of(context).primaryColor),
+                            leading: Icon(Icons.notifications, color: isRead ? AppColors.bone500 : Theme.of(context).primaryColor),
                             title: Text(message, style: TextStyle(fontWeight: isRead ? FontWeight.normal : FontWeight.bold)),
                             subtitle: Text(timeAgo),
                             onTap: () {

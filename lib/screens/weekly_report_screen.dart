@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/weekly_report_service.dart';
+import '../theme/app_theme.dart';
 
 class WeeklyReportScreen extends StatelessWidget {
   final Map<String, dynamic> reportData;
@@ -16,7 +17,7 @@ class WeeklyReportScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Theme.of(context).scaffoldBackgroundColor, const Color(0xFFF0F8F0)],
+          colors: [Theme.of(context).scaffoldBackgroundColor, AppColors.forest100],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -41,7 +42,7 @@ class WeeklyReportScreen extends StatelessWidget {
                 width: 40,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(2.5),
                 ),
               ),
@@ -49,11 +50,11 @@ class WeeklyReportScreen extends StatelessWidget {
               // Icon
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE8F5E9),
+                decoration: BoxDecoration(
+                  color: AppColors.forest100,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.eco, color: Color(0xFF154212), size: 32),
+                child: Icon(Icons.eco, color: AppColors.forest900, size: 32),
               ),
               const SizedBox(height: 24),
               // Headline
@@ -71,9 +72,9 @@ class WeeklyReportScreen extends StatelessWidget {
               // Subtitle
               Text(
                 'Week of $dateRangeStr',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  color: AppColors.bone500,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -116,9 +117,9 @@ class WeeklyReportScreen extends StatelessWidget {
                     ),
                     _buildStatBox(
                       icon: Icons.book,
-                      iconColor: const Color(0xFF154212),
+                      iconColor: AppColors.forest900,
                       value: reportData['newGrowthEntries'].toString(),
-                      valueColor: const Color(0xFF154212),
+                      valueColor: AppColors.forest900,
                       label: 'Journal Entries',
                     ),
                     _buildStatBox(
@@ -157,7 +158,7 @@ class WeeklyReportScreen extends StatelessWidget {
                               reportData['mostImprovedPlant'],
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF154212),
+                                color: AppColors.forest900,
                                 fontSize: 16,
                               ),
                             ),
@@ -176,16 +177,16 @@ class WeeklyReportScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.home, color: Colors.grey),
+                      const Icon(Icons.home, color: AppColors.bone500),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Your home averaged ${(reportData['avgTemperature'] as double).toStringAsFixed(1)}° and ${(reportData['avgHumidity'] as double).toStringAsFixed(0)}% humidity this week',
-                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                          style: const TextStyle(color: AppColors.bone500, fontSize: 13),
                         ),
                       ),
                     ],
@@ -202,7 +203,7 @@ class WeeklyReportScreen extends StatelessWidget {
                     if (context.mounted) Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF154212),
+                    backgroundColor: AppColors.forest900,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -214,7 +215,7 @@ class WeeklyReportScreen extends StatelessWidget {
               const Text(
                 'Generated by Flora every Sunday',
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: AppColors.bone500,
                   fontSize: 11,
                   fontStyle: FontStyle.italic,
                 ),
@@ -256,7 +257,7 @@ class WeeklyReportScreen extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Colors.grey,
+            color: AppColors.bone500,
             fontSize: 12,
           ),
         ),
@@ -266,7 +267,7 @@ class WeeklyReportScreen extends StatelessWidget {
 
   Color _getScoreColor(int score) {
     if (score >= 80) return Colors.green;
-    if (score >= 60) return const Color(0xFF8D3220); // Terracotta for okay
+    if (score >= 60) return AppColors.terracotta900; // Terracotta for okay
     return Colors.red;
   }
 }

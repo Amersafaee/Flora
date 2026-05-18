@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/plant.dart';
 import '../../data/plant_repository.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class AddPlantScreen extends StatefulWidget {
   const AddPlantScreen({super.key});

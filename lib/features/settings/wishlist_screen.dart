@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/species_providers.dart';
 import '../../data/wishlist_providers.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class WishlistScreen extends ConsumerWidget {
   const WishlistScreen({super.key});

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'global_search_screen.dart';
+import '../theme/app_theme.dart';
 
 class ClimateScreen extends StatefulWidget {
   const ClimateScreen({super.key});
@@ -117,7 +118,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-    const Color terracotta = Color(0xFF8D3220);
+    const Color terracotta = AppColors.terracotta900;
     
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -173,7 +174,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
                     Text(
                       "Monitoring your plant's environment",
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: AppColors.bone500,
                         fontSize: 16,
                       ),
                     ),
@@ -261,9 +262,9 @@ class _ClimateScreenState extends State<ClimateScreen> {
                             Column(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Max', style: TextStyle(color: Colors.grey.shade500, fontSize: 10)),
+                                Text('Max', style: TextStyle(color: AppColors.bone500, fontSize: 10)),
                                 const Spacer(),
-                                Text('Min', style: TextStyle(color: Colors.grey.shade500, fontSize: 10)),
+                                Text('Min', style: TextStyle(color: AppColors.bone500, fontSize: 10)),
                               ],
                             ),
                             const SizedBox(width: 16),
@@ -275,9 +276,9 @@ class _ClimateScreenState extends State<ClimateScreen> {
                                   Column(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Divider(color: Colors.grey.shade200),
+                                      Divider(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                                       const Spacer(),
-                                      Divider(color: Colors.grey.shade200),
+                                      Divider(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                                     ],
                                   ),
                                   // Real Data Paint
@@ -340,7 +341,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  color: Colors.grey.shade500,
+                  color: AppColors.bone500,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
@@ -373,7 +374,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
               const SizedBox(width: 8),
               IconButton(
                 onPressed: onSave,
-                icon: const Icon(Icons.save),
+                icon: Icon(Icons.save),
                 color: Theme.of(context).primaryColor,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -400,7 +401,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
         Text(
           text,
           style: TextStyle(
-            color: Colors.grey.shade700,
+            color: AppColors.bone700,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),

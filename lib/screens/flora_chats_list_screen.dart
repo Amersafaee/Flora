@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'flora_screen.dart';
+import '../theme/app_theme.dart';
 
 class FloraChatsListScreen extends StatelessWidget {
   const FloraChatsListScreen({super.key});
@@ -69,7 +70,7 @@ class FloraChatsListScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete',
-                style: TextStyle(color: Color(0xFF8D3220))),
+                style: TextStyle(color: AppColors.terracotta900)),
           ),
         ],
       ),
@@ -108,8 +109,8 @@ class FloraChatsListScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF121212)
-          : const Color(0xFFF8FAF8),
+          ? AppColors.darkCanvas
+          : AppColors.bone25,
       body: SafeArea(
         child: Column(
           children: [
@@ -144,7 +145,7 @@ class FloraChatsListScreen extends StatelessWidget {
                       Text(
                         'AI Plant Consultant',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: AppColors.bone500,
                           fontSize: 12,
                         ),
                       ),
@@ -206,7 +207,7 @@ class FloraChatsListScreen extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: Theme.of(context).brightness ==
                                             Brightness.dark
-                                        ? const Color(0xFF1E211E)
+                                        ? AppColors.darkSurface
                                         : Colors.white,
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
@@ -227,7 +228,7 @@ class FloraChatsListScreen extends StatelessWidget {
                                           color: primaryColor,
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(Icons.eco,
+                                        child: Icon(Icons.eco,
                                             color: Colors.white, size: 20),
                                       ),
                                       const SizedBox(width: 14),
@@ -254,7 +255,7 @@ class FloraChatsListScreen extends StatelessWidget {
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
                                                   fontSize: 13,
-                                                  color: Colors.grey.shade500,
+                                                  color: AppColors.bone500,
                                                 ),
                                               ),
                                             ],
@@ -266,7 +267,7 @@ class FloraChatsListScreen extends StatelessWidget {
                                         _formatTimeAgo(lastMessageAt),
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey.shade400,
+                                          color: AppColors.bone300,
                                         ),
                                       ),
                                     ],
@@ -312,14 +313,14 @@ class FloraChatsListScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey,
+                color: AppColors.bone500,
               ),
             ),
             const SizedBox(height: 8),
             const Text(
               'Tap the + button below to begin',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              style: TextStyle(fontSize: 13, color: AppColors.bone500),
             ),
           ],
         ),

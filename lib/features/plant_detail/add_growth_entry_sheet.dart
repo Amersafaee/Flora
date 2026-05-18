@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class AddGrowthEntrySheet extends StatefulWidget {
   final String plantId;
@@ -119,7 +119,7 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

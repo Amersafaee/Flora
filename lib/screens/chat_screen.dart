@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../theme/app_theme.dart';
 
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
@@ -91,7 +92,7 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const CircleAvatar(
-              backgroundColor: Colors.grey,
+              backgroundColor: AppColors.bone500,
               radius: 16,
               child: Icon(Icons.person, color: Colors.white, size: 20),
             ),
@@ -110,7 +111,7 @@ class _ChatScreenState extends State<ChatScreen> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
-            color: Colors.grey.shade300,
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
             height: 1.0,
           ),
         ),
@@ -131,7 +132,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     return const Center(
                       child: Text(
                         'Could not load messages.',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: AppColors.bone500),
                       ),
                     );
                   }
@@ -148,7 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     return const Center(
                       child: Text(
                         'Say hello and start the conversation.',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: AppColors.bone500),
                       ),
                     );
                   }
@@ -184,8 +185,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                 maxWidth: MediaQuery.of(context).size.width * 0.75,
                               ),
                               decoration: BoxDecoration(
-                                color: isMe ? primaryColor : Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(20).copyWith(
+                                color: isMe ? primaryColor : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(20).copyWith(
                                   bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
                                   bottomLeft: !isMe ? const Radius.circular(4) : const Radius.circular(20),
                                 ),
@@ -203,7 +204,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             Text(
                               timeString,
                               style: const TextStyle(
-                                color: Colors.grey,
+                                color: AppColors.bone500,
                                 fontSize: 10,
                               ),
                             ),
@@ -227,7 +228,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                       ),
                       child: TextField(
                         controller: _textController,
@@ -235,7 +236,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         onSubmitted: (_) => _sendMessage(),
                         decoration: InputDecoration(
                           hintText: 'Type a message...',
-                          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+                          hintStyle: TextStyle(color: AppColors.bone300, fontSize: 15),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                         ),
@@ -252,7 +253,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         color: primaryColor,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.send,
                         color: Colors.white,
                         size: 20,

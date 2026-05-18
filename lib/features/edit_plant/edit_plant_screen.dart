@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/plant.dart';
 import '../../data/plant_repository.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class EditPlantScreen extends StatefulWidget {
   final String plantId;
@@ -92,7 +92,7 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
     }
     if (_plant == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Edit Plant')),
+        appBar: AppBar(title: Text('Edit Plant')),
         body: const Center(child: Text('Plant not found.')),
       );
     }

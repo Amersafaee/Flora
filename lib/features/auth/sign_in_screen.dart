@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -230,9 +230,9 @@ class _SignInScreenState extends State<SignInScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.forestGreen,
                     borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x332D5016),
+                        color: Color(0x3314301E),
                         blurRadius: 20,
                         offset: Offset(0, 6),
                       ),

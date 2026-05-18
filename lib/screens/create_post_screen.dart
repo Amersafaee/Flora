@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/storage_service.dart';
+import '../theme/app_theme.dart';
 class CreatePostScreen extends StatefulWidget {
   final String initialCategory;
   final String? initialTitle;
@@ -172,7 +173,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               decoration: const InputDecoration(
                 hintText: 'Give your post a title',
                 border: InputBorder.none,
-                hintStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey),
+                hintStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.bone500),
               ),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -198,7 +199,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   },
                   selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                   labelStyle: TextStyle(
-                    color: isSelected ? Theme.of(context).primaryColor : Colors.grey[700],
+                    color: isSelected ? Theme.of(context).primaryColor : AppColors.bone700,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 );

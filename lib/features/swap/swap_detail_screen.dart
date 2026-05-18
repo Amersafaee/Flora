@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/swap_providers.dart';
 import '../../data/message_providers.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class SwapDetailScreen extends ConsumerWidget {
   final String listingId;
@@ -70,7 +70,7 @@ class SwapDetailScreen extends ConsumerWidget {
                             ),
                             child: Text(
                               item.isFree ? 'FREE' : typeLabel.toUpperCase(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -176,7 +176,7 @@ class SwapDetailScreen extends ConsumerWidget {
                             child: OutlinedButton(
                               onPressed: () async {
                                 await completeListing(item.id);
-                                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing marked as completed ✅', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF2D5A27), behavior: SnackBarBehavior.floating));
+                                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing marked as completed ✅', style: TextStyle(color: Colors.white)), backgroundColor: AppColors.forest700, behavior: SnackBarBehavior.floating));
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.forestGreen,

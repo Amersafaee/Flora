@@ -6,6 +6,7 @@ import 'dart:io';
 import '../models/plant_model.dart';
 import '../services/milestone_service.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_theme.dart';
 
 class ShareableCardScreen extends StatefulWidget {
   final Plant plant;
@@ -77,7 +78,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                   height: 500,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFF1A3A1A), Color(0xFF154212)],
+                      colors: [Color(0xFF1A3A1A), AppColors.forest900],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -89,18 +90,18 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                       Container(
                         width: 40,
                         height: 40,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.eco, color: Color(0xFF154212), size: 24),
+                        child: Icon(Icons.eco, color: AppColors.forest900, size: 24),
                       ),
                       const SizedBox(height: 24),
                       Container(
                         width: 140,
                         height: 140,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5E9),
+                          color: AppColors.forest100,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 3),
                           image: data['imageUrl'] != null && data['imageUrl'].toString().isNotEmpty
@@ -111,7 +112,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                               : null,
                         ),
                         child: data['imageUrl'] == null || data['imageUrl'].toString().isEmpty
-                            ? const Icon(Icons.eco, size: 64, color: Color(0xFF154212))
+                            ? Icon(Icons.eco, size: 64, color: AppColors.forest900)
                             : null,
                       ),
                       const SizedBox(height: 24),
@@ -128,7 +129,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                       Text(
                         data['commonName']?.toString().isNotEmpty == true ? data['commonName'] : data['category'],
                         style: const TextStyle(
-                          color: Color(0xFFE8F5E9),
+                          color: AppColors.forest100,
                           fontStyle: FontStyle.italic,
                           fontSize: 16,
                         ),
@@ -148,7 +149,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                       Text(
                         data['tagline'],
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           fontStyle: FontStyle.italic,
                           fontSize: 18,
                           shadows: [
@@ -183,8 +184,8 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF154212),
-                      side: const BorderSide(color: Color(0xFF154212)),
+                      foregroundColor: AppColors.forest900,
+                      side: const BorderSide(color: AppColors.forest900),
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -194,7 +195,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                   ElevatedButton(
                     onPressed: _shareCard,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF154212),
+                      backgroundColor: AppColors.forest900,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -221,7 +222,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
         children: [
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 18,

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/plant_model.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_theme.dart';
 
 class EditPlantScreen extends StatefulWidget {
   final String plantId;
@@ -116,7 +117,7 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Plant', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Edit Plant', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -161,8 +162,8 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Theme.of(context).cardColor,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.grey)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
           ),
         ),
       ],

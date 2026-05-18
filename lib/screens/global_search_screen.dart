@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'plant_detail_screen.dart';
 import 'post_comments_screen.dart';
 import 'wiki_plant_detail_screen.dart';
+import '../theme/app_theme.dart';
 
 class GlobalSearchScreen extends StatefulWidget {
   const GlobalSearchScreen({super.key});
@@ -124,7 +125,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           onChanged: _onSearchChanged,
           decoration: InputDecoration(
             hintText: 'Search...',
-            hintStyle: TextStyle(color: Colors.grey.shade400),
+            hintStyle: TextStyle(color: AppColors.bone300),
             border: InputBorder.none,
           ),
           style: TextStyle(color: textColor, fontSize: 18),
@@ -172,7 +173,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                 ? Center(
                     child: Text(
                       'Start typing to search across your plants and the wiki.',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: TextStyle(color: AppColors.bone500),
                       textAlign: TextAlign.center,
                     ),
                   )
@@ -184,15 +185,15 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                           padding: const EdgeInsets.only(bottom: 16),
                           child: Row(
                             children: [
-                              Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.grey.shade200, shape: BoxShape.circle)),
+                              Container(width: 40, height: 40, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, shape: BoxShape.circle)),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(width: double.infinity, height: 16, color: Colors.grey.shade200),
+                                    Container(width: double.infinity, height: 16, color: Theme.of(context).colorScheme.surfaceContainerHighest),
                                     const SizedBox(height: 8),
-                                    Container(width: 100, height: 14, color: Colors.grey.shade200),
+                                    Container(width: 100, height: 14, color: Theme.of(context).colorScheme.surfaceContainerHighest),
                                   ],
                                 ),
                               ),
@@ -205,11 +206,11 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.search, size: 64, color: Colors.grey.shade400),
+                                Icon(Icons.search, size: 64, color: AppColors.bone300),
                                 const SizedBox(height: 16),
                                 Text(
                                   'No results for "$_query"',
-                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                                  style: TextStyle(color: AppColors.bone500, fontSize: 16),
                                 ),
                               ],
                             ),
@@ -260,7 +261,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     final name = data['name'] ?? '';
     final commonName = data['commonName'] ?? '';
     return ListTile(
-      leading: const Icon(Icons.eco_outlined, color: Color(0xFF154212)),
+      leading: const Icon(Icons.eco_outlined, color: AppColors.forest900),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(commonName),
       onTap: () {
@@ -277,7 +278,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     final name = data['name'] ?? '';
     final species = data['species'] ?? '';
     return ListTile(
-      leading: const Icon(Icons.local_florist_outlined, color: Color(0xFF154212)),
+      leading: const Icon(Icons.local_florist_outlined, color: AppColors.forest900),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(species),
       onTap: () {
@@ -294,7 +295,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     final title = data['title'] ?? '';
     final category = data['category'] ?? '';
     return ListTile(
-      leading: const Icon(Icons.forum_outlined, color: Color(0xFF154212)),
+      leading: const Icon(Icons.forum_outlined, color: AppColors.forest900),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(category),
       onTap: () {

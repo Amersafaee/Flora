@@ -5,6 +5,7 @@ import 'signup_screen.dart';
 import 'onboarding_screen.dart';
 import '../services/auth_service.dart';
 import '../main.dart';
+import '../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -127,8 +128,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF8D3220),
+        content: Text(message, style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.terracotta900,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -136,6 +137,26 @@ class _LoginScreenState extends State<LoginScreen> {
         duration: const Duration(seconds: 4),
       ),
     );
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await _authService.signInWithGoogle();
+      if (!mounted) return;
+      if (result == 'Success') {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => MainTabScreen(onThemeChanged: widget.onThemeChanged ?? (_) {})),
+          (route) => false,
+        );
+      } else if (result != 'cancelled') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google sign in failed. Please try again.'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -181,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Your personal botanical guide',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: AppColors.bone500,
                   fontSize: 16,
                 ),
               ),
@@ -203,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 enabled: !_isLoading,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).cardColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -214,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF154212), width: 2),
+                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
                   ),
                 ),
               ),
@@ -237,11 +258,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 onSubmitted: (_) => _login(),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).cardColor,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.grey,
+                      color: AppColors.bone500,
                     ),
                     onPressed: _isLoading
                         ? null
@@ -257,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF154212), width: 2),
+                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
                   ),
                 ),
               ),
@@ -284,14 +305,55 @@ class _LoginScreenState extends State<LoginScreen> {
                             strokeWidth: 2.5,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Sign In',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              Row(
+                children: [
+                  const Expanded(child: Divider(color: Color(0xFFE0E0E0), thickness: 1)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: const Text('or', style: TextStyle(color: AppColors.bone500)),
+                  ),
+                  const Expanded(child: Divider(color: Color(0xFFE0E0E0), thickness: 1)),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              OutlinedButton(
+                onPressed: _isLoading ? null : _signInWithGoogle,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+                      ),
+                      child: const Center(
+                        child: Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('Continue with Google', style: Theme.of(context).textTheme.labelLarge),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -302,7 +364,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const Text(
                     "New here?",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.bone500),
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
@@ -321,7 +383,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text(
                       'Create an account',
                       style: TextStyle(
-                        color: Color(0xFF8D3220),
+                        color: AppColors.terracotta900,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

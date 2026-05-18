@@ -432,17 +432,18 @@ Future<void> main() async {
 
   // ── LOGIC CHECK 23 — Blog content is formatted for readability ──────────
   try {
-    final wikiFile = File('lib/screens/wiki_screen.dart');
-    final wikiContent = await wikiFile.readAsString();
-    final hasSplit = wikiContent.contains('split');
-    final hasMultipleParagraphs = wikiContent.contains('paragraphs');
+    // FIX 7 moved blog detail into blog_detail_screen.dart — check there
+    final blogDetailFile = File('lib/screens/blog_detail_screen.dart');
+    final blogDetailContent = await blogDetailFile.readAsString();
+    final hasSplit = blogDetailContent.contains('split');
+    final hasMultipleParagraphs = blogDetailContent.contains('paragraphs');
     if (hasSplit && hasMultipleParagraphs) {
       pass('Blog content is split into paragraphs for readability');
     } else {
       fail('Blog content is displayed as one unformatted block — will be unreadable');
     }
   } catch (e) {
-    fail('Could not read wiki_screen.dart: $e');
+    fail('Could not read blog_detail_screen.dart: $e');
   }
 
   // ── LOGIC CHECK 24 — Swap chat does not contain Ask Flora button ────────

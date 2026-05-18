@@ -2,6 +2,7 @@ import '../services/badges_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'care_screen.dart';
+import 'community_screen.dart';
 
 import 'global_search_screen.dart';
 import 'profile_screen.dart';
@@ -10,8 +11,6 @@ import 'identify_screen.dart';
 import 'plant_detail_screen.dart';
 import 'post_comments_screen.dart';
 import 'wiki_screen.dart';
-import 'flora_chats_list_screen.dart';
-import 'all_plants_screen.dart';
 import '../services/firestore_service.dart';
 import '../models/plant_model.dart';
 import '../models/task_model.dart';
@@ -21,6 +20,8 @@ import '../services/milestone_service.dart';
 import '../services/weekly_report_service.dart';
 import 'weekly_report_screen.dart';
 import '../utils/user_utils.dart';
+import '../theme/app_theme.dart';
+import '../services/weather_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -34,10 +35,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // Static guard: weekly report fires at most once per app process lifetime
   static bool _weeklyCheckDone = false;
 
+  WeatherData? _weatherData;
+  bool _weatherLoading = true;
+
+  Future<void> _loadWeather() async {
+    setState(() => _weatherLoading = true);
+    final weather = await WeatherService().getCurrentWeather();
+    if (mounted) {
+      setState(() {
+        _weatherData = weather;
+        _weatherLoading = false;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _computeHealthScores();
+    _loadWeather();
   }
 
   Future<void> _computeHealthScores() async {
@@ -70,6 +86,73 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  Widget _buildWeatherCard(WeatherData? weather, bool isLoading) {
+    if (isLoading) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.wb_cloudy_outlined, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 12),
+            Text('Loading weather...', style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
+      );
+    }
+
+    if (weather == null) return const SizedBox.shrink();
+
+    final tempC = weather.temperatureCelsius.round();
+    final humidity = weather.humidity.round();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.wb_cloudy_outlined, color: Theme.of(context).colorScheme.primary, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  weather.cityName.isNotEmpty ? weather.cityName : 'Current Location',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                Text(
+                  weather.description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('$tempC°C', style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              )),
+              Text('💧 $humidity%', style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildCompactStatCard(BuildContext context, String title, String value, IconData icon, Color iconColor) {
     return Container(
@@ -98,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 12, color: AppColors.bone500, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -119,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: Icon(icon, color: Theme.of(context).primaryColor, size: 28),
           ),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -129,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-    const Color softGreen = Color(0xFFE8F3EA);
+    const Color softGreen = AppColors.forest100;
     
     final firestoreService = FirestoreService();
     
@@ -147,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             MaterialPageRoute(builder: (_) => const AddPlantScreen()),
           );
         },
-        backgroundColor: const Color(0xFF154212),
+        backgroundColor: AppColors.forest900,
         child: const Icon(Icons.add, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -170,16 +253,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     },
                     child: buildUserAvatar(radius: 18),
                     ),
-                    const Text(
+                    Text(
                       'Digital Conservatory',
                       style: TextStyle(
-                        color: Color(0xFF154212),
+                        color: AppColors.forest900,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'serif',
                         fontSize: 18,
                       ),
                     ),
-                  IconButton(icon: Icon(Icons.search, color: Theme.of(context).primaryColor), onPressed: () { Navigator.push(context, MaterialPageRoute(builder: (_) => const GlobalSearchScreen())); }),
+                  IconButton(icon: Icon(Icons.search, color: Theme.of(context).primaryColor), onPressed: () { Navigator.push(context, MaterialPageRoute(builder: (_) => GlobalSearchScreen())); }),
                 ],
               ),
               const SizedBox(height: 16),
@@ -344,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               child: Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE8F3EA),
+                                  color: AppColors.forest100,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
                                 ),
@@ -370,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               child: Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE8F3EA),
+                                  color: AppColors.forest100,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
                                 ),
@@ -396,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               child: Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE8F3EA),
+                                  color: AppColors.forest100,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
                                 ),
@@ -464,6 +547,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 8),
 
+              _buildWeatherCard(_weatherData, _weatherLoading),
+              const SizedBox(height: 8),
+
               // Daily Care Section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -481,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade600,
+                      color: AppColors.bone500,
                     ),
                   ),
                 ],
@@ -539,7 +625,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         padding: EdgeInsets.symmetric(vertical: 20),
                         child: Text(
                           'No tasks for today.',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppColors.bone500),
                         ),
                       ),
                     );
@@ -548,7 +634,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   return Column(
                     children: tasks.map((task) {
                       IconData icon = Icons.check_circle_outline;
-                      Color iconColor = Colors.grey;
+                      Color iconColor = AppColors.bone500;
                       if (task.taskType.toLowerCase().contains('water')) {
                         icon = Icons.water_drop;
                         iconColor = Colors.redAccent;
@@ -564,7 +650,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       }
                       
                       final isOverdue = task.dueDate.isBefore(startOfToday) && !task.isCompleted;
-                      final cardBg = isOverdue ? const Color(0xFF8D3220).withValues(alpha: 0.1) : Theme.of(context).cardColor;
+                      final cardBg = isOverdue ? Color(0x1A8D3220) : Theme.of(context).cardColor;
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
@@ -608,7 +694,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     Text(
                                       task.plantName,
                                       style: const TextStyle(
-                                        color: Colors.grey,
+                                        color: AppColors.bone500,
                                         fontSize: 13,
                                       ),
                                     ),
@@ -617,7 +703,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF8D3220),
+                                          color: AppColors.terracotta900,
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: const Text('Overdue', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -629,7 +715,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               IconButton(
                                 icon: Icon(
                                   task.isCompleted ? Icons.check_circle : Icons.check_circle_outline,
-                                  color: task.isCompleted ? Colors.green : Colors.grey,
+                                  color: task.isCompleted ? Colors.green : AppColors.bone500,
                                 ),
                                 onPressed: () {
                                   if (!task.isCompleted) {
@@ -692,7 +778,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         if (assessed.isEmpty) {
                           return GestureDetector(
                             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen())),
-                            child: _buildCompactStatCard(context, 'Assess a plant', '', Icons.camera_alt, Colors.grey),
+                            child: _buildCompactStatCard(context, 'Assess a plant', '', Icons.camera_alt, AppColors.bone500),
                           );
                         }
                         int sum = 0;
@@ -709,9 +795,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildQuickAction(context, Icons.search, 'Identify 🔍', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()))),
-                  _buildQuickAction(context, Icons.chat_bubble_outline, 'Ask Flora 🌿', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()))),
-                  _buildQuickAction(context, Icons.menu_book_outlined, 'Journal 📖', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllPlantsScreen()))),
+                  _buildQuickAction(context, Icons.camera_alt_outlined, 'Identify 📷', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()))),
+                  _buildQuickAction(context, Icons.calendar_today_outlined, 'Care 🗓️', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareScreen()))),
+                  _buildQuickAction(context, Icons.people_outline, 'Community 🌱', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()))),
                 ],
               ),
               const SizedBox(height: 16),
@@ -766,10 +852,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF154212).withValues(alpha: 0.1),
+                                color: Color(0x1A14301E),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.eco, color: Color(0xFF154212), size: 80),
+                              child: Icon(Icons.eco, color: AppColors.forest900, size: 80),
                             ),
                             const SizedBox(height: 24),
                             Text(
@@ -784,7 +870,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             const Text(
                               'Add your first plant and Flora will build a personalised care plan for it automatically',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                              style: TextStyle(color: AppColors.bone500, fontSize: 14),
                             ),
                             const SizedBox(height: 24),
                             SizedBox(
@@ -795,7 +881,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen()));
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF154212),
+                                  backgroundColor: AppColors.forest900,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
                                 child: const Text('Add Your First Plant 🌱', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -806,7 +892,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               onPressed: () {
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()));
                               },
-                              child: const Text('Or identify a plant with your camera', style: TextStyle(color: Color(0xFF154212))),
+                              child: const Text('Or identify a plant with your camera', style: TextStyle(color: AppColors.forest900)),
                             ),
                           ],
                         ),
@@ -856,36 +942,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               plant.imageUrl,
                                               fit: BoxFit.cover,
                                               errorBuilder: (context, error, stackTrace) => Container(
-                                                color: const Color(0xFFE8F5E9),
+                                                color: AppColors.forest100,
                                                 child: Center(
                                                   child: Icon(
                                                     Icons.eco,
                                                     size: 48,
-                                                    color: const Color(0xFF154212).withValues(alpha: 0.4),
+                                                    color: Color(0x6614301E),
                                                   ),
                                                 ),
                                               ),
                                               loadingBuilder: (context, child, loadingProgress) {
                                                 if (loadingProgress == null) return child;
                                                 return Container(
-                                                  color: const Color(0xFFE8F5E9),
+                                                  color: AppColors.forest100,
                                                   child: Center(
                                                     child: Icon(
                                                       Icons.eco,
                                                       size: 48,
-                                                      color: const Color(0xFF154212).withValues(alpha: 0.4),
+                                                      color: Color(0x6614301E),
                                                     ),
                                                   ),
                                                 );
                                               },
                                             )
                                           : Container(
-                                              color: const Color(0xFFE8F5E9),
+                                              color: AppColors.forest100,
                                               child: Center(
                                                 child: Icon(
                                                   Icons.eco,
                                                   size: 48,
-                                                  color: const Color(0xFF154212).withValues(alpha: 0.4),
+                                                  color: Color(0x6614301E),
                                                 ),
                                               ),
                                             ),
@@ -909,13 +995,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFE8F5E9),
+                                            color: AppColors.forest100,
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Text(
                                             plant.category.isEmpty ? 'Plant' : plant.category,
                                             style: const TextStyle(
-                                              color: Color(0xFF154212),
+                                              color: AppColors.forest900,
                                               fontSize: 11,
                                             ),
                                             maxLines: 1,
@@ -963,7 +1049,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Text('No community posts yet.',
-                          style: TextStyle(color: Colors.grey.shade500)),
+                          style: TextStyle(color: AppColors.bone500)),
                     );
                   }
                   return Column(
@@ -1022,14 +1108,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       Text(
                                         'by $author',
                                         style: TextStyle(
-                                          color: Colors.grey.shade500,
+                                          color: AppColors.bone500,
                                           fontSize: 12,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey.shade400),
+                                Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.bone300),
                               ],
                             ),
                           ),
@@ -1066,7 +1152,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Text('Plant guides loading…',
-                          style: TextStyle(color: Colors.grey.shade500)),
+                          style: TextStyle(color: AppColors.bone500)),
                     );
                   }
                   return Column(
@@ -1129,7 +1215,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
-                                            color: Colors.grey.shade500,
+                                            color: AppColors.bone500,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -1141,18 +1227,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
+                                    color: Color(0x1F2E7D32),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.access_time, size: 10, color: Color(0xFF2E7D32)),
+                                      const Icon(Icons.access_time, size: 10, color: AppColors.forest600),
                                       const SizedBox(width: 3),
                                       Text(
                                         '$readMinutes min',
                                         style: const TextStyle(
-                                          color: Color(0xFF2E7D32),
+                                          color: AppColors.forest600,
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -1222,7 +1308,7 @@ class _ShimmerBoxState extends State<ShimmerBox> with SingleTickerProviderStateM
             width: widget.width,
             height: widget.height,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(widget.borderRadius),
             ),
           ),

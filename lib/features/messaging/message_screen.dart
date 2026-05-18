@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/message_providers.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class MessageScreen extends ConsumerStatefulWidget {
   final String threadId;
@@ -122,7 +122,7 @@ class _MessageScreenState extends ConsumerState<MessageScreen> {
                       decoration: InputDecoration(
                         hintText: 'Type a message...',
                         filled: true,
-                        fillColor: isDark ? AppColors.darkSurface : AppColors.mist.withValues(alpha: 0.3),
+                        fillColor: isDark ? AppColors.darkSurface : Color(0x4CE8F3EA),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: AppRadius.borderPill,

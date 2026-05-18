@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/swap_providers.dart';
 import '../../data/message_providers.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class SwapScreen extends ConsumerStatefulWidget {
   const SwapScreen({super.key});
@@ -215,7 +215,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                                       ),
                                       child: Text(
                                         item.isFree ? 'FREE' : typeLabel.toUpperCase(),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,

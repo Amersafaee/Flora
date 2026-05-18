@@ -13,11 +13,10 @@ import 'services/notification_service.dart';
 import 'services/theme_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
-import 'screens/identify_screen.dart';
-import 'screens/care_screen.dart';
-import 'screens/community_screen.dart';
 import 'screens/wiki_screen.dart';
 import 'screens/flora_chats_list_screen.dart';
+import 'screens/all_plants_screen.dart';
+import 'screens/profile_screen.dart';
 import 'screens/signup_screen.dart';
 
 void main() async {
@@ -150,11 +149,10 @@ class _MainTabScreenState extends State<MainTabScreen> {
   Widget _buildScreen(int index) {
     switch (index) {
       case 0: return HomeScreen(onThemeChanged: widget.onThemeChanged);
-      case 1: return const FloraChatsListScreen();
-      case 2: return const IdentifyScreen();
-      case 3: return CareScreen(onThemeChanged: widget.onThemeChanged);
-      case 4: return const CommunityScreen();
-      case 5: return const WikiScreen();
+      case 1: return const AllPlantsScreen();
+      case 2: return const FloraChatsListScreen();
+      case 3: return const WikiScreen();
+      case 4: return const ProfileScreen();
       default: return const SizedBox.shrink();
     }
   }
@@ -166,6 +164,8 @@ class _MainTabScreenState extends State<MainTabScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (!_builtScreens.containsKey(_currentIndex)) {
       _builtScreens[_currentIndex] = _buildScreen(_currentIndex);
       _visitedTabs.add(_currentIndex);
@@ -175,14 +175,13 @@ class _MainTabScreenState extends State<MainTabScreen> {
       body: _builtScreens[_currentIndex]!,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
+          color: isDark ? AppColors.darkSurface : AppColors.white,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? AppColors.darkBorderSubtle : AppColors.bone100,
+              width: 1,
             ),
-          ],
+          ),
         ),
         child: BottomNavigationBar(
           elevation: 0,
@@ -194,15 +193,34 @@ class _MainTabScreenState extends State<MainTabScreen> {
             });
           },
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: Theme.of(context).primaryColor,
-          unselectedItemColor: Colors.grey,
+          selectedItemColor: isDark ? AppColors.darkForestPrimary : AppColors.forest700,
+          unselectedItemColor: isDark ? AppColors.darkTextTertiary : AppColors.bone500,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.eco), label: 'Flora'),
-            BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: 'Identify'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Care'),
-            BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Community'),
-            BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Wiki'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.yard_outlined),
+              activeIcon: Icon(Icons.yard),
+              label: 'Garden',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.eco_outlined),
+              activeIcon: Icon(Icons.eco),
+              label: 'Flora',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.explore_outlined),
+              activeIcon: Icon(Icons.explore),
+              label: 'Discover',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profile',
+            ),
           ],
         ),
       ),

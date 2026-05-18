@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/onboarding_service.dart';
+import '../theme/app_theme.dart';
 
 class FeatureTooltip extends StatefulWidget {
   final String title;
@@ -48,7 +49,7 @@ class _FeatureTooltipState extends State<FeatureTooltip> {
         widget.child,
         Positioned.fill(
           child: Container(
-            color: const Color(0x88000000),
+            color: const Color(0x88000000),  // intentional 53% overlay
           ),
         ),
         Align(
@@ -57,7 +58,7 @@ class _FeatureTooltipState extends State<FeatureTooltip> {
             padding: const EdgeInsets.all(24.0),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(20),
               ),
               padding: const EdgeInsets.all(16),
@@ -67,7 +68,7 @@ class _FeatureTooltipState extends State<FeatureTooltip> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.eco, color: Color(0xFF154212)),
+                      const Icon(Icons.eco, color: AppColors.forest900),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -75,7 +76,7 @@ class _FeatureTooltipState extends State<FeatureTooltip> {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: AppColors.bone900,
                           ),
                         ),
                       ),
@@ -86,7 +87,7 @@ class _FeatureTooltipState extends State<FeatureTooltip> {
                     widget.description,
                     style: const TextStyle(
                       fontSize: 14,
-                      color: Colors.grey,
+                      color: AppColors.bone500,
                       height: 1.5,
                     ),
                   ),
@@ -99,7 +100,7 @@ class _FeatureTooltipState extends State<FeatureTooltip> {
                         if (mounted) setState(() => _shouldShow = false);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF154212),
+                        backgroundColor: AppColors.forest900,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

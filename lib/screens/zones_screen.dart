@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../theme/app_theme.dart';
 
 class ZonesScreen extends StatefulWidget {
   const ZonesScreen({super.key});
@@ -95,7 +96,7 @@ class _ZonesScreenState extends State<ZonesScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: Text('Cancel', style: TextStyle(color: AppColors.bone500)),
             ),
             TextButton(
               onPressed: () {
@@ -141,7 +142,7 @@ class _ZonesScreenState extends State<ZonesScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Something went wrong', style: TextStyle(color: Colors.grey)));
+                  return const Center(child: Text('Something went wrong', style: TextStyle(color: AppColors.bone500)));
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -150,7 +151,7 @@ class _ZonesScreenState extends State<ZonesScreen> {
                 final docs = snapshot.data?.docs ?? [];
                 if (docs.isEmpty) {
                   return const Center(
-                    child: Text('No zones added yet.', style: TextStyle(color: Colors.grey)),
+                    child: Text('No zones added yet.', style: TextStyle(color: AppColors.bone500)),
                   );
                 }
 
@@ -186,7 +187,7 @@ class _ZonesScreenState extends State<ZonesScreen> {
                               onPressed: () => _editZone(id, name),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              icon: Icon(Icons.delete_outline, color: Colors.red),
                               onPressed: () => _deleteZone(id),
                             ),
                           ],

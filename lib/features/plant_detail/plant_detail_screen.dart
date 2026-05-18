@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/plant_providers.dart';
-import '../../theme/tokens.dart';
 import 'add_growth_entry_sheet.dart';
+import '../../theme/app_theme.dart';
 
 class PlantDetailScreen extends ConsumerWidget {
   final String plantId;

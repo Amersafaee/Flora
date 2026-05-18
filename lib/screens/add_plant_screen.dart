@@ -8,6 +8,7 @@ import '../services/storage_service.dart';
 import '../models/plant_model.dart';
 import '../models/task_model.dart';
 import 'flora_screen.dart';
+import '../theme/app_theme.dart';
 
 class AddPlantScreen extends StatefulWidget {
   final String? initialPlantName;
@@ -136,7 +137,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Something went wrong. Please try again.'),
-            backgroundColor: Colors.grey,
+            backgroundColor: AppColors.bone500,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -204,7 +205,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                 child: Container(
                   height: 200,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
+                    color: AppColors.forest100,
                     borderRadius: BorderRadius.circular(16),
                     image: _imageFile != null
                         ? DecorationImage(
@@ -227,7 +228,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                                   child: Icon(
                                     Icons.eco,
                                     size: 48,
-                                    color: const Color(0xFF154212).withValues(alpha: 0.4),
+                                    color: Color(0x6614301E),
                                   ),
                                 ),
                               ),
@@ -236,7 +237,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                               child: Icon(
                                 Icons.eco,
                                 size: 48,
-                                color: const Color(0xFF154212).withValues(alpha: 0.4),
+                                color: Color(0x6614301E),
                               ),
                             ),
                 ),
@@ -253,21 +254,21 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                 controller: _nameController,
                 decoration: InputDecoration(
                   hintText: 'e.g. Monstera Deliciosa',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  hintStyle: TextStyle(color: AppColors.bone300),
                   filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E211E) : const Color(0xFFFFFFFF),
+                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFCCCCCC)),
+                    borderSide: const BorderSide(color: AppColors.bone300),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFCCCCCC)),
+                    borderSide: const BorderSide(color: AppColors.bone300),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF154212), width: 2),
+                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
                   ),
                 ),
               ),
@@ -290,21 +291,21 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                 controller: _commonNameController,
                 decoration: InputDecoration(
                   hintText: 'e.g. Swiss Cheese Plant',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  hintStyle: TextStyle(color: AppColors.bone300),
                   filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E211E) : const Color(0xFFFFFFFF),
+                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFCCCCCC)),
+                    borderSide: const BorderSide(color: AppColors.bone300),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFCCCCCC)),
+                    borderSide: const BorderSide(color: AppColors.bone300),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF154212), width: 2),
+                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
                   ),
                 ),
               ),
@@ -320,7 +321,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
@@ -354,7 +355,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
@@ -462,7 +463,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                         height: 5,
                         margin: const EdgeInsets.only(bottom: 24),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
+                          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -479,7 +480,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     const SizedBox(height: 12),
                     Text(
                       'How often does this plant need care? We will add it to your calendar automatically.',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                      style: TextStyle(color: AppColors.bone500, fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
@@ -528,14 +529,14 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                         Navigator.pop(context); // close bottom sheet
                         Navigator.push(context, MaterialPageRoute(builder: (_) => FloraScreen(conversationId: conversationId)));
                       },
-                      icon: const Icon(Icons.psychology, color: Color(0xFF154212)),
+                      icon: const Icon(Icons.psychology, color: AppColors.forest900),
                       label: const Text(
                         'Ask Flora for advice 🌿',
-                        style: TextStyle(color: Color(0xFF154212), fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold),
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: Color(0xFF154212)),
+                        side: const BorderSide(color: AppColors.forest900),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
@@ -546,7 +547,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                         await _saveSchedules(plantName, plantId, wateringVal, fertilizingVal, mistingVal);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF154212),
+                        backgroundColor: AppColors.forest900,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -564,7 +565,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                       },
                       child: Text(
                         'Skip for now',
-                        style: TextStyle(color: Colors.grey.shade600),
+                        style: TextStyle(color: AppColors.bone500),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -593,15 +594,15 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(

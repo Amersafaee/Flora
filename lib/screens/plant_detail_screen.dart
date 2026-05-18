@@ -20,6 +20,7 @@ import 'create_listing_screen.dart' as import_create_listing;
 import '../services/onboarding_service.dart';
 import 'onboarding_overlay_screen.dart';
 import 'home_screen.dart';
+import '../theme/app_theme.dart';
 
 // ignore_for_file: avoid_dynamic_calls
 
@@ -112,7 +113,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
           );
         },
         backgroundColor: primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: Icon(Icons.add, color: Colors.white),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -170,7 +171,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                             }
                             if (childDocs.isNotEmpty) {
                               lineageWidgets.add(
-                                Text('🪴 ${childDocs.length} propagation(s) from this plant', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                Text('🪴 ${childDocs.length} propagation(s) from this plant', style: TextStyle(color: AppColors.bone500, fontSize: 12)),
                               );
                             }
                             
@@ -220,8 +221,8 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                       },
                                   ),
                                   ListTile(
-                                    leading: const Icon(Icons.badge_outlined, color: Color(0xFF154212)),
-                                    title: const Text('View Plant Passport', style: TextStyle(color: Color(0xFF154212))),
+                                    leading: const Icon(Icons.badge_outlined, color: AppColors.forest900),
+                                    title: const Text('View Plant Passport', style: TextStyle(color: AppColors.forest900)),
                                     onTap: () {
                                       Navigator.pop(context);
                                       final plantMap = Map<String, dynamic>.from(plantData);
@@ -249,21 +250,21 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                         });
                                       }
                                       if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plant marked as unhealthy', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF8D3220)));
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plant marked as unhealthy', style: TextStyle(color: Colors.white)), backgroundColor: AppColors.terracotta900));
                                       }
                                     },
                                   ),
                                   ListTile(
-                                    leading: const Icon(Icons.sentiment_dissatisfied, color: Colors.grey),
-                                    title: const Text('Mark as Deceased', style: TextStyle(color: Colors.grey)),
+                                    leading: const Icon(Icons.sentiment_dissatisfied, color: AppColors.bone500),
+                                    title: const Text('Mark as Deceased', style: TextStyle(color: AppColors.bone500)),
                                     onTap: () {
                                       Navigator.pop(context);
                                       _showMemorialDialog(context, plantId, plantData['name'] as String? ?? plantName, plantData);
                                     },
                                   ),
                                   ListTile(
-                                    leading: const Icon(Icons.delete, color: Color(0xFF8D3220)),
-                                    title: const Text('Delete Plant', style: TextStyle(color: Color(0xFF8D3220))),
+                                    leading: const Icon(Icons.delete, color: AppColors.terracotta900),
+                                    title: const Text('Delete Plant', style: TextStyle(color: AppColors.terracotta900)),
                                     onTap: () {
                                       Navigator.pop(context);
                                       showDialog(
@@ -288,7 +289,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                                   (route) => false,
                                                 );
                                               },
-                                              child: const Text('Delete', style: TextStyle(color: Color(0xFF8D3220))),
+                                              child: const Text('Delete', style: TextStyle(color: AppColors.terracotta900)),
                                             ),
                                           ],
                                         ),
@@ -343,7 +344,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     return Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -359,7 +360,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                           color: Theme.of(context).cardColor,
                                           shape: BoxShape.circle,
                                         ),
-                                        child: Icon(Icons.favorite_border, color: Colors.grey.shade400),
+                                        child: Icon(Icons.favorite_border, color: AppColors.bone300),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
@@ -369,7 +370,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                             Text(
                                               'Health Score',
                                               style: TextStyle(
-                                                color: Colors.grey.shade600,
+                                                color: AppColors.bone500,
                                                 fontSize: 12,
                                               ),
                                             ),
@@ -379,7 +380,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                                   child: Text(
                                                     'Analyze with Flora to get health score',
                                                     style: TextStyle(
-                                                      color: Colors.grey.shade600,
+                                                      color: AppColors.bone500,
                                                       fontSize: 10,
                                                       fontStyle: FontStyle.italic,
                                                     ),
@@ -426,7 +427,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                           Text(
                                             'Health Score',
                                             style: TextStyle(
-                                              color: Colors.grey.shade600,
+                                              color: AppColors.bone500,
                                               fontSize: 12,
                                             ),
                                           ),
@@ -441,7 +442,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                           Text(
                                             'Vitals',
                                             style: TextStyle(
-                                              color: Colors.grey.shade500,
+                                              color: AppColors.bone500,
                                               fontSize: 11,
                                             ),
                                           ),
@@ -455,7 +456,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           Container(
                             height: 40,
                             width: 1,
-                            color: Colors.grey.shade300,
+                            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                           ),
                           const SizedBox(width: 16),
                           
@@ -478,7 +479,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                     Text(
                                       'Last Watered',
                                       style: TextStyle(
-                                        color: Colors.grey.shade600,
+                                        color: AppColors.bone500,
                                         fontSize: 12,
                                       ),
                                     ),
@@ -495,7 +496,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                     Text(
                                       lastWateredDate != null ? 'Completed' : 'No history',
                                       style: TextStyle(
-                                        color: Colors.grey.shade500,
+                                        color: AppColors.bone500,
                                         fontSize: 11,
                                       ),
                                     ),
@@ -520,7 +521,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                       boxShadow: [
                         BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))
                       ],
@@ -530,7 +531,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
+                            color: AppColors.forest100,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(Icons.wb_sunny_outlined, color: primaryColor),
@@ -543,7 +544,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                               Text(
                                 'Last Light Reading',
                                 style: TextStyle(
-                                  color: Colors.grey.shade600,
+                                  color: AppColors.bone500,
                                   fontSize: 12,
                                 ),
                               ),
@@ -559,7 +560,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                 Text(
                                   DateFormat('MMM d, yyyy').format((plantData['lastLightReadingDate'] as Timestamp).toDate()),
                                   style: TextStyle(
-                                    color: Colors.grey.shade500,
+                                    color: AppColors.bone500,
                                     fontSize: 11,
                                   ),
                                 ),
@@ -610,21 +611,21 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                         padding: const EdgeInsets.symmetric(
                             vertical: 16, horizontal: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(16),
                           border:
-                              Border.all(color: Colors.grey.shade200, width: 1),
+                              Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3), width: 1),
                         ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF8D3220).withValues(alpha: 0.1),
+                                color: Color(0x1A8D3220),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(Icons.local_hospital,
-                                  color: Color(0xFF8D3220), size: 20),
+                                  color: AppColors.terracotta900, size: 20),
                             ),
                             const SizedBox(width: 16),
                             const Text(
@@ -647,7 +648,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                             ],
                             const Spacer(),
                             Icon(Icons.arrow_forward_ios,
-                                size: 16, color: Colors.grey.shade400),
+                                size: 16, color: AppColors.bone300),
                           ],
                         ),
                       ),
@@ -676,7 +677,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     style: OutlinedButton.styleFrom(
                       backgroundColor: Theme.of(context).cardColor,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                      side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5), width: 1.5),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -761,7 +762,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     style: OutlinedButton.styleFrom(
                       backgroundColor: Theme.of(context).cardColor,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                      side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5), width: 1.5),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -791,7 +792,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                 child: Text(
                   'Watch your plant grow over time',
                   style: TextStyle(
-                    color: Colors.grey,
+                    color: AppColors.bone500,
                     fontSize: 12,
                   ),
                 ),
@@ -824,7 +825,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     if (incompleteTasks.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Center(child: Text('No upcoming tasks.', style: TextStyle(color: Colors.grey))),
+                        child: Center(child: Text('No upcoming tasks.', style: TextStyle(color: AppColors.bone500))),
                       );
                     }
                     return Column(
@@ -833,16 +834,16 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey.shade200),
+                            border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                             boxShadow: [
                               BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))
                             ],
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.radio_button_unchecked, color: Colors.grey.shade400),
+                              Icon(Icons.radio_button_unchecked, color: AppColors.bone300),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
@@ -850,7 +851,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                   children: [
                                     Text(task.taskType, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                     const SizedBox(height: 2),
-                                    Text(DateFormat('MMM d, yyyy').format(task.dueDate), style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                    Text(DateFormat('MMM d, yyyy').format(task.dueDate), style: const TextStyle(color: AppColors.bone500, fontSize: 13)),
                                   ],
                                 ),
                               ),
@@ -920,10 +921,10 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFE8F5E9),
+                                    color: AppColors.forest100,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(Icons.menu_book, color: Color(0xFF2E7D32)),
+                                  child: const Icon(Icons.menu_book, color: AppColors.forest600),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
@@ -932,7 +933,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                     children: [
                                       Text(match['commonName'] ?? match['name'] ?? 'Species', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                       const SizedBox(height: 4),
-                                      Text(match['watering'] ?? 'Moderate watering', style: const TextStyle(color: Colors.grey, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      Text(match['watering'] ?? 'Moderate watering', style: const TextStyle(color: AppColors.bone500, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     ],
                                   ),
                                 ),
@@ -1005,8 +1006,8 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                   backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                                   child: Text(authorInitial, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
                                 ),
-                                title: Text(truncatedTitle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                                trailing: Text(timeAgo, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                title: Text(truncatedTitle, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                trailing: Text(timeAgo, style: TextStyle(color: AppColors.bone500, fontSize: 12)),
                                 onTap: () {
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => PostCommentsScreen(postId: doc.id, postTitle: title)));
                                 },
@@ -1057,7 +1058,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       return const Center(
                         child: Text(
                           'Something went wrong',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                          style: TextStyle(color: AppColors.bone500, fontSize: 12),
                         ),
                       );
                     }
@@ -1069,7 +1070,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           padding: EdgeInsets.symmetric(vertical: 20),
                           child: Text(
                             'No growth history yet.',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: AppColors.bone500),
                           ),
                         ),
                       );
@@ -1149,7 +1150,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   Text(
                     label,
                     style: TextStyle(
-                      color: Colors.grey.shade500,
+                      color: AppColors.bone500,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,
@@ -1169,13 +1170,13 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isChipGreen ? primaryColor : Colors.grey.shade200,
+                  color: isChipGreen ? primaryColor : Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   chipText,
                   style: TextStyle(
-                    color: isChipGreen ? Colors.white : Colors.black87,
+                    color: isChipGreen ? Colors.white : Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -1198,10 +1199,10 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   height: 200,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Center(child: Icon(Icons.error_outline, color: Colors.grey)),
+                  child: const Center(child: Icon(Icons.error_outline, color: AppColors.bone500)),
                 ),
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
@@ -1209,14 +1210,14 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     height: 200,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
+                      color: AppColors.forest100,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Center(
                       child: Icon(
                         Icons.eco,
                         size: 48,
-                        color: const Color(0xFF154212).withValues(alpha: 0.4),
+                        color: Color(0x6614301E),
                       ),
                     ),
                   );
@@ -1228,14 +1229,14 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
+                color: AppColors.forest100,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
                 child: Icon(
                   Icons.eco,
                   size: 48,
-                  color: const Color(0xFF154212).withValues(alpha: 0.4),
+                  color: Color(0x6614301E),
                 ),
               ),
             ),
@@ -1280,7 +1281,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
 
     // Score colour
     final Color scoreColor = score > 70
-        ? const Color(0xFF154212)
+        ? AppColors.forest900
         : score >= 40
             ? Colors.orange.shade700
             : Colors.red.shade700;
@@ -1297,18 +1298,18 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFDFF5E3),
+                color: AppColors.forest100,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
                 children: [
                   const Icon(Icons.auto_awesome,
-                      color: Color(0xFF154212), size: 18),
+                      color: AppColors.forest900, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     'New growth detected! 🌱',
                     style: TextStyle(
-                      color: const Color(0xFF154212),
+                      color: AppColors.forest900,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -1341,7 +1342,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     Text(
                       'LAST HEALTH ASSESSMENT',
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: AppColors.bone500,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -1351,7 +1352,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       Text(
                         dateStr,
                         style: TextStyle(
-                          color: Colors.grey.shade500,
+                          color: AppColors.bone500,
                           fontSize: 11,
                         ),
                       ),
@@ -1388,7 +1389,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           'out of 100',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey.shade500,
+                            color: AppColors.bone500,
                           ),
                         ),
                       ],
@@ -1402,7 +1403,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   Text(
                     observations,
                     style: TextStyle(
-                      color: Colors.grey.shade700,
+                      color: AppColors.bone700,
                       fontSize: 13,
                       height: 1.5,
                     ),
@@ -1574,7 +1575,7 @@ Future<void> _showMemorialDialog(BuildContext context, String plantId, String pl
       await showDialog(
         context: context,
         builder: (context) => Scaffold(
-          backgroundColor: const Color(0xFF1E211E),
+          backgroundColor: AppColors.darkSurface,
           body: SafeArea(
             child: Center(
               child: Padding(
@@ -1603,7 +1604,7 @@ Future<void> _showMemorialDialog(BuildContext context, String plantId, String pl
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF1E211E),
+                        foregroundColor: AppColors.darkSurface,
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       ),
                       child: const Text('OK'),
@@ -1633,7 +1634,7 @@ Future<void> _showTimeLapse(BuildContext context, String plantId) async {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Add more growth photos to create a time lapse — you need at least 2', style: TextStyle(color: Colors.white)),
-          backgroundColor: Color(0xFF154212),
+          backgroundColor: AppColors.forest900,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1762,7 +1763,7 @@ class _MemorialSlideshowDialogState extends State<_MemorialSlideshowDialog> {
     final daysCaredFor = DateTime.now().difference(dateAdded).inDays;
 
     return Dialog.fullscreen(
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: AppColors.darkCanvas,
       child: SafeArea(
         child: Column(
           children: [
@@ -1848,7 +1849,7 @@ class _MemorialSlideshowDialogState extends State<_MemorialSlideshowDialog> {
                       onPressed: _isSaving ? null : _saveAndMove,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF1E1E1E),
+                        foregroundColor: AppColors.darkCanvas,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),

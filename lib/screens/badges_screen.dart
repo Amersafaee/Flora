@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../services/badges_service.dart';
+import '../theme/app_theme.dart';
 
 class BadgesScreen extends StatefulWidget {
   const BadgesScreen({super.key});
@@ -63,8 +64,8 @@ class _BadgesScreenState extends State<BadgesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryColor = Color(0xFF154212);
-    const Color backgroundColor = Color(0xFFF8FAF8);
+    const Color primaryColor = AppColors.forest900;
+    const Color backgroundColor = AppColors.bone25;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
 
     if (currentUserId == null) {
@@ -97,7 +98,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
         stream: _badgesService.getUserBadges(currentUserId!),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const Center(child: Text('Could not load badges.', style: TextStyle(color: Colors.grey)));
+            return const Center(child: Text('Could not load badges.', style: TextStyle(color: AppColors.bone500)));
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -135,7 +136,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
@@ -162,7 +163,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                       Text(
                         'Keep growing to unlock more badges.',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: AppColors.bone500,
                           fontSize: 14,
                         ),
                       ),
@@ -178,7 +179,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                     child: Text(
                       'EARNED BADGES',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: AppColors.bone500,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
@@ -197,7 +198,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                     child: Text(
                       'LOCKED BADGES',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: AppColors.bone500,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
@@ -234,7 +235,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -252,10 +253,10 @@ class _BadgesScreenState extends State<BadgesScreen> {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: isEarned ? primaryColor : Colors.grey.shade200,
+                    backgroundColor: isEarned ? primaryColor : Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: Icon(
                       isEarned ? Icons.check : Icons.lock,
-                      color: isEarned ? Colors.white : Colors.grey.shade400,
+                      color: isEarned ? Colors.white : AppColors.bone300,
                       size: 32,
                     ),
                   ),
@@ -265,13 +266,13 @@ class _BadgesScreenState extends State<BadgesScreen> {
                       right: -4,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.lock,
-                          color: Colors.grey.shade500,
+                          color: AppColors.bone500,
                           size: 14,
                         ),
                       ),
@@ -283,7 +284,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                 badge['badgeName'],
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: isEarned ? textColor : Colors.grey.shade500,
+                  color: isEarned ? textColor : AppColors.bone500,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -294,7 +295,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                   badge['badgeDescription'],
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.grey.shade500,
+                    color: AppColors.bone500,
                     fontSize: 11,
                   ),
                   maxLines: 3,
@@ -306,7 +307,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                 Text(
                   DateFormat('MMM d, yyyy').format(earnedDate),
                   style: TextStyle(
-                    color: Colors.grey.shade400,
+                    color: AppColors.bone300,
                     fontSize: 10,
                   ),
                 ),

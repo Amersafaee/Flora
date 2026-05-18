@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/plant_providers.dart';
 import '../../data/task_providers.dart';
-import '../../theme/tokens.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../theme/app_theme.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -91,7 +91,7 @@ class HomeScreen extends ConsumerWidget {
                               fontFamily: 'NotoSerif',
                               fontSize: 22,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: Theme.of(context).cardColor,
                             )),
                             const SizedBox(height: 6),
                             Text('Point your camera at any plant',
@@ -102,7 +102,7 @@ class HomeScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(25),
+                          color: Theme.of(context).cardColor.withAlpha(25),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.camera_alt, color: Colors.white, size: 28),

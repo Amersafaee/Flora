@@ -23,7 +23,7 @@ import '../features/auth/profile_setup_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/settings/wishlist_screen.dart';
 import '../features/flora_chat/flora_chat_screen.dart';
-import '../theme/tokens.dart';
+import '../theme/app_theme.dart';
 
 // ─── Router ─────────────────────────────────────────────────────────────────
 // Riverpod-aware router: listens to auth state and redirects accordingly.
@@ -259,7 +259,7 @@ class _FloraNavBar extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? AppColors.darkSurface.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
+            color: isDark ? Color(0xCC1E211E) : Colors.white.withValues(alpha: 0.8),
             border: Border(top: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.mist, width: 0.5)),
           ),
       child: SafeArea(
@@ -296,7 +296,7 @@ class _FloraNavBar extends StatelessWidget {
                               ? AppColors.forestGreen
                               : (isDark
                                   ? AppColors.darkTextSecondary
-                                  : Colors.grey),
+                                  : AppColors.bone500),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -311,7 +311,7 @@ class _FloraNavBar extends StatelessWidget {
                               ? AppColors.forestGreen
                               : (isDark
                                   ? AppColors.darkTextSecondary
-                                  : Colors.grey),
+                                  : AppColors.bone500),
                         ),
                       ),
                     ],

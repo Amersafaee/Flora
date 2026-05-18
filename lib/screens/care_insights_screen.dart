@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../services/care_intelligence_service.dart';
 import '../services/gemini_service.dart';
+import '../theme/app_theme.dart';
 
 class CareInsightsScreen extends StatefulWidget {
   const CareInsightsScreen({super.key});
@@ -74,7 +75,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Add some plants first to get a personalized plan'),
-              backgroundColor: Color(0xFF154212),
+              backgroundColor: AppColors.forest900,
             ),
           );
         }
@@ -112,11 +113,11 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF154212),
+                          color: AppColors.forest900,
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.grey),
+                        icon: const Icon(Icons.close, color: AppColors.bone500),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
@@ -148,7 +149,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to generate plan. Please try again.'),
-            backgroundColor: Color(0xFF8D3220),
+            backgroundColor: AppColors.terracotta900,
           ),
         );
       }
@@ -181,7 +182,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -192,12 +193,12 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: const BoxDecoration(
-                      color: Color(0xFFE8F5E9),
+                      color: AppColors.forest100,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.eco,
-                      color: Color(0xFF154212),
+                      color: AppColors.forest900,
                       size: 20,
                     ),
                   ),
@@ -223,7 +224,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                       child: Text(
                         reasoning,
                         style: const TextStyle(
-                          color: Color(0xFF154212),
+                          color: AppColors.forest900,
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -286,7 +287,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'serif',
-                            color: Color(0xFF154212),
+                            color: AppColors.forest900,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -294,7 +295,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                           'Flora has personalized your care schedule based on your home conditions',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey.shade600,
+                            color: AppColors.bone500,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -303,8 +304,8 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                           child: ElevatedButton.icon(
                             onPressed: _isGeneratingPlan ? null : _generatePersonalizedPlan,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF154212),
-                              disabledBackgroundColor: const Color(0xFF154212).withValues(alpha: 0.55),
+                              backgroundColor: AppColors.forest900,
+                              disabledBackgroundColor: Color(0x8C14301E),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -315,7 +316,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                     width: 20, height: 20,
                                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                   )
-                                : const Icon(Icons.auto_awesome, color: Colors.white),
+                                : Icon(Icons.auto_awesome, color: Colors.white),
                             label: Text(
                               _isGeneratingPlan ? 'Generating...' : 'Get Personalized Plan',
                               style: const TextStyle(
@@ -351,7 +352,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                             width: 50,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             decoration: const BoxDecoration(
-                              color: Color(0xFF154212),
+                              color: AppColors.forest900,
                               shape: BoxShape.circle,
                             ),
                             child: Column(
@@ -373,9 +374,9 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                             width: 50,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             decoration: BoxDecoration(
-                              color: hasTask ? const Color(0xFF154212) : Colors.transparent,
+                              color: hasTask ? AppColors.forest900 : Colors.transparent,
                               borderRadius: BorderRadius.circular(16),
-                              border: hasTask ? null : Border.all(color: Colors.grey.shade300),
+                              border: hasTask ? null : Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -383,7 +384,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                 Text(
                                   dayLetter,
                                   style: TextStyle(
-                                    color: hasTask ? Colors.white : Colors.grey.shade600,
+                                    color: hasTask ? Colors.white : AppColors.bone500,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -411,7 +412,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                         ? Center(
                             child: Text(
                               'No tasks scheduled for the next 14 days.',
-                              style: TextStyle(color: Colors.grey.shade600),
+                              style: TextStyle(color: AppColors.bone500),
                             ),
                           )
                         : ListView.builder(
@@ -441,14 +442,14 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey.shade600,
+                                        color: AppColors.bone500,
                                       ),
                                     ),
                                   ),
                                   ...tasks.map((task) {
                                     final type = task['taskType'] as String;
                                     
-                                    Color iconBg = const Color(0xFFE8F5E9);
+                                    Color iconBg = AppColors.forest100;
                                     Color iconColor = const Color(0xFF4CAF50);
                                     IconData iconData = Icons.water_drop;
                                     
@@ -466,7 +467,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                       margin: const EdgeInsets.only(bottom: 16),
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: Theme.of(context).cardColor,
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
@@ -504,7 +505,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                                     Text(
                                                       type,
                                                       style: TextStyle(
-                                                        color: Colors.grey.shade600,
+                                                        color: AppColors.bone500,
                                                         fontSize: 13,
                                                       ),
                                                     ),
@@ -512,7 +513,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                                 ),
                                               ),
                                               IconButton(
-                                                icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF154212)),
+                                                icon: const Icon(Icons.chat_bubble_outline, color: AppColors.forest900),
                                                 onPressed: () => _showReasoningSheet(task['reasoning']),
                                               ),
                                             ],
@@ -524,7 +525,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: Colors.grey.shade500,
+                                              color: AppColors.bone500,
                                               fontStyle: FontStyle.italic,
                                             ),
                                           ),

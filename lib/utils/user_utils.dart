@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../theme/app_theme.dart';
 
 /// Returns the best available profile photo URL for the current user.
 /// Prefers the Firestore profilePhotoUrl over Firebase Auth photoURL.
@@ -22,7 +23,7 @@ Future<String?> getUserProfilePhotoUrl() async {
 /// resolves the profile photo from Firestore first, then Firebase Auth.
 Widget buildUserAvatar({
   double radius = 20,
-  Color backgroundColor = Colors.grey,
+  Color backgroundColor = AppColors.bone500,
 }) {
   return FutureBuilder<String?>(
     future: getUserProfilePhotoUrl(),

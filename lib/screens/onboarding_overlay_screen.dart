@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/onboarding_service.dart';
+import '../theme/app_theme.dart';
 
 class OnboardingOverlayScreen extends StatelessWidget {
   final String title;
@@ -47,7 +48,7 @@ class OnboardingOverlayScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF1E221E)
+                        ? AppColors.darkSurface
                         : Colors.white,
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
@@ -64,7 +65,7 @@ class OnboardingOverlayScreen extends StatelessWidget {
                     children: [
                       // Icon
                       const Center(
-                        child: Icon(Icons.eco, color: Color(0xFF2E7D32), size: 48),
+                        child: Icon(Icons.eco, color: AppColors.forest600, size: 48),
                       ),
                       const SizedBox(height: 20),
 
@@ -87,7 +88,7 @@ class OnboardingOverlayScreen extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 15,
-                          color: Colors.grey.shade600,
+                          color: AppColors.bone500,
                           height: 1.5,
                         ),
                       ),
@@ -102,7 +103,7 @@ class OnboardingOverlayScreen extends StatelessWidget {
                             children: [
                               const Icon(
                                 Icons.check_circle,
-                                color: Color(0xFF2E7D32),
+                                color: AppColors.forest600,
                                 size: 16,
                               ),
                               const SizedBox(width: 10),
@@ -125,17 +126,17 @@ class OnboardingOverlayScreen extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: () => _dismiss(context),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF154212),
+                            backgroundColor: AppColors.forest900,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
+                          child: Text(
                             'Got it, let\'s go! 🌿',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Theme.of(context).cardColor,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -150,7 +151,7 @@ class OnboardingOverlayScreen extends StatelessWidget {
                           child: Text(
                             'Skip',
                             style: TextStyle(
-                              color: Colors.grey.shade500,
+                              color: AppColors.bone500,
                               fontSize: 13,
                             ),
                           ),

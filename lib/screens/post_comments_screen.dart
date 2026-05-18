@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_theme.dart';
 
 class PostCommentsScreen extends StatefulWidget {
   final String postId;
@@ -146,7 +147,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                     final docs = snapshot.data!.docs;
                     if (docs.isEmpty) {
                       return const Center(
-                        child: Text('Add some plants first to save tips', style: TextStyle(color: Colors.grey)),
+                        child: Text('Add some plants first to save tips', style: TextStyle(color: AppColors.bone500)),
                       );
                     }
                     
@@ -160,8 +161,8 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                         
                         return ListTile(
                           leading: const CircleAvatar(
-                            backgroundColor: Color(0xFFE8F3EA),
-                            child: Icon(Icons.eco, color: Color(0xFF154212)),
+                            backgroundColor: AppColors.forest100,
+                            child: Icon(Icons.eco, color: AppColors.forest900),
                           ),
                           title: Text(plantName, style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text(category),
@@ -184,7 +185,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                               );
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Saved to $plantName journal 🌿'), backgroundColor: const Color(0xFF2D5A27)),
+                                  SnackBar(content: Text('Saved to $plantName journal 🌿'), backgroundColor: AppColors.forest700),
                                 );
                               }
                             } catch (e) {
@@ -238,7 +239,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                   color: Theme.of(context).cardColor,
                   child: Text(
                     widget.postTitle,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 );
               }
@@ -261,7 +262,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                       const SizedBox(height: 8),
                       Text(
                         body,
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                        style: TextStyle(color: AppColors.bone500, fontSize: 14),
                       ),
                     ],
                     if (imageUrl.isNotEmpty) ...[
@@ -300,7 +301,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                 final comments = snapshot.data?.docs ?? [];
                 if (comments.isEmpty) {
                   return const Center(
-                    child: Text('No comments yet. Be the first to reply!', style: TextStyle(color: Colors.grey)),
+                    child: Text('No comments yet. Be the first to reply!', style: TextStyle(color: AppColors.bone500)),
                   );
                 }
 
@@ -320,7 +321,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                           if (data['isFloraAnswer'] == true)
                             const CircleAvatar(
                               radius: 16,
-                              backgroundColor: Color(0xFF154212),
+                              backgroundColor: AppColors.forest900,
                               child: Icon(Icons.eco, color: Colors.white, size: 16),
                             )
                           else
@@ -342,7 +343,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                             child: Container(
                               padding: EdgeInsets.all(data['isFloraAnswer'] == true ? 12.0 : 0),
                               decoration: BoxDecoration(
-                                color: data['isFloraAnswer'] == true ? const Color(0xFFE8F5E9) : Colors.transparent,
+                                color: data['isFloraAnswer'] == true ? AppColors.forest100 : Colors.transparent,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -351,11 +352,11 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                                   Row(
                                     children: [
                                       if (data['isFloraAnswer'] == true) ...[
-                                        const Icon(Icons.eco, color: Color(0xFF154212), size: 12),
+                                        const Icon(Icons.eco, color: AppColors.forest900, size: 12),
                                         const SizedBox(width: 4),
                                         const Text(
                                           'FLORA AI EXPERT ANSWER',
-                                          style: TextStyle(color: Color(0xFF154212), fontWeight: FontWeight.bold, fontSize: 11),
+                                          style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold, fontSize: 11),
                                         ),
                                         const Spacer(),
                                       ] else ...[
@@ -367,7 +368,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                                       const SizedBox(width: 8),
                                       Text(
                                         _formatTimestamp(data['timestamp']),
-                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                        style: const TextStyle(color: AppColors.bone500, fontSize: 12),
                                       ),
                                     ],
                                   ),
@@ -376,7 +377,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                                     data['text'] ?? '',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: data['isFloraAnswer'] == true ? const Color(0xFF154212) : null,
+                                      color: data['isFloraAnswer'] == true ? AppColors.forest900 : null,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
@@ -412,14 +413,14 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                                             : Icons.favorite_border,
                                           size: 16,
                                           color: (List<String>.from(data['likedBy'] ?? []).contains(FirebaseAuth.instance.currentUser?.uid)) 
-                                            ? const Color(0xFF8D3220) 
-                                            : Colors.grey,
+                                            ? AppColors.terracotta900 
+                                            : AppColors.bone500,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         '${(data['likedBy'] as List?)?.length ?? 0}',
-                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                        style: const TextStyle(fontSize: 12, color: AppColors.bone500),
                                       ),
                                       const SizedBox(width: 12),
                                       GestureDetector(
@@ -433,7 +434,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                                         },
                                         child: const Text(
                                           'Reply',
-                                          style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
+                                          style: TextStyle(fontSize: 12, color: AppColors.bone500, fontWeight: FontWeight.w500),
                                         ),
                                       ),
                                     ],
@@ -481,9 +482,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Theme.of(context).brightness == Brightness.dark 
-                          ? const Color(0xFF2C2C2C) 
-                          : Colors.grey.shade100,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
                   ),
@@ -495,7 +494,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                         child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                       )
                     : IconButton(
-                        icon: Icon(Icons.send, color: _hasText ? primaryColor : Colors.grey),
+                        icon: Icon(Icons.send, color: _hasText ? primaryColor : AppColors.bone500),
                         onPressed: _hasText ? _sendComment : null,
                       ),
               ],

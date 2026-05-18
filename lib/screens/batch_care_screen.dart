@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/task_model.dart';
 import '../services/firestore_service.dart';
 import '../services/care_intelligence_service.dart';
+import '../theme/app_theme.dart';
 
 class BatchCareScreen extends StatefulWidget {
   final List<Task> tasks;
@@ -85,12 +86,12 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          title: const Text('Quick Care', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+          title: const Text('Quick Care', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.bone900)),
           backgroundColor: Colors.transparent,
           elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.black),
+          iconTheme: const IconThemeData(color: AppColors.bone900),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: const Icon(Icons.arrow_back, color: AppColors.bone900),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -101,7 +102,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: const BoxDecoration(
-                  color: Color(0xFFE8F5E9),
+                  color: AppColors.forest100,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.check_circle, color: Colors.green, size: 80),
@@ -114,7 +115,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
               const SizedBox(height: 8),
               const Text(
                 'Your plants have been taken care of',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(fontSize: 16, color: AppColors.bone500),
               ),
               const SizedBox(height: 32),
               Row(
@@ -131,7 +132,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF154212),
+                  backgroundColor: AppColors.forest900,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -153,13 +154,13 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
         chipColor = Colors.green;
         break;
       case 'Fertilizing':
-        chipColor = const Color(0xFF8D3220); // Terracotta
+        chipColor = AppColors.terracotta900; // Terracotta
         break;
       case 'Repotting':
         chipColor = Colors.blue;
         break;
       default:
-        chipColor = Colors.grey;
+        chipColor = AppColors.bone500;
     }
 
     String careTip;
@@ -180,19 +181,19 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Quick Care', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+        title: const Text('Quick Care', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.bone900)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: AppColors.bone900),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.bone900),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            const Text('Swipe right to complete, swipe left to skip', style: TextStyle(color: Colors.grey, fontSize: 14)),
+            const Text('Swipe right to complete, swipe left to skip', style: TextStyle(color: AppColors.bone500, fontSize: 14)),
             const SizedBox(height: 16),
             // Progress Bar
             Padding(
@@ -201,14 +202,14 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: progress,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF154212)),
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.forest900),
                   minHeight: 4,
                 ),
               ),
             ),
             const SizedBox(height: 8),
-            Text('${_currentIndex + 1} of ${widget.tasks.length}', style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text('${_currentIndex + 1} of ${widget.tasks.length}', style: const TextStyle(color: AppColors.bone500, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             // Task Card
             Expanded(
@@ -226,7 +227,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(32),
                     boxShadow: [
                       BoxShadow(
@@ -273,13 +274,13 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                               const SizedBox(height: 16),
                               Text(
                                 'Due ${currentTask.dueDate.month}/${currentTask.dueDate.day}',
-                                style: const TextStyle(color: Colors.grey, fontSize: 14),
+                                style: const TextStyle(color: AppColors.bone500, fontSize: 14),
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 careTip,
                                 style: const TextStyle(
-                                  color: Color(0xFF154212),
+                                  color: AppColors.forest900,
                                   fontStyle: FontStyle.italic,
                                   fontSize: 16,
                                 ),
@@ -289,9 +290,9 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                         ),
                         Expanded(
                           child: Container(
-                            color: const Color(0xFFE8F5E9),
+                            color: AppColors.forest100,
                             child: const Center(
-                              child: Icon(Icons.eco, size: 100, color: Color(0xFF154212)),
+                              child: Icon(Icons.eco, size: 100, color: AppColors.forest900),
                             ),
                           ),
                         ),
@@ -312,7 +313,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                     width: 64,
                     height: 64,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -332,7 +333,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                     width: 64,
                     height: 64,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF154212),
+                      color: AppColors.forest900,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(

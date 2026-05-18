@@ -3,6 +3,7 @@ import 'package:camera/camera.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../theme/app_theme.dart';
 
 class LightMeterScreen extends StatefulWidget {
   const LightMeterScreen({super.key});
@@ -17,7 +18,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
   double _luxValue = 0;
   String _lightLevel = 'Tap Measure to start';
   String _lightDescription = 'Point your camera at the light source';
-  Color _levelColor = Colors.grey;
+  Color _levelColor = AppColors.bone500;
   Timer? _measureTimer;
   final List<double> _recentReadings = [];
 
@@ -98,7 +99,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
     } else if (lux < 10000) {
       _lightLevel = 'Bright Indirect';
       _lightDescription = 'Perfect for Monstera, Pothos and most tropical plants';
-      _levelColor = const Color(0xFF154212);
+      _levelColor = AppColors.forest900;
     } else if (lux < 25000) {
       _lightLevel = 'Bright Direct';
       _lightDescription = 'Great for succulents, cacti and herbs';
@@ -180,7 +181,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                         child: CircularProgressIndicator(
                           value: _gaugeValue,
                           strokeWidth: 14,
-                          backgroundColor: Colors.grey.shade200,
+                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                           valueColor: AlwaysStoppedAnimation<Color>(_levelColor),
                         ),
                       ),
@@ -206,7 +207,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -297,7 +298,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: primaryColor),
                       ),
                       const SizedBox(width: 8),
-                      Text('Measuring for 5 seconds...', style: TextStyle(color: Colors.grey.shade600)),
+                      Text('Measuring for 5 seconds...', style: TextStyle(color: AppColors.bone500)),
                     ],
                   ),
                 ),
@@ -310,7 +311,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                     child: ElevatedButton(
                       onPressed: () => _showSaveToPlantSheet(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE8F5E9),
+                        backgroundColor: AppColors.forest100,
                         foregroundColor: primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -354,7 +355,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                 Center(
                   child: Container(
                     width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: const BorderRadius.all(Radius.circular(2))),
+                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3), borderRadius: const BorderRadius.all(Radius.circular(2))),
                   ),
                 ),
                 const Text('Save Light Reading', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -375,17 +376,17 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                           
                           return ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: const Color(0xFFE8F5E9),
+                              backgroundColor: AppColors.forest100,
                               backgroundImage: data['imageUrl'] != null && data['imageUrl'].toString().isNotEmpty
                                   ? NetworkImage(data['imageUrl'])
                                   : null,
                               child: data['imageUrl'] == null || data['imageUrl'].toString().isEmpty
-                                  ? const Icon(Icons.eco, color: Color(0xFF154212))
+                                  ? const Icon(Icons.eco, color: AppColors.forest900)
                                   : null,
                             ),
                             title: Text(data['name'] ?? 'Unknown'),
                             subtitle: Text(data['category'] ?? 'Plant'),
-                            trailing: const Icon(Icons.check_circle_outline, color: Colors.grey),
+                            trailing: const Icon(Icons.check_circle_outline, color: AppColors.bone500),
                             onTap: () async {
                               Navigator.pop(context);
                               await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(docs[index].id).update({
@@ -397,7 +398,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                     content: Text('Light reading saved to ${data['name']} 🌿'),
-                                    backgroundColor: const Color(0xFF154212),
+                                    backgroundColor: AppColors.forest900,
                                   ),
                                 );
                             },

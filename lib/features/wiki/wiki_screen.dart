@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/species_providers.dart';
 import '../../data/wishlist_providers.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class WikiScreen extends ConsumerWidget {
   const WikiScreen({super.key});
@@ -205,7 +205,7 @@ class WikiScreen extends ConsumerWidget {
                                       ),
                                       child: Text(
                                         s.category,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
@@ -242,7 +242,7 @@ class WikiScreen extends ConsumerWidget {
                                       children: s.traits.take(3).map((t) => Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: isDark ? AppColors.darkSurface : AppColors.mist.withValues(alpha: 0.5),
+                                          color: isDark ? AppColors.darkSurface : Color(0x80E8F3EA),
                                           borderRadius: AppRadius.borderSm,
                                         ),
                                         child: Text(t, style: TextStyle(

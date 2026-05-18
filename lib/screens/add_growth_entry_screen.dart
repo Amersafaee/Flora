@@ -6,6 +6,7 @@ import '../services/storage_service.dart';
 import '../services/gemini_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'flora_chats_list_screen.dart';
+import '../theme/app_theme.dart';
 
 class AddGrowthEntryScreen extends StatefulWidget {
   final String plantName;
@@ -127,7 +128,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()));
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF154212),
+                          backgroundColor: AppColors.forest900,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
@@ -141,10 +142,10 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: const BorderSide(color: Color(0xFF154212), width: 2),
+                          side: const BorderSide(color: AppColors.forest900, width: 2),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('View Treatment Cases', style: TextStyle(color: Color(0xFF154212), fontWeight: FontWeight.bold)),
+                        child: const Text('View Treatment Cases', style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -164,7 +165,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Something went wrong. Please try again.'),
-            backgroundColor: Colors.grey,
+            backgroundColor: AppColors.bone500,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -223,11 +224,11 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                 onPressed: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()));
                 },
-                icon: const Icon(Icons.psychology, color: Color(0xFF154212)),
-                label: const Text('Not sure what to write? Ask Flora 🌿', style: TextStyle(color: Color(0xFF154212), fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.psychology, color: AppColors.forest900),
+                label: const Text('Not sure what to write? Ask Flora 🌿', style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: Color(0xFF154212), width: 1.5),
+                  side: const BorderSide(color: AppColors.forest900, width: 1.5),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
@@ -244,7 +245,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                 child: Container(
                   height: 200,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
+                    color: AppColors.forest100,
                     borderRadius: BorderRadius.circular(16),
                     image: _imageFile != null
                         ? DecorationImage(
@@ -258,7 +259,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                           child: Icon(
                             Icons.eco,
                             size: 48,
-                            color: const Color(0xFF154212).withValues(alpha: 0.4),
+                            color: Color(0x6614301E),
                           ),
                         )
                       : null,
@@ -274,8 +275,8 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
               const SizedBox(height: 8),
               Text(
                 widget.plantName,
-                style: const TextStyle(
-                  color: Colors.grey,
+                style: TextStyle(
+                  color: AppColors.bone500,
                   fontSize: 16,
                 ),
               ),
@@ -292,17 +293,17 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   hintText: 'e.g. 64',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  hintStyle: TextStyle(color: AppColors.bone300),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppColors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -323,17 +324,17 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   hintText: 'e.g. 2',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  hintStyle: TextStyle(color: AppColors.bone300),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppColors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -354,17 +355,17 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                 maxLines: 4,
                 decoration: InputDecoration(
                   hintText: 'Describe how your plant looks today...',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  hintStyle: TextStyle(color: AppColors.bone300),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppColors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),

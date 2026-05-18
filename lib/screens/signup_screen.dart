@@ -8,6 +8,7 @@ import '../services/auth_service.dart';
 import '../services/onboarding_service.dart';
 import 'login_screen.dart';
 import '../main.dart';
+import '../theme/app_theme.dart';
 
 class SignupScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -180,6 +181,36 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await _authService.signInWithGoogle();
+      if (!mounted) return;
+      if (result == 'Success') {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+          if (doc.exists && doc.data()?['isNewUser'] == true) {
+            await OnboardingService.initForNewUser();
+            await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'isNewUser': false});
+          }
+        }
+        
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => MainTabScreen(onThemeChanged: widget.onThemeChanged ?? (_) {})),
+          (route) => false,
+        );
+      } else if (result != 'cancelled') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google sign in failed. Please try again.'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
@@ -215,7 +246,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         decoration: BoxDecoration(
                           color: primaryColor,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                          border: Border.all(color: Theme.of(context).cardColor, width: 2),
                         ),
                         child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
                       ),
@@ -227,7 +258,7 @@ class _SignupScreenState extends State<SignupScreen> {
               Center(
                 child: Text(
                   'Add Photo (optional)',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  style: TextStyle(color: AppColors.bone500, fontSize: 12),
                 ),
               ),
               const SizedBox(height: 20),
@@ -248,7 +279,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 'Start your plant journey today',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: AppColors.bone500,
                   fontSize: 16,
                 ),
               ),
@@ -269,7 +300,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 enabled: !_isLoading,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).cardColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -280,7 +311,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF154212), width: 2),
+                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
                   ),
                 ),
               ),
@@ -302,7 +333,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 enabled: !_isLoading,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).cardColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -313,7 +344,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF154212), width: 2),
+                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
                   ),
                 ),
               ),
@@ -336,11 +367,11 @@ class _SignupScreenState extends State<SignupScreen> {
                 onSubmitted: (_) => _signup(),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).cardColor,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.grey,
+                      color: AppColors.bone500,
                     ),
                     onPressed: _isLoading
                         ? null
@@ -356,7 +387,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF154212), width: 2),
+                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
                   ),
                 ),
               ),
@@ -392,13 +423,54 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               const SizedBox(height: 24),
 
+              Row(
+                children: [
+                  const Expanded(child: Divider(color: Color(0xFFE0E0E0), thickness: 1)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: const Text('or', style: TextStyle(color: AppColors.bone500)),
+                  ),
+                  const Expanded(child: Divider(color: Color(0xFFE0E0E0), thickness: 1)),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              OutlinedButton(
+                onPressed: _isLoading ? null : _signInWithGoogle,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+                      ),
+                      child: const Center(
+                        child: Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('Continue with Google', style: Theme.of(context).textTheme.labelLarge),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // Already have an account? Sign In
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
                     "Already have an account?",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.bone500),
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
@@ -417,7 +489,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     child: const Text(
                       'Sign In',
                       style: TextStyle(
-                        color: Color(0xFF8D3220),
+                        color: AppColors.terracotta900,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

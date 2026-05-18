@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'add_plant_screen.dart';
 import 'flora_screen.dart';
 import 'wiki_plant_detail_screen.dart';
+import '../theme/app_theme.dart';
 
 class IdentifyResultScreen extends StatefulWidget {
   final File imageFile;
@@ -39,7 +40,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
   }
 
   Color _scoreColor(int score) {
-    if (score > 70) return const Color(0xFF2E7D32);
+    if (score > 70) return AppColors.forest600;
     if (score >= 40) return const Color(0xFFE65100);
     return const Color(0xFFC62828);
   }
@@ -139,7 +140,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please sign in to continue with Flora.'),
-            backgroundColor: Color(0xFF8D3220),
+            backgroundColor: AppColors.terracotta900,
           ),
         );
       }
@@ -211,7 +212,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Could not open Flora: $e'),
-            backgroundColor: const Color(0xFF8D3220),
+            backgroundColor: AppColors.terracotta900,
           ),
         );
       }
@@ -235,7 +236,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Color(0xFF154212)),
+                    icon: const Icon(Icons.arrow_back, color: AppColors.forest900),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Expanded(
@@ -245,7 +246,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF154212),
+                          color: AppColors.forest900,
                         ),
                       ),
                     ),
@@ -342,7 +343,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                 ],
                               ),
                               const SizedBox(height: 16),
-                              Divider(color: Colors.grey.shade100, height: 1),
+                              Divider(color: Theme.of(context).colorScheme.surfaceContainerHighest, height: 1),
                               const SizedBox(height: 16),
                             ],
 
@@ -400,10 +401,10 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFE8F5E9),
+                                      color: AppColors.forest100,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: const Icon(Icons.menu_book, color: Color(0xFF2E7D32)),
+                                    child: const Icon(Icons.menu_book, color: AppColors.forest600),
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
@@ -412,7 +413,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                     ),
                                   ),
-                                  const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                                  const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.bone500),
                                 ],
                               ),
                             ),
@@ -449,13 +450,13 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF154212),
+                          backgroundColor: AppColors.forest900,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                           elevation: 0,
                         ),
-                        icon: const Icon(Icons.add_circle_outline,
+                        icon: Icon(Icons.add_circle_outline,
                             color: Colors.white, size: 20),
                         label: const Text(
                           'Add to My Collection',
@@ -476,17 +477,17 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
-                              color: Color(0xFF154212), width: 1.5),
+                              color: AppColors.forest900, width: 1.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         icon: const Icon(Icons.refresh,
-                            color: Color(0xFF154212), size: 20),
+                            color: AppColors.forest900, size: 20),
                         label: const Text(
                           'Analyze Another',
                           style: TextStyle(
-                            color: Color(0xFF154212),
+                            color: AppColors.forest900,
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
@@ -501,9 +502,9 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _isOpeningFlora ? null : _openFloraWithPlantContext,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E7D32),
+                          backgroundColor: AppColors.forest600,
                           disabledBackgroundColor:
-                              const Color(0xFF2E7D32).withValues(alpha: 0.55),
+                              Color(0x8C2E7D32),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -518,7 +519,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.eco,
+                            : Icon(Icons.eco,
                                 color: Colors.white, size: 20),
                         label: Text(
                           _isOpeningFlora ? 'Opening Flora…' : 'Continue with Flora 🌿',

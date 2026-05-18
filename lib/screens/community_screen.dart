@@ -15,6 +15,7 @@ import '../services/firestore_service.dart';
 import '../utils/user_utils.dart';
 import '../services/onboarding_service.dart';
 import 'onboarding_overlay_screen.dart';
+import '../theme/app_theme.dart';
 
 
 class CommunityScreen extends StatefulWidget {
@@ -151,7 +152,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-    const Color softGreen = Color(0xFFE8F3EA);
+    const Color softGreen = AppColors.forest100;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -206,10 +207,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   },
                   decoration: InputDecoration(
                     hintText: 'Search discussions...',
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+                    hintStyle: TextStyle(color: AppColors.bone300),
+                    prefixIcon: Icon(Icons.search, color: AppColors.bone300),
                     filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E211E) : Colors.white,
+                    fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : Colors.white,
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -225,7 +226,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 child: Row(
                   children: [
                     ChoiceChip(
-                      label: const Text('For My Garden'),
+                      label: Text('For My Garden'),
                       selected: _feedMode == 'mine',
                       onSelected: (selected) {
                         if (selected) setState(() => _feedMode = 'mine');
@@ -240,7 +241,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     ),
                     const SizedBox(width: 8),
                     ChoiceChip(
-                      label: const Text('All Posts'),
+                      label: Text('All Posts'),
                       selected: _feedMode == 'all',
                       onSelected: (selected) {
                         if (selected) setState(() => _feedMode = 'all');
@@ -303,7 +304,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF154212), Color(0xFF2D5A27)],
+                          colors: [AppColors.forest900, AppColors.forest700],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -342,7 +343,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF154212),
+                                foregroundColor: AppColors.forest900,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               child: const Text('Join Challenge', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -400,14 +401,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
                               Text(
                                 'Trade cuttings and seeds locally',
                                 style: TextStyle(
-                                  color: Colors.grey.shade600,
+                                  color: AppColors.bone500,
                                   fontSize: 13,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        Icon(Icons.arrow_forward_ios, color: Colors.grey.shade400, size: 16),
+                        Icon(Icons.arrow_forward_ios, color: AppColors.bone300, size: 16),
                       ],
                     ),
                   ),
@@ -426,7 +427,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return const Center(child: Text('Failed to load posts', style: TextStyle(color: Colors.grey)));
+                      return const Center(child: Text('Failed to load posts', style: TextStyle(color: AppColors.bone500)));
                     }
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: Padding(padding: EdgeInsets.all(40.0), child: CircularProgressIndicator()));
@@ -465,7 +466,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.people, size: 60, color: Color(0xFF154212)),
+                            Icon(Icons.people, size: 60, color: AppColors.forest900),
                             const SizedBox(height: 20),
                             Text(
                               'Be the first to share',
@@ -479,7 +480,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             const Text(
                               'The community is waiting for your plant story. Share a tip, ask a question, or show off your collection.',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                              style: TextStyle(color: AppColors.bone500, fontSize: 14),
                             ),
                             const SizedBox(height: 24),
                             ElevatedButton(
@@ -487,7 +488,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'General')));
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF154212),
+                                backgroundColor: AppColors.forest900,
                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
@@ -505,16 +506,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.eco_outlined, size: 60, color: Color(0xFF154212)),
+                              const Icon(Icons.eco_outlined, size: 60, color: AppColors.forest900),
                               const SizedBox(height: 20),
-                              const Text('No community posts about your plants yet. Be the first to share! 🌿', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey)),
+                              const Text('No community posts about your plants yet. Be the first to share! 🌿', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: AppColors.bone500)),
                               const SizedBox(height: 24),
                               ElevatedButton(
                                 onPressed: () {
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'General')));
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF154212),
+                                  backgroundColor: AppColors.forest900,
                                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
@@ -527,7 +528,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(40.0),
-                          child: Text('No posts found for your search.', style: TextStyle(color: Colors.grey)),
+                          child: Text('No posts found for your search.', style: TextStyle(color: AppColors.bone500)),
                         ),
                       );
                     }
@@ -662,7 +663,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     Text(
                       timeAgo,
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: AppColors.bone500,
                         fontSize: 12,
                       ),
                     ),
@@ -670,7 +671,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.more_horiz, color: Colors.grey.shade500),
+                icon: Icon(Icons.more_horiz, color: AppColors.bone500),
                 onPressed: () {
                   showModalBottomSheet(
                     context: context,
@@ -688,7 +689,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('You cannot report your own post'),
-                                    backgroundColor: Colors.grey,
+                                    backgroundColor: AppColors.bone500,
                                     behavior: SnackBarBehavior.floating,
                                   ),
                                 );
@@ -737,8 +738,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           ),
                           if (currentUserId == authorUid)
                             ListTile(
-                              leading: const Icon(Icons.delete_outline, color: Color(0xFF8D3220)),
-                              title: const Text('Delete Post', style: TextStyle(color: Color(0xFF8D3220))),
+                              leading: const Icon(Icons.delete_outline, color: AppColors.terracotta900),
+                              title: const Text('Delete Post', style: TextStyle(color: AppColors.terracotta900)),
                               onTap: () {
                                 Navigator.pop(context);
                                 showDialog(
@@ -816,7 +817,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           Text(
             body,
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: AppColors.bone500,
               fontSize: 14,
               height: 1.4,
             ),
@@ -835,18 +836,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Container(
                     height: 200,
-                    color: const Color(0xFFE8F5E9),
+                    color: AppColors.forest100,
                     child: Center(
-                      child: Icon(Icons.eco, color: const Color(0xFF154212).withValues(alpha: 0.4), size: 48),
+                      child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
                     ),
                   ),
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
                     return Container(
                       height: 200,
-                      color: const Color(0xFFE8F5E9),
+                      color: AppColors.forest100,
                       child: Center(
-                        child: Icon(Icons.eco, color: const Color(0xFF154212).withValues(alpha: 0.4), size: 48),
+                        child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
                       ),
                     );
                   },
@@ -872,7 +873,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
             
           const SizedBox(height: 16),
-          Divider(color: Colors.grey.shade200),
+          Divider(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
           const SizedBox(height: 8),
           
           // Interaction Row
@@ -889,7 +890,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       IconButton(
                         icon: Icon(
                           isLiked ? Icons.favorite : Icons.favorite_border,
-                          color: isLiked ? const Color(0xFF8D3220) : Colors.grey.shade500,
+                          color: isLiked ? AppColors.terracotta900 : AppColors.bone500,
                           size: 20,
                         ),
                         onPressed: () async {
@@ -905,7 +906,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           }
                         },
                       ),
-                      Text('$likesCount', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold))
+                      Text('$likesCount', style: TextStyle(color: AppColors.bone500, fontWeight: FontWeight.bold))
                     ],
                   );
                 },
@@ -914,7 +915,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
               Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.chat_bubble_outline, color: Colors.grey.shade500, size: 20),
+                    icon: Icon(Icons.chat_bubble_outline, color: AppColors.bone500, size: 20),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -927,12 +928,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       );
                     },
                   ),
-                  Text('$commentsCount', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold))
+                  Text('$commentsCount', style: TextStyle(color: AppColors.bone500, fontWeight: FontWeight.bold))
                 ],
               ),
               const Spacer(),
               IconButton(
-                icon: Icon(Icons.share_outlined, color: Colors.grey.shade500, size: 20),
+                icon: Icon(Icons.share_outlined, color: AppColors.bone500, size: 20),
                 onPressed: () {
                   // ignore: deprecated_member_use
                   Share.share("Check out this plant discussion on Digital Conservatory: $title");

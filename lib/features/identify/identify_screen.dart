@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../theme/tokens.dart';
 import '../../services/gemini_service.dart';
 import '../../screens/identify_result_screen.dart';
+import '../../theme/app_theme.dart';
 
 class IdentifyScreen extends StatefulWidget {
   const IdentifyScreen({super.key});

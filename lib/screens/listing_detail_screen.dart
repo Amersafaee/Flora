@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'swap_chat_screen.dart';
+import '../theme/app_theme.dart';
 
 class ListingDetailScreen extends StatefulWidget {
   final DocumentSnapshot doc;
@@ -61,7 +62,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Color(0xFF8D3220))),
+            child: const Text('Delete', style: TextStyle(color: AppColors.terracotta900)),
           ),
         ],
       ),
@@ -118,7 +119,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   });
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
-                child: const Text('Save'),
+                child: Text('Save'),
               ),
               const SizedBox(height: 20),
             ],
@@ -212,12 +213,12 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   background: imageUrl.isNotEmpty
                       ? Image.network(imageUrl, fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
-                            color: const Color(0xFFE8F5E9),
-                            child: const Center(child: Icon(Icons.eco, size: 64, color: Color(0xFF154212))),
+                            color: AppColors.forest100,
+                            child: const Center(child: Icon(Icons.eco, size: 64, color: AppColors.forest900)),
                           ))
                       : Container(
-                          color: const Color(0xFFE8F5E9),
-                          child: const Center(child: Icon(Icons.eco, size: 64, color: Color(0xFF154212))),
+                          color: AppColors.forest100,
+                          child: const Center(child: Icon(Icons.eco, size: 64, color: AppColors.forest900)),
                         ),
                 ),
               ),
@@ -232,50 +233,50 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE8F5E9),
+                              color: AppColors.forest100,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(type, style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
                           ),
                           const Spacer(),
-                          Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
+                          Icon(Icons.access_time, size: 14, color: AppColors.bone500),
                           const SizedBox(width: 4),
-                          Text(timeAgo, style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                          Text(timeAgo, style: TextStyle(color: AppColors.bone500, fontSize: 13)),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Text(title, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                      Text(title, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 16, color: Colors.grey.shade500),
+                          Icon(Icons.location_on, size: 16, color: AppColors.bone500),
                           const SizedBox(width: 4),
-                          Text(location, style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+                          Text(location, style: TextStyle(color: AppColors.bone500, fontSize: 14)),
                         ],
                       ),
                       const SizedBox(height: 24),
                       Text('About this plant', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.onSurface)),
                       const SizedBox(height: 8),
-                      Text(description, style: TextStyle(color: Colors.grey.shade700, fontSize: 15, height: 1.5)),
+                      Text(description, style: TextStyle(color: AppColors.bone700, fontSize: 15, height: 1.5)),
                       const SizedBox(height: 24),
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFFF3F1),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF8D3220).withValues(alpha: 0.2)),
+                          border: Border.all(color: Color(0x338D3220)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.swap_horiz, color: Color(0xFF8D3220)),
+                            const Icon(Icons.swap_horiz, color: AppColors.terracotta900),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Looking to swap for', style: TextStyle(color: Color(0xFF8D3220), fontSize: 12, fontWeight: FontWeight.bold)),
+                                  Text('Looking to swap for', style: TextStyle(color: AppColors.terracotta900, fontSize: 12, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 4),
-                                  Text(lookingFor, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                  Text(lookingFor, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                                 ],
                               ),
                             ),
@@ -286,7 +287,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
                         ),
@@ -294,14 +295,14 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           children: [
                             const CircleAvatar(
                               radius: 24,
-                              backgroundColor: Colors.grey,
+                              backgroundColor: AppColors.bone500,
                               child: Icon(Icons.person, color: Colors.white),
                             ),
                             const SizedBox(width: 12),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Listed by', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                const Text('Listed by', style: TextStyle(color: AppColors.bone500, fontSize: 12)),
                                 Row(
                                   children: [
                                     Text(ownerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -344,7 +345,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 child: ElevatedButton(
                   onPressed: () => _showPassportSheet(data),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF154212),
+                    backgroundColor: AppColors.forest900,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
@@ -386,8 +387,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     } else {
       healthBadge = Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(12)),
-        child: Text('Health: Not assessed', style: TextStyle(color: Colors.grey.shade800, fontWeight: FontWeight.bold, fontSize: 12)),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12)),
+        child: Text('Health: Not assessed', style: TextStyle(color: AppColors.bone900, fontWeight: FontWeight.bold, fontSize: 12)),
       );
     }
 
@@ -408,11 +409,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
             Center(
               child: Container(
                 width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const SizedBox(height: 20),
-            Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(title, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -420,21 +421,21 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(12)),
-                  child: Text(type, style: const TextStyle(color: Color(0xFF154212), fontWeight: FontWeight.bold, fontSize: 12)),
+                  decoration: BoxDecoration(color: AppColors.forest100, borderRadius: BorderRadius.circular(12)),
+                  child: Text(type, style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Text('Passport Details', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 8),
-            Text(description, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
+            Text(description, style: TextStyle(color: AppColors.bone700, fontSize: 14)),
             const SizedBox(height: 16),
             Row(
               children: [
-                const Icon(Icons.person, color: Colors.grey, size: 20),
+                const Icon(Icons.person, color: AppColors.bone500, size: 20),
                 const SizedBox(width: 8),
-                Text('Listed by $ownerName', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                Text('Listed by $ownerName', style: const TextStyle(color: AppColors.bone500, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 24),
@@ -447,7 +448,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: const Text('View Full Listing', style: TextStyle(color: Color(0xFF154212))),
+                    child: const Text('View Full Listing', style: TextStyle(color: AppColors.forest900)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -458,7 +459,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       _startConversation();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF154212),
+                      backgroundColor: AppColors.forest900,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),

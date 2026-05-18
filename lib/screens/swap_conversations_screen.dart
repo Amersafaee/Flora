@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'swap_chat_screen.dart';
 import 'package:intl/intl.dart';
+import '../theme/app_theme.dart';
 
 class SwapConversationsScreen extends StatefulWidget {
   const SwapConversationsScreen({super.key});
@@ -100,7 +101,7 @@ class _SwapConversationsScreenState extends State<SwapConversationsScreen> {
         title: const Text('My Swap Conversations', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: sortedDocs.isEmpty
-          ? const Center(child: Text('No active conversations', style: TextStyle(color: Colors.grey)))
+          ? const Center(child: Text('No active conversations', style: TextStyle(color: AppColors.bone500)))
           : ListView.separated(
               itemCount: sortedDocs.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
@@ -120,8 +121,8 @@ class _SwapConversationsScreenState extends State<SwapConversationsScreen> {
                 return ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFE8F5E9),
-                    child: Icon(Icons.person, color: Color(0xFF154212)),
+                    backgroundColor: AppColors.forest100,
+                    child: Icon(Icons.person, color: AppColors.forest900),
                   ),
                   title: Text(
                     '$otherPartyName • $listingTitle',
@@ -133,11 +134,11 @@ class _SwapConversationsScreenState extends State<SwapConversationsScreen> {
                     lastMessage.isEmpty ? 'No messages yet' : lastMessage,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(color: AppColors.bone500),
                   ),
                   trailing: Text(
                     timeStr,
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                    style: TextStyle(color: AppColors.bone500, fontSize: 12),
                   ),
                   onTap: () {
                     Navigator.push(

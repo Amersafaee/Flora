@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'plant_detail_screen.dart';
+import '../theme/app_theme.dart';
 
 class SwapChatScreen extends StatefulWidget {
   final String conversationId;
@@ -158,7 +159,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
             const Text('Trade Chat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             Text(
               _listingTitle,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.normal),
+              style: TextStyle(fontSize: 12, color: AppColors.bone500, fontWeight: FontWeight.normal),
             ),
           ],
         ),
@@ -175,7 +176,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
               },
               icon: const Icon(Icons.visibility, size: 16),
               label: const Text('View Listing'),
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF154212)),
+              style: TextButton.styleFrom(foregroundColor: AppColors.forest900),
             ),
         ],
       ),
@@ -192,7 +193,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                 final docs = snapshot.data!.docs;
-                if (docs.isEmpty) return const Center(child: Text('Start the trade negotiation!', style: TextStyle(color: Colors.grey)));
+                if (docs.isEmpty) return const Center(child: Text('Start the trade negotiation!', style: TextStyle(color: AppColors.bone500)));
 
                 return ListView.builder(
                   reverse: true,
@@ -220,7 +221,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
                           maxWidth: MediaQuery.of(context).size.width * 0.75,
                         ),
                         decoration: BoxDecoration(
-                          color: isMe ? const Color(0xFF154212) : Colors.grey.shade200,
+                          color: isMe ? AppColors.forest900 : Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(20),
                             topRight: const Radius.circular(20),
@@ -247,13 +248,13 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
                                     return Container(
                                       height: 200,
                                       width: double.infinity,
-                                      color: Colors.grey.shade300,
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                       child: const Center(child: CircularProgressIndicator()),
                                     );
                                   },
                                   errorBuilder: (context, error, stackTrace) => const Padding(
                                     padding: EdgeInsets.all(16.0),
-                                    child: Icon(Icons.broken_image, color: Colors.grey),
+                                    child: Icon(Icons.broken_image, color: AppColors.bone500),
                                   ),
                                 ),
                               if (text.isNotEmpty)
@@ -262,7 +263,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
                                   child: Text(
                                     text,
                                     style: TextStyle(
-                                      color: isMe ? Colors.white : Colors.black87,
+                                      color: isMe ? Colors.white : Theme.of(context).colorScheme.onSurface,
                                       fontSize: 16,
                                       fontWeight: type == 'location' ? FontWeight.w500 : FontWeight.normal,
                                     ),
@@ -277,7 +278,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
                                     Text(
                                       timeStr,
                                       style: TextStyle(
-                                        color: isMe ? Colors.white70 : Colors.grey.shade600,
+                                        color: isMe ? Colors.white70 : AppColors.bone500,
                                         fontSize: 10,
                                       ),
                                     ),
@@ -305,7 +306,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
           if (_isUploading)
             const Padding(
               padding: EdgeInsets.all(8.0),
-              child: LinearProgressIndicator(color: Color(0xFF154212)),
+              child: LinearProgressIndicator(color: AppColors.forest900),
             ),
           SafeArea(
             child: Container(
@@ -319,12 +320,12 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.add_photo_alternate_outlined, color: Colors.grey),
+                    icon: const Icon(Icons.add_photo_alternate_outlined, color: AppColors.bone500),
                     onPressed: _pickAndSendImage,
                     tooltip: 'Send Image',
                   ),
                   IconButton(
-                    icon: const Icon(Icons.location_on_outlined, color: Colors.grey),
+                    icon: const Icon(Icons.location_on_outlined, color: AppColors.bone500),
                     onPressed: _shareLocation,
                     tooltip: 'Share Location',
                   ),
@@ -338,7 +339,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: Colors.grey.shade100,
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       ),
                       maxLines: null,
@@ -349,7 +350,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
                   const SizedBox(width: 4),
                   Container(
                     decoration: const BoxDecoration(
-                      color: Color(0xFF154212),
+                      color: AppColors.forest900,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(

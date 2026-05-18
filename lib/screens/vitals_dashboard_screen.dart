@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math' as math;
 import 'plant_detail_screen.dart';
+import '../theme/app_theme.dart';
 
 class VitalsDashboardScreen extends StatefulWidget {
   const VitalsDashboardScreen({super.key});
@@ -13,7 +14,7 @@ class VitalsDashboardScreen extends StatefulWidget {
 
 class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
   Color _getScoreColor(int score) {
-    if (score > 70) return const Color(0xFF154212); // Green
+    if (score > 70) return AppColors.forest900; // Green
     if (score >= 40) return Colors.orange.shade600;
     return Colors.red.shade600;
   }
@@ -83,7 +84,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'serif',
-                          color: Color(0xFF154212),
+                          color: AppColors.forest900,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -91,7 +92,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                         'Your collection health overview',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey.shade600,
+                          color: AppColors.bone500,
                         ),
                       ),
                     ],
@@ -105,7 +106,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -119,9 +120,9 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _buildStatColumn(avgScore.toString(), 'Collection Health', avgColor),
-                        Container(width: 1, height: 40, color: Colors.grey.shade200),
-                        _buildStatColumn(thrivingCount.toString(), 'Thriving', const Color(0xFF154212)),
-                        Container(width: 1, height: 40, color: Colors.grey.shade200),
+                        Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                        _buildStatColumn(thrivingCount.toString(), 'Thriving', AppColors.forest900),
+                        Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                         _buildStatColumn(needHelpCount.toString(), 'Need Help', Colors.red.shade600),
                       ],
                     ),
@@ -136,7 +137,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF191C1B),
+                      color: AppColors.bone900,
                     ),
                   ),
                 ),
@@ -153,10 +154,10 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                       final prevScore = plant['previousHealthScore'] as int?;
                       final color = _getScoreColor(score);
                       
-                      Widget trendIcon = Icon(Icons.arrow_forward, color: Colors.grey.shade400, size: 20);
+                      Widget trendIcon = Icon(Icons.arrow_forward, color: AppColors.bone300, size: 20);
                       if (prevScore != null) {
                         if (score > prevScore + 5) {
-                          trendIcon = const Icon(Icons.arrow_upward, color: Color(0xFF154212), size: 20);
+                          trendIcon = const Icon(Icons.arrow_upward, color: AppColors.forest900, size: 20);
                         } else if (score < prevScore - 5) {
                           trendIcon = Icon(Icons.arrow_downward, color: Colors.red.shade600, size: 20);
                         }
@@ -183,7 +184,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                           margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
@@ -227,13 +228,13 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
-                                            color: Color(0xFF191C1B),
+                                            color: AppColors.bone900,
                                           ),
                                         ),
                                         Text(
                                           plant['category'] ?? '',
                                           style: TextStyle(
-                                            color: Colors.grey.shade500,
+                                            color: AppColors.bone500,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -248,7 +249,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                                 height: 4,
                                 width: double.infinity,
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(2),
                                 ),
                                 child: LayoutBuilder(
@@ -271,7 +272,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                                 statusText,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey.shade500,
+                                  color: AppColors.bone500,
                                   fontStyle: FontStyle.italic,
                                 ),
                               ),
@@ -306,7 +307,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade500,
+            color: AppColors.bone500,
           ),
         ),
       ],
@@ -326,7 +327,7 @@ class HealthRingPainter extends CustomPainter {
     final radius = math.min(size.width / 2, size.height / 2) - 4;
     
     final bgPaint = Paint()
-      ..color = Colors.grey.shade200
+      ..color = const Color(0xFFEEEEEE)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round;

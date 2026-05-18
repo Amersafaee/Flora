@@ -4,7 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'profile_screen.dart';
 import 'wiki_plant_detail_screen.dart';
+import 'blog_detail_screen.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_theme.dart';
 
 class WikiScreen extends StatefulWidget {
   const WikiScreen({super.key});
@@ -50,21 +52,21 @@ class _WikiScreenState extends State<WikiScreen> {
                         );
                       },
                       child: const CircleAvatar(
-                        backgroundColor: Colors.grey,
+                        backgroundColor: AppColors.bone500,
                         radius: 18,
                         child: Icon(Icons.person, color: Colors.white, size: 20),
                       ),
                     ),
-                    const Text(
+                    Text(
                       'Digital Conservatory',
                       style: TextStyle(
-                        color: Color(0xFF154212),
+                        color: AppColors.forest900,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'serif',
                         fontSize: 18,
                       ),
                     ),
-                    IconButton(icon: Icon(Icons.search, color: Theme.of(context).primaryColor), onPressed: () { Navigator.push(context, MaterialPageRoute(builder: (_) => const GlobalSearchScreen())); }),
+                    IconButton(icon: Icon(Icons.search, color: Theme.of(context).primaryColor), onPressed: () { Navigator.push(context, MaterialPageRoute(builder: (_) => GlobalSearchScreen())); }),
                   ],
                 ),
               ),
@@ -88,7 +90,7 @@ class _WikiScreenState extends State<WikiScreen> {
                     Text(
                       'Explore our botanical encyclopedia to find your perfect green companion.',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: AppColors.bone500,
                         fontSize: 16,
                         height: 1.4,
                       ),
@@ -121,8 +123,8 @@ class _WikiScreenState extends State<WikiScreen> {
                     },
                     decoration: InputDecoration(
                       hintText: 'Search by name, species, or trait...',
-                      hintStyle: TextStyle(color: Colors.grey.shade500),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey.shade500),
+                      hintStyle: TextStyle(color: AppColors.bone500),
+                      prefixIcon: Icon(Icons.search, color: AppColors.bone500),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
@@ -167,7 +169,7 @@ class _WikiScreenState extends State<WikiScreen> {
                           padding: EdgeInsets.all(40.0),
                           child: Text(
                             'No plants in the wiki yet.',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: AppColors.bone500),
                           ),
                         ),
                       );
@@ -193,7 +195,7 @@ class _WikiScreenState extends State<WikiScreen> {
                           padding: EdgeInsets.all(40.0),
                           child: Text(
                             'No plants found for your search.',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: AppColors.bone500),
                           ),
                         ),
                       );
@@ -250,19 +252,28 @@ class _WikiScreenState extends State<WikiScreen> {
                     }
                     
                     final allBlogsRaw = snapshot.data?.docs ?? [];
-                    // FIX 8: Only show blogs that have a real localImagePath (filters out seeded species-wiki entries)
+                    // FIX 4: Only show blogs with a real localImagePath that starts with 'assets/'
+                    // This filters out fake/seeded entries and ensures the image will load.
                     final allBlogs = allBlogsRaw.where((doc) {
                       final d = doc.data() as Map<String, dynamic>;
                       final path = (d['localImagePath'] as String? ?? '').trim();
-                      return path.isNotEmpty;
+                      return path.isNotEmpty && path.startsWith('assets/');
                     }).toList();
+                    // FIX 4: If list is empty after filtering show a loading indicator
                     if (allBlogs.isEmpty) {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(40.0),
-                          child: Text(
-                            'No blogs available.',
-                            style: TextStyle(color: Colors.grey),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(color: AppColors.forest900),
+                              SizedBox(height: 16),
+                              Text(
+                                'Blog posts loading...',
+                                style: TextStyle(color: AppColors.bone500),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -300,7 +311,7 @@ class _WikiScreenState extends State<WikiScreen> {
           });
         },
         child: Chip(
-          avatar: isSelected ? const Icon(Icons.check, color: Colors.white, size: 16) : null,
+          avatar: isSelected ? Icon(Icons.check, color: Colors.white, size: 16) : null,
           label: Text(
             label,
             style: TextStyle(
@@ -308,8 +319,8 @@ class _WikiScreenState extends State<WikiScreen> {
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          backgroundColor: isSelected ? const Color(0xFF154212) : Colors.transparent,
-          side: isSelected ? BorderSide.none : const BorderSide(color: Color(0xFFCCCCCC)),
+          backgroundColor: isSelected ? AppColors.forest900 : Colors.transparent,
+          side: isSelected ? BorderSide.none : const BorderSide(color: AppColors.bone300),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -352,23 +363,23 @@ class _WikiScreenState extends State<WikiScreen> {
             Container(
               height: 200,
               width: double.infinity,
-              color: const Color(0xFFE8F5E9),
+              color: AppColors.forest100,
               child: imageUrl.isNotEmpty
                   ? Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Center(
-                        child: Icon(Icons.eco, color: const Color(0xFF154212).withValues(alpha: 0.4), size: 48),
+                        child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
                       ),
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Center(
-                          child: Icon(Icons.eco, color: const Color(0xFF154212).withValues(alpha: 0.4), size: 48),
+                          child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
                         );
                       },
                     )
                   : Center(
-                      child: Icon(Icons.eco, color: const Color(0xFF154212).withValues(alpha: 0.4), size: 48),
+                      child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
                     ),
             ),
             
@@ -384,7 +395,7 @@ class _WikiScreenState extends State<WikiScreen> {
                       Text(
                         category,
                         style: const TextStyle(
-                          color: Color(0xFF8D3220),
+                          color: AppColors.terracotta900,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                           letterSpacing: 1.2,
@@ -421,7 +432,7 @@ class _WikiScreenState extends State<WikiScreen> {
                             },
                             child: Icon(
                               isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                              color: isBookmarked ? const Color(0xFF154212) : Colors.grey,
+                              color: isBookmarked ? AppColors.forest900 : AppColors.bone500,
                             ),
                           );
                         },
@@ -442,7 +453,7 @@ class _WikiScreenState extends State<WikiScreen> {
                   Text(
                     commonName,
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: AppColors.bone500,
                       fontSize: 14,
                       fontStyle: FontStyle.italic,
                     ),
@@ -466,13 +477,13 @@ class _WikiScreenState extends State<WikiScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F5F1),
+        color: AppColors.forest100,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         tag,
         style: const TextStyle(
-          color: Color(0xFF2D5A27),
+          color: AppColors.forest700,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
@@ -484,175 +495,20 @@ class _WikiScreenState extends State<WikiScreen> {
     required BuildContext context,
     required Map<String, dynamic> blogData,
   }) {
-    final title = (blogData['title'] as String? ?? '');
-    final category = (blogData['category'] as String? ?? '');
+    // FIX 5: Safe typed field access for all blog fields
+    final title = (blogData['title'] as String? ?? 'Untitled');
+    final category = (blogData['category'] as String? ?? 'General');
     final readMinutes = (blogData['readMinutes'] as num?)?.toInt() ?? 5;
     final summary = (blogData['summary'] as String? ?? '');
-    final content = (blogData['content'] as String? ?? '');
     final localImagePath = (blogData['localImagePath'] as String? ?? '');
 
     return GestureDetector(
       onTap: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          builder: (context) => DraggableScrollableSheet(
-            initialChildSize: 0.9,
-            minChildSize: 0.5,
-            maxChildSize: 0.95,
-            expand: false,
-            builder: (context, scrollController) => SingleChildScrollView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 5,
-                      margin: const EdgeInsets.only(bottom: 24),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  if (localImagePath.isNotEmpty) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        localImagePath,
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          height: 200,
-                          width: double.infinity,
-                          color: const Color(0xFFE8F5E9),
-                          child: const Center(
-                            child: Icon(Icons.article, color: Color(0xFF154212), size: 48),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F5F1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      category,
-                      style: const TextStyle(
-                        color: Color(0xFF2D5A27),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontFamily: 'serif',
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time, size: 16, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$readMinutes min read',
-                        style: const TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Read time indicator
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time, size: 16, color: Color(0xFF2E7D32)),
-                      const SizedBox(width: 6),
-                      Text(
-                        '$readMinutes min read',
-                        style: const TextStyle(
-                          color: Color(0xFF2E7D32),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Paragraph-grouped content
-                  Builder(builder: (context) {
-                    // Split into sentences and group into paragraphs of ~3 sentences
-                    final rawSentences = content.split('. ');
-                    final List<String> paragraphs = [];
-                    const sentencesPerParagraph = 3;
-                    for (int i = 0; i < rawSentences.length; i += sentencesPerParagraph) {
-                      final chunk = rawSentences.sublist(
-                        i,
-                        (i + sentencesPerParagraph) > rawSentences.length
-                            ? rawSentences.length
-                            : i + sentencesPerParagraph,
-                      );
-                      final para = chunk.where((s) => s.trim().isNotEmpty).join('. ').trim();
-                      if (para.isNotEmpty) {
-                        // Re-add period if the last sentence doesn't already end with punctuation
-                        paragraphs.add(para.endsWith('.') || para.endsWith('!') || para.endsWith('?') ? para : '$para.');
-                      }
-                    }
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (int i = 0; i < paragraphs.length; i++) ...[
-                          if (i == 0)
-                            // First paragraph gets a decorative green left border
-                            Container(
-                              padding: const EdgeInsets.only(left: 14),
-                              decoration: const BoxDecoration(
-                                border: Border(
-                                  left: BorderSide(color: Color(0xFF2E7D32), width: 3),
-                                ),
-                              ),
-                              child: Text(
-                                paragraphs[i],
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  height: 1.7,
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                            )
-                          else
-                            Text(
-                              paragraphs[i],
-                              style: TextStyle(
-                                fontSize: 15,
-                                height: 1.7,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          if (i < paragraphs.length - 1) const SizedBox(height: 16),
-                        ],
-                      ],
-                    );
-                  }),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
+        // FIX 7: Navigate to BlogDetailScreen instead of showing a bottom sheet
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BlogDetailScreen(blogData: blogData),
           ),
         );
       },
@@ -682,9 +538,9 @@ class _WikiScreenState extends State<WikiScreen> {
                   errorBuilder: (context, error, stackTrace) => Container(
                     height: 160,
                     width: double.infinity,
-                    color: const Color(0xFFE8F5E9),
+                    color: AppColors.forest100,
                     child: const Center(
-                      child: Icon(Icons.article, color: Color(0xFF154212), size: 48),
+                      child: Icon(Icons.article, color: AppColors.forest900, size: 48),
                     ),
                   ),
                 ),
@@ -694,11 +550,11 @@ class _WikiScreenState extends State<WikiScreen> {
                 height: 160,
                 width: double.infinity,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFE8F5E9),
+                  color: AppColors.forest100,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: const Center(
-                  child: Icon(Icons.article, color: Color(0xFF154212), size: 48),
+                  child: Icon(Icons.article, color: AppColors.forest900, size: 48),
                 ),
               ),
             Padding(
@@ -712,13 +568,13 @@ class _WikiScreenState extends State<WikiScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0F5F1),
+                          color: AppColors.forest100,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           category,
                           style: const TextStyle(
-                            color: Color(0xFF2D5A27),
+                            color: AppColors.forest700,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
@@ -726,7 +582,7 @@ class _WikiScreenState extends State<WikiScreen> {
                       ),
                       Text(
                         '$readMinutes min read',
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        style: const TextStyle(color: AppColors.bone500, fontSize: 12),
                       ),
                     ],
                   ),
@@ -743,7 +599,7 @@ class _WikiScreenState extends State<WikiScreen> {
                   Text(
                     summary,
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: AppColors.bone500,
                       fontSize: 14,
                       height: 1.4,
                     ),

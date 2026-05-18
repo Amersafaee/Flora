@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/plant_model.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_theme.dart';
 
 class MemorialGardenScreen extends StatelessWidget {
   const MemorialGardenScreen({super.key});
@@ -34,7 +35,7 @@ class MemorialGardenScreen extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
-              return const Center(child: Text('Something went wrong', style: TextStyle(color: Colors.grey)));
+              return const Center(child: Text('Something went wrong', style: TextStyle(color: AppColors.bone500)));
             }
 
             final deceasedPlants = (snapshot.data ?? []).where((p) => p.isDeceased).toList();

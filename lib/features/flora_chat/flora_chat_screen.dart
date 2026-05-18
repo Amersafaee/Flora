@@ -6,7 +6,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class FloraChatScreen extends StatefulWidget {
   final String? initialMessage;

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
-import '../../theme/tokens.dart';
+import '../../theme/app_theme.dart';
 
 class AddSwapScreen extends StatefulWidget {
   const AddSwapScreen({super.key});
@@ -114,7 +114,7 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing posted successfully! 🌱', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF2D5A27), behavior: SnackBarBehavior.floating));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing posted successfully! 🌱', style: TextStyle(color: Colors.white)), backgroundColor: AppColors.forest700, behavior: SnackBarBehavior.floating));
         context.pop();
       }
     } catch (e) {
