@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../services/weekly_report_service.dart';
 import '../theme/app_theme.dart';
@@ -10,6 +11,7 @@ class WeeklyReportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final start = reportData['weekStartDate'] as DateTime;
     final end = reportData['weekEndDate'] as DateTime;
@@ -40,44 +42,31 @@ class WeeklyReportScreen extends StatelessWidget {
               ),
               // Drag handle
               Container(
-                width: 40,
-                height: 5,
+                width: 40, height: 5,
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(2.5),
                 ),
               ),
               const SizedBox(height: 24),
-              // Icon
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.forest100,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.eco, color: AppColors.forest900, size: 32),
+                decoration: const BoxDecoration(color: AppColors.forest100, shape: BoxShape.circle),
+                child: const Icon(Icons.eco, color: AppColors.forest900, size: 32),
               ),
               const SizedBox(height: 24),
-              // Headline
               Text(
                 reportData['headline'] ?? '',
                 style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontFamily: 'serif',
+                  fontSize: 24, fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface, fontFamily: 'serif',
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              // Subtitle
               Text(
-                'Week of $dateRangeStr',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.bone500,
-                  fontStyle: FontStyle.italic,
-                ),
+                '${l.weekOf} $dateRangeStr',
+                style: const TextStyle(fontSize: 14, color: AppColors.bone500, fontStyle: FontStyle.italic),
               ),
               const SizedBox(height: 32),
               // Stats Grid
@@ -85,13 +74,7 @@ class WeeklyReportScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 padding: const EdgeInsets.all(16),
                 child: GridView.count(
@@ -107,28 +90,28 @@ class WeeklyReportScreen extends StatelessWidget {
                       iconColor: isDark ? AppColors.successDark : AppColors.successLight,
                       value: reportData['completedTasks'].toString(),
                       valueColor: isDark ? AppColors.successDark : AppColors.successLight,
-                      label: 'Tasks Done',
+                      label: l.tasksDone,
                     ),
                     _buildStatBox(
                       icon: Icons.cancel,
                       iconColor: isDark ? AppColors.errorDark : AppColors.errorLight,
                       value: reportData['skippedTasks'].toString(),
                       valueColor: isDark ? AppColors.errorDark : AppColors.errorLight,
-                      label: 'Skipped',
+                      label: l.skipped,
                     ),
                     _buildStatBox(
                       icon: Icons.book,
                       iconColor: AppColors.forest900,
                       value: reportData['newGrowthEntries'].toString(),
                       valueColor: AppColors.forest900,
-                      label: 'Journal Entries',
+                      label: l.journalEntries,
                     ),
                     _buildStatBox(
                       icon: Icons.favorite,
                       iconColor: _getScoreColor(reportData['collectionHealthAvg'] as int, context),
                       value: '${reportData['collectionHealthAvg']}%',
                       valueColor: _getScoreColor(reportData['collectionHealthAvg'] as int, context),
-                      label: 'Collection Health',
+                      label: l.collectionHealth,
                     ),
                   ],
                 ),
@@ -151,17 +134,13 @@ class WeeklyReportScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Star of the Week',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFF57C00)),
+                            Text(
+                              l.starOfTheWeek,
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFF57C00)),
                             ),
                             Text(
                               reportData['mostImprovedPlant'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.forest900,
-                                fontSize: 16,
-                              ),
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.forest900, fontSize: 16),
                             ),
                           ],
                         ),
@@ -209,17 +188,13 @@ class WeeklyReportScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Text('Close Report', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Text(l.closeReport, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Generated by Flora every Sunday',
-                style: TextStyle(
-                  color: AppColors.bone500,
-                  fontSize: 11,
-                  fontStyle: FontStyle.italic,
-                ),
+              Text(
+                l.generatedByFlora,
+                style: const TextStyle(color: AppColors.bone500, fontSize: 11, fontStyle: FontStyle.italic),
               ),
               const SizedBox(height: 16),
             ],
@@ -244,24 +219,11 @@ class WeeklyReportScreen extends StatelessWidget {
           children: [
             Icon(icon, color: iconColor, size: 20),
             const SizedBox(width: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-                color: valueColor,
-              ),
-            ),
+            Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: valueColor)),
           ],
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppColors.bone500,
-            fontSize: 12,
-          ),
-        ),
+        Text(label, style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
       ],
     );
   }

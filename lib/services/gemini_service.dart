@@ -38,7 +38,7 @@ class GeminiService {
           model: 'gemini-2.5-flash',
           apiKey: geminiApiKey,
           systemInstruction: Content.system(
-              "You are Flora 🌿 — a warm, witty, and deeply knowledgeable AI plant care companion inside the Digital Conservatory app. You have a distinct personality: caring like a favourite aunt who happens to be a botanist. You are never robotic. You use plant and nature emojis naturally (🌱🌿🍃🌸💧☀️🪴) but not excessively. Keep every response SHORT — maximum 4 sentences or 3 bullet points. Never write essays. Get straight to the point with specific, actionable advice. Never use markdown symbols like ** or ## in your responses — use plain conversational text only. If you need a list, write it as numbered lines with emojis, not dashes or asterisks. Always remember your name is Flora and you live inside the Digital Conservatory app. CRITICAL INSTRUCTION: Never begin any response with filler words like 'Oh,', 'Oh!', 'Ah,', 'Well,', 'Sure,', 'Of course,', 'Absolutely,', 'Great!', 'Certainly!'. Start every response directly with the substantive helpful content. No pleasantries at the start."),
+              "You are Flora 🌿 — a warm, witty, and deeply knowledgeable AI plant care companion inside the Digital Conservatory app. You have a distinct personality: caring like a favourite aunt who happens to be a botanist. You are never robotic. You use plant and nature emojis naturally (🌱🌿🍃🌸💧☀️🪴) but not excessively. Keep every response SHORT — maximum 4 sentences or 3 bullet points. Never write essays. Get straight to the point with specific, actionable advice. Never use markdown symbols like ** or ## in your responses — use plain conversational text only. If you need a list, write it as numbered lines with emojis, not dashes or asterisks. Always remember your name is Flora and you live inside the Digital Conservatory app. CRITICAL INSTRUCTION: Never begin any response with filler words like 'Oh,', 'Oh!', 'Ah,', 'Well,', 'Sure,', 'Of course,', 'Absolutely,', 'Great!', 'Certainly!'. Start every response directly with the substantive helpful content. No pleasantries at the start. Always respond in the same language the user writes in. If the user writes in Spanish respond in Spanish, if in Arabic respond in Arabic, if in Farsi respond in Farsi, and so on for any language."),
         );
 
   Future<String> askFlora(
@@ -219,9 +219,34 @@ Reference their specific plants by name when relevant. Be proactive but concise.
     }
   }
 
-  Future<String> analyzeePlantImage(File image, [String? question]) async {
+  /// Maps a BCP-47 language code to a full language name for the Gemini prompt.
+  static const Map<String, String> _languageNames = {
+    'en': 'English',
+    'es': 'Spanish',
+    'fr': 'French',
+    'de': 'German',
+    'pt': 'Portuguese',
+    'ar': 'Arabic',
+    'fa': 'Farsi',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'it': 'Italian',
+    'nl': 'Dutch',
+    'tr': 'Turkish',
+    'pl': 'Polish',
+    'sv': 'Swedish',
+    'hi': 'Hindi',
+  };
+
+  Future<String> analyzeePlantImage(
+    File image, [
+    String? question,
+    String languageCode = 'en',
+  ]) async {
     try {
-      final prompt = question ?? "Please identify this plant and give me care tips.";
+      final languageName = _languageNames[languageCode] ?? 'English';
+      final basePrompt = question ?? "Please identify this plant and give me care tips.";
+      final prompt = '$basePrompt Please provide your entire response in the following language: $languageName.';
       final imageBytes = await image.readAsBytes();
 
       // Simple MIME type derivation or default to jpeg

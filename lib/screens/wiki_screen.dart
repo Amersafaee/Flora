@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'global_search_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'profile_screen.dart';
 import 'wiki_plant_detail_screen.dart';
 import 'blog_detail_screen.dart';
@@ -16,6 +17,7 @@ class WikiScreen extends StatefulWidget {
 }
 
 class _WikiScreenState extends State<WikiScreen> {
+  // Internal English key used for Firestore tag matching — must NOT be localized
   String _selectedFilter = 'All Plants';
   String _searchQuery = '';
 
@@ -28,8 +30,17 @@ class _WikiScreenState extends State<WikiScreen> {
 
   @override
   Widget build(BuildContext context) {
-    
+    final l = AppLocalizations.of(context);
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+
+    // Map from internal English key → localized display label
+    final filterLabels = {
+      'All Plants': l.wikiFilterAllPlants,
+      'Pet Friendly': l.wikiFilterPetFriendly,
+      'Low Light': l.lowLight,
+      'Air Purifying': l.wikiFilterAirPurifying,
+      'Beginner': l.wikiFilterBeginner,
+    };
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -58,19 +69,24 @@ class _WikiScreenState extends State<WikiScreen> {
                       ),
                     ),
                     Text(
-                      'Digital Conservatory',
-                      style: TextStyle(
+                      l.digitalConservatory,
+                      style: const TextStyle(
                         color: AppColors.forest900,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'serif',
                         fontSize: 18,
                       ),
                     ),
-                    IconButton(icon: Icon(Icons.search, color: Theme.of(context).primaryColor), onPressed: () { Navigator.push(context, MaterialPageRoute(builder: (_) => GlobalSearchScreen())); }),
+                    IconButton(
+                      icon: Icon(Icons.search, color: Theme.of(context).primaryColor),
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => GlobalSearchScreen()));
+                      },
+                    ),
                   ],
                 ),
               ),
-              
+
               // Title and Subtitle
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -78,7 +94,7 @@ class _WikiScreenState extends State<WikiScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Plant Wiki',
+                      l.plantWiki,
                       style: TextStyle(
                         fontFamily: 'serif',
                         fontSize: 36,
@@ -88,8 +104,8 @@ class _WikiScreenState extends State<WikiScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Explore our botanical encyclopedia to find your perfect green companion.',
-                      style: TextStyle(
+                      l.wikiSubtitle,
+                      style: const TextStyle(
                         color: AppColors.bone500,
                         fontSize: 16,
                         height: 1.4,
@@ -99,7 +115,7 @@ class _WikiScreenState extends State<WikiScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Search Bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -122,9 +138,9 @@ class _WikiScreenState extends State<WikiScreen> {
                       });
                     },
                     decoration: InputDecoration(
-                      hintText: 'Search by name, species, or trait...',
-                      hintStyle: TextStyle(color: AppColors.bone500),
-                      prefixIcon: Icon(Icons.search, color: AppColors.bone500),
+                      hintText: l.searchByNameSpeciesTrait,
+                      hintStyle: const TextStyle(color: AppColors.bone500),
+                      prefixIcon: const Icon(Icons.search, color: AppColors.bone500),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
@@ -132,23 +148,23 @@ class _WikiScreenState extends State<WikiScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Filter Chips
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
-                  children: [
-                    _buildFilterChip('All Plants', isSelected: _selectedFilter == 'All Plants'),
-                    _buildFilterChip('Pet Friendly', isSelected: _selectedFilter == 'Pet Friendly'),
-                    _buildFilterChip('Low Light', isSelected: _selectedFilter == 'Low Light'),
-                    _buildFilterChip('Air Purifying', isSelected: _selectedFilter == 'Air Purifying'),
-                    _buildFilterChip('Beginner', isSelected: _selectedFilter == 'Beginner'),
-                  ],
+                  children: filterLabels.entries.map((entry) {
+                    return _buildFilterChip(
+                      internalKey: entry.key,
+                      displayLabel: entry.value,
+                      isSelected: _selectedFilter == entry.key,
+                    );
+                  }).toList(),
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Plant Cards
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -156,20 +172,20 @@ class _WikiScreenState extends State<WikiScreen> {
                   stream: FirebaseFirestore.instance.collection('species').snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return const Center(child: Text('Error loading wiki data'));
+                      return Center(child: Text(l.errorLoadingWikiData));
                     }
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    
+
                     final allDocs = snapshot.data?.docs ?? [];
                     if (allDocs.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(40.0),
+                          padding: const EdgeInsets.all(40.0),
                           child: Text(
-                            'No plants in the wiki yet.',
-                            style: TextStyle(color: AppColors.bone500),
+                            l.noPlantsInWikiYet,
+                            style: const TextStyle(color: AppColors.bone500),
                           ),
                         ),
                       );
@@ -177,25 +193,27 @@ class _WikiScreenState extends State<WikiScreen> {
 
                     final filteredPlants = allDocs.where((doc) {
                       final p = doc.data() as Map<String, dynamic>;
-                      final matchesSearch = (p['name'] ?? '').toString().toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                      final matchesSearch =
+                          (p['name'] ?? '').toString().toLowerCase().contains(_searchQuery.toLowerCase()) ||
                           (p['commonName'] ?? '').toString().toLowerCase().contains(_searchQuery.toLowerCase());
-                      
+
                       bool matchesFilter = true;
                       if (_selectedFilter != 'All Plants') {
+                        // Tag matching uses internal English key — not localized
                         final tags = List<String>.from(p['tags'] ?? []);
                         matchesFilter = tags.contains(_selectedFilter);
                       }
-                      
+
                       return matchesSearch && matchesFilter;
                     }).toList();
 
                     if (filteredPlants.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(40.0),
+                          padding: const EdgeInsets.all(40.0),
                           child: Text(
-                            'No plants found for your search.',
-                            style: TextStyle(color: AppColors.bone500),
+                            l.noPlantsFoundForSearch,
+                            style: const TextStyle(color: AppColors.bone500),
                           ),
                         ),
                       );
@@ -222,12 +240,12 @@ class _WikiScreenState extends State<WikiScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Blog Section Title
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
-                  'Latest from the Blog',
+                  l.latestFromBlog,
                   style: TextStyle(
                     fontFamily: 'serif',
                     fontSize: 24,
@@ -237,41 +255,43 @@ class _WikiScreenState extends State<WikiScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Blog Cards
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance.collection('blogs').orderBy('createdAt', descending: true).snapshots(),
+                  stream: FirebaseFirestore.instance
+                      .collection('blogs')
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return const Center(child: Text('Error loading blogs'));
+                      return Center(child: Text(l.errorLoadingBlogs));
                     }
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    
+
                     final allBlogsRaw = snapshot.data?.docs ?? [];
-                    // FIX 4: Only show blogs with a real localImagePath that starts with 'assets/'
-                    // This filters out fake/seeded entries and ensures the image will load.
+                    // Only show blogs with a real localImagePath starting with 'assets/'
                     final allBlogs = allBlogsRaw.where((doc) {
                       final d = doc.data() as Map<String, dynamic>;
                       final path = (d['localImagePath'] as String? ?? '').trim();
                       return path.isNotEmpty && path.startsWith('assets/');
                     }).toList();
-                    // FIX 4: If list is empty after filtering show a loading indicator
+
                     if (allBlogs.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(40.0),
+                          padding: const EdgeInsets.all(40.0),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              CircularProgressIndicator(color: AppColors.forest900),
-                              SizedBox(height: 16),
+                              const CircularProgressIndicator(color: AppColors.forest900),
+                              const SizedBox(height: 16),
                               Text(
-                                'Blog posts loading...',
-                                style: TextStyle(color: AppColors.bone500),
+                                l.blogPostsLoading,
+                                style: const TextStyle(color: AppColors.bone500),
                               ),
                             ],
                           ),
@@ -301,19 +321,23 @@ class _WikiScreenState extends State<WikiScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, {bool isSelected = false}) {
+  Widget _buildFilterChip({
+    required String internalKey,
+    required String displayLabel,
+    required bool isSelected,
+  }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4.0),
       child: GestureDetector(
         onTap: () {
           setState(() {
-            _selectedFilter = label;
+            _selectedFilter = internalKey;
           });
         },
         child: Chip(
-          avatar: isSelected ? Icon(Icons.check, color: Colors.white, size: 16) : null,
+          avatar: isSelected ? const Icon(Icons.check, color: Colors.white, size: 16) : null,
           label: Text(
-            label,
+            displayLabel,
             style: TextStyle(
               color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -359,7 +383,7 @@ class _WikiScreenState extends State<WikiScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Placeholder
+            // Image
             Container(
               height: 200,
               width: double.infinity,
@@ -368,21 +392,16 @@ class _WikiScreenState extends State<WikiScreen> {
                   ? Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Center(
-                        child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
-                      ),
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(child: Icon(Icons.eco, color: Color(0x6614301E), size: 48)),
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
-                        return Center(
-                          child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
-                        );
+                        return const Center(child: Icon(Icons.eco, color: Color(0x6614301E), size: 48));
                       },
                     )
-                  : Center(
-                      child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
-                    ),
+                  : const Center(child: Icon(Icons.eco, color: Color(0x6614301E), size: 48)),
             ),
-            
+
             // Content
             Padding(
               padding: const EdgeInsets.all(20.0),
@@ -401,7 +420,7 @@ class _WikiScreenState extends State<WikiScreen> {
                           letterSpacing: 1.2,
                         ),
                       ),
-                                            StreamBuilder<DocumentSnapshot>(
+                      StreamBuilder<DocumentSnapshot>(
                         stream: FirebaseAuth.instance.currentUser != null
                             ? FirebaseFirestore.instance
                                 .collection('users')
@@ -452,7 +471,7 @@ class _WikiScreenState extends State<WikiScreen> {
                   const SizedBox(height: 4),
                   Text(
                     commonName,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.bone500,
                       fontSize: 14,
                       fontStyle: FontStyle.italic,
@@ -495,7 +514,7 @@ class _WikiScreenState extends State<WikiScreen> {
     required BuildContext context,
     required Map<String, dynamic> blogData,
   }) {
-    // FIX 5: Safe typed field access for all blog fields
+    final l = AppLocalizations.of(context);
     final title = (blogData['title'] as String? ?? 'Untitled');
     final category = (blogData['category'] as String? ?? 'General');
     final readMinutes = (blogData['readMinutes'] as num?)?.toInt() ?? 5;
@@ -504,12 +523,9 @@ class _WikiScreenState extends State<WikiScreen> {
 
     return GestureDetector(
       onTap: () {
-        // FIX 7: Navigate to BlogDetailScreen instead of showing a bottom sheet
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => BlogDetailScreen(blogData: blogData),
-          ),
+          MaterialPageRoute(builder: (_) => BlogDetailScreen(blogData: blogData)),
         );
       },
       child: Container(
@@ -581,7 +597,7 @@ class _WikiScreenState extends State<WikiScreen> {
                         ),
                       ),
                       Text(
-                        '$readMinutes min read',
+                        '$readMinutes ${l.minRead}',
                         style: const TextStyle(color: AppColors.bone500, fontSize: 12),
                       ),
                     ],
@@ -598,7 +614,7 @@ class _WikiScreenState extends State<WikiScreen> {
                   const SizedBox(height: 8),
                   Text(
                     summary,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.bone500,
                       fontSize: 14,
                       height: 1.4,
@@ -615,9 +631,3 @@ class _WikiScreenState extends State<WikiScreen> {
     );
   }
 }
-
-
-
-
-
-

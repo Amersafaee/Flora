@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'listing_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -14,14 +15,24 @@ class SwapMarketScreen extends StatefulWidget {
 }
 
 class _SwapMarketScreenState extends State<SwapMarketScreen> {
+  // Filter state uses internal English keys that match Firestore type values
   String _selectedFilter = 'All';
   String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     const Color softGreen = AppColors.forest100;
+
+    // Filter chips: display label → internal Firestore filter key
+    final filters = [
+      {'label': l.all, 'key': 'All'},
+      {'label': l.cuttings, 'key': 'Cuttings'},
+      {'label': l.seeds, 'key': 'Seeds'},
+      {'label': l.wholePlants, 'key': 'Whole Plants'},
+    ];
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -39,14 +50,11 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
                       onPressed: () => Navigator.pop(context),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Swap Market',
+                        l.swapMarket,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
                     IconButton(
@@ -54,9 +62,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                          ),
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
                           builder: (context) {
                             return Container(
                               padding: const EdgeInsets.all(20),
@@ -64,10 +70,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Listings by Location',
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
+                                  Text(l.listingsByLocation, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 16),
                                   Expanded(
                                     child: StreamBuilder<QuerySnapshot>(
@@ -80,11 +83,13 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                                           return const Center(child: CircularProgressIndicator());
                                         }
                                         if (snapshot.hasError || !snapshot.hasData) {
-                                          return const Center(child: Text('No listings available', style: TextStyle(color: AppColors.bone500)));
+                                          return Center(child: Text(l.noListingsAvailable, style: const TextStyle(color: AppColors.bone500)));
                                         }
-                                        final docs = snapshot.data!.docs.where((d) => (d.data() as Map<String, dynamic>)['isAvailable'] == true).toList();
+                                        final docs = snapshot.data!.docs
+                                            .where((d) => (d.data() as Map<String, dynamic>)['isAvailable'] == true)
+                                            .toList();
                                         if (docs.isEmpty) {
-                                          return const Center(child: Text('No listings available', style: TextStyle(color: AppColors.bone500)));
+                                          return Center(child: Text(l.noListingsAvailable, style: const TextStyle(color: AppColors.bone500)));
                                         }
                                         return ListView.builder(
                                           itemCount: docs.length,
@@ -98,7 +103,9 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                                               subtitle: Text(location),
                                               onTap: () {
                                                 Navigator.pop(context);
-                                                Navigator.push(context, MaterialPageRoute(builder: (_) => ListingDetailScreen(doc: docs[index])));
+                                                Navigator.push(context, MaterialPageRoute(
+                                                  builder: (_) => ListingDetailScreen(doc: docs[index]),
+                                                ));
                                               },
                                             );
                                           },
@@ -130,20 +137,14 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
                   ),
                   child: TextField(
                     onChanged: (val) => setState(() => _searchQuery = val),
                     decoration: InputDecoration(
-                      hintText: 'Search plants or cuttings...',
-                      hintStyle: TextStyle(color: AppColors.bone500),
-                      prefixIcon: Icon(Icons.search, color: AppColors.bone500),
+                      hintText: l.searchPlantsOrCuttings,
+                      hintStyle: const TextStyle(color: AppColors.bone500),
+                      prefixIcon: const Icon(Icons.search, color: AppColors.bone500),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
@@ -157,12 +158,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
-                  children: [
-                    _buildFilterChip('All', isSelected: _selectedFilter == 'All'),
-                    _buildFilterChip('Cuttings', isSelected: _selectedFilter == 'Cuttings'),
-                    _buildFilterChip('Seeds', isSelected: _selectedFilter == 'Seeds'),
-                    _buildFilterChip('Whole Plants', isSelected: _selectedFilter == 'Whole Plants'),
-                  ],
+                  children: filters.map((f) => _buildFilterChip(f['label']!, f['key']!)).toList(),
                 ),
               ),
               const SizedBox(height: 24),
@@ -177,18 +173,21 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return const Center(child: Text('Error loading listings', style: TextStyle(color: AppColors.bone500)));
+                      return Center(child: Text(l.errorLoadingListings, style: const TextStyle(color: AppColors.bone500)));
                     }
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: Padding(padding: EdgeInsets.all(40.0), child: CircularProgressIndicator()));
                     }
 
-                    final allDocs = snapshot.data?.docs.where((d) => (d.data() as Map<String, dynamic>)['isAvailable'] == true).toList() ?? [];
+                    final allDocs = snapshot.data?.docs
+                            .where((d) => (d.data() as Map<String, dynamic>)['isAvailable'] == true)
+                            .toList() ??
+                        [];
                     if (allDocs.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(40.0),
-                          child: Text('No listings available right now.', style: TextStyle(color: AppColors.bone500)),
+                          padding: const EdgeInsets.all(40.0),
+                          child: Text(l.noListingsAvailable, style: const TextStyle(color: AppColors.bone500)),
                         ),
                       );
                     }
@@ -199,22 +198,22 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       final desc = (data['description'] ?? '').toString().toLowerCase();
                       final type = (data['type'] ?? '');
                       final query = _searchQuery.toLowerCase();
-                      
-                      bool matchesSearch = title.contains(query) || desc.contains(query);
+
+                      final matchesSearch = title.contains(query) || desc.contains(query);
                       bool matchesFilter = true;
-                      
+
                       if (_selectedFilter == 'Cuttings') matchesFilter = type == 'Cutting';
                       if (_selectedFilter == 'Seeds') matchesFilter = type == 'Free Seeds';
                       if (_selectedFilter == 'Whole Plants') matchesFilter = type == 'Whole Plant';
-                      
+
                       return matchesSearch && matchesFilter;
                     }).toList();
 
                     if (filteredDocs.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(40.0),
-                          child: Text('No listings found for your search.', style: TextStyle(color: AppColors.bone500)),
+                          padding: const EdgeInsets.all(40.0),
+                          child: Text(l.noListingsForSearch, style: const TextStyle(color: AppColors.bone500)),
                         ),
                       );
                     }
@@ -222,12 +221,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                     return Column(
                       children: [
                         for (var doc in filteredDocs) ...[
-                          _buildListingCard(
-                            context: context,
-                            doc: doc,
-                            primaryColor: primaryColor,
-                            softGreen: softGreen,
-                          ),
+                          _buildListingCard(context: context, doc: doc, primaryColor: primaryColor, softGreen: softGreen, l: l),
                           const SizedBox(height: 20),
                         ],
                         const SizedBox(height: 40),
@@ -242,27 +236,21 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreateListingScreen()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateListingScreen()));
         },
         backgroundColor: primaryColor,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('List Your Plant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(l.listYourPlant, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
 
-  Widget _buildFilterChip(String label, {bool isSelected = false}) {
+  Widget _buildFilterChip(String label, String filterKey) {
+    final isSelected = _selectedFilter == filterKey;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4.0),
       child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedFilter = label;
-          });
-        },
+        onTap: () => setState(() => _selectedFilter = filterKey),
         child: Chip(
           label: Text(
             label,
@@ -274,9 +262,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
           backgroundColor: isSelected ? AppColors.forest900 : Colors.transparent,
           side: isSelected ? BorderSide.none : const BorderSide(color: AppColors.bone300),
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
       ),
     );
@@ -287,6 +273,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
     required DocumentSnapshot doc,
     required Color primaryColor,
     required Color softGreen,
+    required AppLocalizations l,
   }) {
     final data = doc.data() as Map<String, dynamic>;
     final imageUrl = data['imageUrl'] ?? '';
@@ -297,8 +284,8 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
     final type = data['type'] ?? '';
     final lookingFor = data['lookingFor'] ?? '';
     final ownerName = data['ownerName'] ?? '';
-    
-    String timeAgo = 'Recently';
+
+    String timeAgo = l.recently;
     final timestamp = data['timestamp'];
     if (timestamp is Timestamp) {
       final date = timestamp.toDate();
@@ -314,30 +301,18 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
 
     return GestureDetector(
       onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ListingDetailScreen(doc: doc),
-            ),
-          );
-        },
+        Navigator.push(context, MaterialPageRoute(builder: (_) => ListingDetailScreen(doc: doc)));
+      },
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Placeholder
             Container(
               height: 180,
               width: double.infinity,
@@ -346,16 +321,11 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                   ? Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Center(
-                        child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
-                      ),
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(child: Icon(Icons.eco, color: Color(0x6614301E), size: 48)),
                     )
-                  : Center(
-                      child: Icon(Icons.eco, color: Color(0x6614301E), size: 48),
-                    ),
+                  : const Center(child: Icon(Icons.eco, color: Color(0x6614301E), size: 48)),
             ),
-            
-            // Content
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -366,67 +336,34 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: softGreen,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          type,
-                          style: TextStyle(
-                            color: primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
+                        decoration: BoxDecoration(color: softGreen, borderRadius: BorderRadius.circular(8)),
+                        child: Text(type, style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 12)),
                       ),
                       Row(
                         children: [
-                          Icon(Icons.location_on, color: AppColors.bone500, size: 14),
+                          const Icon(Icons.location_on, color: AppColors.bone500, size: 14),
                           const SizedBox(width: 4),
                           Text(
                             '$location · ${distanceKm}km',
-                            style: TextStyle(
-                              color: AppColors.bone500,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(color: AppColors.bone500, fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
+                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.onSurface)),
                   const SizedBox(height: 4),
-                  Text(
-                    description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: AppColors.bone500,
-                      fontSize: 14,
-                    ),
-                  ),
+                  Text(description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.bone500, fontSize: 14)),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Icon(Icons.swap_horiz, color: AppColors.terracotta900, size: 16),
+                      const Icon(Icons.swap_horiz, color: AppColors.terracotta900, size: 16),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Looking for: $lookingFor',
-                          style: TextStyle(
-                            color: AppColors.terracotta900,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          '${l.lookingForPrefix}$lookingFor',
+                          style: const TextStyle(color: AppColors.terracotta900, fontSize: 13, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
@@ -445,23 +382,10 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                             child: Icon(Icons.person, color: Colors.white, size: 14),
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            ownerName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
+                          Text(ownerName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
                         ],
                       ),
-                      Text(
-                        timeAgo,
-                        style: TextStyle(
-                          color: AppColors.bone500,
-                          fontSize: 12,
-                        ),
-                      ),
+                      Text(timeAgo, style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
                     ],
                   ),
                 ],
@@ -473,10 +397,3 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
     );
   }
 }
-
-
-
-
-
-
-

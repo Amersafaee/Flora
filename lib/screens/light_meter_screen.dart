@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:camera/camera.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,8 +18,9 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
   bool _isMeasuring = false;
   bool _isDark = false;
   double _luxValue = 0;
-  String _lightLevel = 'Tap Measure to start';
-  String _lightDescription = 'Point your camera at the light source';
+  // Internal level key — resolved to l10n string at build time
+  String _lightLevelKey = 'tapMeasureToStart';
+  String _lightDescKey = 'pointCameraAtLight';
   Color _levelColor = AppColors.bone500;
   Timer? _measureTimer;
   final List<double> _recentReadings = [];
@@ -72,7 +74,6 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
         count++;
       }
       final avgBrightness = count > 0 ? total / count : 0;
-      // Map 0-255 brightness to approximate lux range 0-50000
       final estimatedLux = (avgBrightness / 255) * 50000;
 
       if (mounted) {
@@ -90,38 +91,31 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
 
   void _updateLightLevel(double lux) {
     if (lux < 500) {
-      _lightLevel = 'Low Light';
-      _lightDescription = 'Good for shade-tolerant plants like Pothos and Snake Plant';
-      // Low light → cool blue-toned neutral
+      _lightLevelKey = 'lowLight';
+      _lightDescKey = 'lowLightDesc';
       _levelColor = _isDark ? AppColors.darkTextSecondary : AppColors.bone500;
     } else if (lux < 2500) {
-      _lightLevel = 'Medium Light';
-      _lightDescription = 'Ideal for Peace Lily, Philodendron and most Ferns';
-      // Medium light → warm amber/warning
+      _lightLevelKey = 'mediumLight';
+      _lightDescKey = 'mediumLightDesc';
       _levelColor = _isDark ? AppColors.warningDark : AppColors.warningLight;
     } else if (lux < 10000) {
-      _lightLevel = 'Bright Indirect';
-      _lightDescription = 'Perfect for Monstera, Pothos and most tropical plants';
-      // Bright indirect → healthy forest green
+      _lightLevelKey = 'brightIndirect';
+      _lightDescKey = 'brightIndirectDesc';
       _levelColor = _isDark ? AppColors.darkForestPrimary : AppColors.forest600;
     } else if (lux < 25000) {
-      _lightLevel = 'Bright Direct';
-      _lightDescription = 'Great for succulents, cacti and herbs';
-      // Bright direct → strong warning
+      _lightLevelKey = 'brightDirect';
+      _lightDescKey = 'brightDirectDesc';
       _levelColor = _isDark ? AppColors.warningDark : AppColors.warning;
     } else {
-      _lightLevel = 'Very Intense';
-      _lightDescription = 'Too bright for most houseplants — risk of leaf scorch';
-      // Very intense → error/danger
+      _lightLevelKey = 'veryIntense';
+      _lightDescKey = 'veryIntenseDesc';
       _levelColor = _isDark ? AppColors.errorDark : AppColors.errorLight;
     }
   }
 
   void _stopMeasuring() {
     _measureTimer?.cancel();
-    try {
-      _controller?.stopImageStream();
-    } catch (_) {}
+    try { _controller?.stopImageStream(); } catch (_) {}
     if (mounted) setState(() => _isMeasuring = false);
   }
 
@@ -130,9 +124,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
     return _recentReadings.reduce((a, b) => a + b) / _recentReadings.length;
   }
 
-  double get _gaugeValue {
-    return (_averageLux / 50000).clamp(0.0, 1.0);
-  }
+  double get _gaugeValue => (_averageLux / 50000).clamp(0.0, 1.0);
 
   @override
   void dispose() {
@@ -141,10 +133,36 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
     super.dispose();
   }
 
+  String _resolveLevel(AppLocalizations l) {
+    switch (_lightLevelKey) {
+      case 'lowLight': return l.lowLight;
+      case 'mediumLight': return l.mediumLight;
+      case 'brightIndirect': return l.brightIndirect;
+      case 'brightDirect': return l.brightDirect;
+      case 'veryIntense': return l.veryIntense;
+      default: return l.tapMeasureToStart;
+    }
+  }
+
+  String _resolveDesc(AppLocalizations l) {
+    switch (_lightDescKey) {
+      case 'lowLightDesc': return l.lowLightDesc;
+      case 'mediumLightDesc': return l.mediumLightDesc;
+      case 'brightIndirectDesc': return l.brightIndirectDesc;
+      case 'brightDirectDesc': return l.brightDirectDesc;
+      case 'veryIntenseDesc': return l.veryIntenseDesc;
+      default: return l.pointCameraAtLight;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     _isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final lightLevel = _resolveLevel(l);
+    final lightDescription = _resolveDesc(l);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -160,11 +178,11 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                       icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
                       onPressed: () => Navigator.pop(context),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Light Meter',
+                        l.lightMeter,
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(width: 48),
@@ -202,13 +220,9 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            _lightLevel,
+                            lightLevel,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: _levelColor,
-                            ),
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _levelColor),
                           ),
                           const SizedBox(height: 8),
                           Container(
@@ -245,16 +259,13 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: _levelColor.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
+                        decoration: BoxDecoration(color: _levelColor.withValues(alpha: 0.1), shape: BoxShape.circle),
                         child: Icon(Icons.eco, color: _levelColor),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Text(
-                          _lightDescription,
+                          lightDescription,
                           style: TextStyle(fontSize: 14, height: 1.4, color: Theme.of(context).colorScheme.onSurface),
                         ),
                       ),
@@ -273,9 +284,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                   child: ElevatedButton(
                     onPressed: _isMeasuring ? _stopMeasuring : _startMeasuring,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isMeasuring
-                          ? (_isDark ? AppColors.errorDark : AppColors.errorLight)
-                          : primaryColor,
+                      backgroundColor: _isMeasuring ? (_isDark ? AppColors.errorDark : AppColors.errorLight) : primaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 0,
@@ -286,7 +295,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                         Icon(_isMeasuring ? Icons.stop : Icons.camera_alt_outlined, color: Colors.white),
                         const SizedBox(width: 12),
                         Text(
-                          _isMeasuring ? 'Stop Measuring' : 'Measure Light',
+                          _isMeasuring ? l.stopMeasuring : l.measureLight,
                           style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -302,12 +311,11 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SizedBox(
-                        width: 14,
-                        height: 14,
+                        width: 14, height: 14,
                         child: CircularProgressIndicator(strokeWidth: 2, color: primaryColor),
                       ),
                       const SizedBox(width: 8),
-                      Text('Measuring for 5 seconds...', style: TextStyle(color: AppColors.bone500)),
+                      Text(l.measuringFiveSeconds, style: const TextStyle(color: AppColors.bone500)),
                     ],
                   ),
                 ),
@@ -331,7 +339,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                         children: [
                           Icon(Icons.eco, color: primaryColor),
                           const SizedBox(width: 12),
-                          const Text('Save to a Plant 🌿', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(l.saveToPlant, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -347,6 +355,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
   }
 
   void _showSaveToPlantSheet(BuildContext context) {
+    final l = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -364,10 +373,13 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                 Center(
                   child: Container(
                     width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3), borderRadius: const BorderRadius.all(Radius.circular(2))),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                      borderRadius: const BorderRadius.all(Radius.circular(2)),
+                    ),
                   ),
                 ),
-                const Text('Save Light Reading', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(l.saveLightReading, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
@@ -375,14 +387,13 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                       final docs = snapshot.data!.docs;
-                      if (docs.isEmpty) return const Center(child: Text('No plants found.'));
+                      if (docs.isEmpty) return Center(child: Text(l.noPlantsFound));
                       return ListView.builder(
                         itemCount: docs.length,
                         itemBuilder: (context, index) {
                           final data = docs[index].data() as Map<String, dynamic>;
                           final isDeceased = data['isDeceased'] == true;
                           if (isDeceased) return const SizedBox.shrink();
-                          
                           return ListTile(
                             leading: CircleAvatar(
                               backgroundColor: AppColors.forest100,
@@ -390,26 +401,27 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                                   ? NetworkImage(data['imageUrl'])
                                   : null,
                               child: data['imageUrl'] == null || data['imageUrl'].toString().isEmpty
-                                  ? const Icon(Icons.eco, color: AppColors.forest900)
-                                  : null,
+                                  ? const Icon(Icons.eco, color: AppColors.forest900) : null,
                             ),
                             title: Text(data['name'] ?? 'Unknown'),
                             subtitle: Text(data['category'] ?? 'Plant'),
                             trailing: const Icon(Icons.check_circle_outline, color: AppColors.bone500),
                             onTap: () async {
                               Navigator.pop(context);
-                              await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(docs[index].id).update({
+                              await FirebaseFirestore.instance
+                                  .collection('users').doc(uid).collection('plants').doc(docs[index].id)
+                                  .update({
                                 'lastLightReading': _averageLux,
-                                'lastLightReadingLabel': _lightLevel,
+                                'lastLightReadingLabel': _resolveLevel(l),
                                 'lastLightReadingDate': FieldValue.serverTimestamp(),
                               });
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                    content: Text('Light reading saved to ${data['name']} 🌿'),
-                                    backgroundColor: AppColors.forest900,
-                                  ),
-                                );
+                                  content: Text('${l.lightReadingSavedToPrefix}${data['name']} 🌿'),
+                                  backgroundColor: AppColors.forest900,
+                                ),
+                              );
                             },
                           );
                         },

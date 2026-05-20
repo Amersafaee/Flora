@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../models/task_model.dart';
 import '../services/firestore_service.dart';
 import '../services/care_intelligence_service.dart';
@@ -41,18 +42,17 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
 
           final intelligence = CareIntelligenceService();
           final nextCare = await intelligence.computeNextCareDate(
-            plantId: '', // Default since Task doesn't store plantId
+            plantId: '',
             plantName: task.plantName,
-            category: 'General', // Fallback
+            category: 'General',
             baseIntervalDays: baseInterval,
             lastWateredDate: DateTime.now(),
-            zoneUid: 'main_zone', // Assumed for now
+            zoneUid: 'main_zone',
             userUid: uid,
           );
           
           final nextDate = nextCare['nextDate'] as DateTime;
           
-          // Re-create the task for the future
           await FirestoreService().addTask(Task(
             id: '',
             plantName: task.plantName,
@@ -82,11 +82,13 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     if (_isAllDone) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          title: const Text('Quick Care', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.bone900)),
+          title: Text(l.quickCare, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.bone900)),
           backgroundColor: Colors.transparent,
           elevation: 0,
           iconTheme: const IconThemeData(color: AppColors.bone900),
@@ -108,22 +110,22 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                 child: const Icon(Icons.check_circle, color: Colors.green, size: 80),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'All done',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, fontFamily: 'serif'),
+              Text(
+                l.allDone,
+                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, fontFamily: 'serif'),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Your plants have been taken care of',
-                style: TextStyle(fontSize: 16, color: AppColors.bone500),
+              Text(
+                l.plantsCaredFor,
+                style: const TextStyle(fontSize: 16, color: AppColors.bone500),
               ),
               const SizedBox(height: 32),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildSummaryPill(Icons.check, '$_completedCount Completed', Colors.green),
+                  _buildSummaryPill(Icons.check, '$_completedCount ${l.completed}', Colors.green),
                   const SizedBox(width: 16),
-                  _buildSummaryPill(Icons.close, '$_skippedCount Skipped', Colors.red),
+                  _buildSummaryPill(Icons.close, '$_skippedCount ${l.skipped}', Colors.red),
                 ],
               ),
               const SizedBox(height: 48),
@@ -137,7 +139,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
-                child: const Text('Back to Care', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(l.backToCare, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ],
           ),
@@ -154,7 +156,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
         chipColor = Colors.green;
         break;
       case 'Fertilizing':
-        chipColor = AppColors.terracotta900; // Terracotta
+        chipColor = AppColors.terracotta900;
         break;
       case 'Repotting':
         chipColor = Colors.blue;
@@ -166,22 +168,22 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
     String careTip;
     switch (currentTask.taskType) {
       case 'Watering':
-        careTip = 'Check soil moisture before watering.';
+        careTip = l.checkSoilBeforeWatering;
         break;
       case 'Fertilizing':
-        careTip = 'Use diluted liquid fertilizer.';
+        careTip = l.useDilutedFertilizer;
         break;
       case 'Repotting':
-        careTip = 'Choose a pot 2 inches larger.';
+        careTip = l.choosePot2InchesLarger;
         break;
       default:
-        careTip = 'Care for your plant gently.';
+        careTip = l.careForPlantGently;
     }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Quick Care', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.bone900)),
+        title: Text(l.quickCare, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.bone900)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.bone900),
@@ -193,7 +195,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const Text('Swipe right to complete, swipe left to skip', style: TextStyle(color: AppColors.bone500, fontSize: 14)),
+            Text(l.swipeToCompleteOrSkip, style: const TextStyle(color: AppColors.bone500, fontSize: 14)),
             const SizedBox(height: 16),
             // Progress Bar
             Padding(
@@ -216,10 +218,8 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
               child: GestureDetector(
                 onHorizontalDragEnd: (details) {
                   if (details.primaryVelocity! > 0) {
-                    // Swipe right
                     _handleSwipe(true);
                   } else if (details.primaryVelocity! < 0) {
-                    // Swipe left
                     _handleSwipe(false);
                   }
                 },

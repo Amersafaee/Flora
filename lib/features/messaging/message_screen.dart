@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/message_providers.dart';
 import '../../theme/app_theme.dart';
@@ -19,14 +20,12 @@ class _MessageScreenState extends ConsumerState<MessageScreen> {
   @override
   void initState() {
     super.initState();
-    // Update last seen when opening thread
     updateLastSeen(widget.threadId);
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
-    // Update last seen when leaving thread
     updateLastSeen(widget.threadId);
     super.dispose();
   }
@@ -34,17 +33,16 @@ class _MessageScreenState extends ConsumerState<MessageScreen> {
   void _send() {
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
-
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final name = user.displayName ?? 'Plant Lover';
-
+    final name = user.displayName ?? AppLocalizations.of(context).plantLover;
     sendSwapMessage(widget.threadId, text, name);
     _ctrl.clear();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final messagesAsync = ref.watch(messagesProvider(widget.threadId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -61,9 +59,8 @@ class _MessageScreenState extends ConsumerState<MessageScreen> {
               error: (e, _) => Center(child: Text('Error: $e')),
               data: (messages) {
                 if (messages.isEmpty) {
-                  return const Center(child: Text('Send a message to start swapping!'));
+                  return Center(child: Text(l10n.sendMessageToStartSwapping));
                 }
-
                 return ListView.builder(
                   reverse: true,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -71,7 +68,6 @@ class _MessageScreenState extends ConsumerState<MessageScreen> {
                   itemBuilder: (context, index) {
                     final msg = messages[index];
                     final isMe = msg.senderUid == uid;
-
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Row(
@@ -103,8 +99,6 @@ class _MessageScreenState extends ConsumerState<MessageScreen> {
               },
             ),
           ),
-          
-          // Input Bar
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             decoration: BoxDecoration(
@@ -120,9 +114,9 @@ class _MessageScreenState extends ConsumerState<MessageScreen> {
                       controller: _ctrl,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
-                        hintText: 'Type a message...',
+                        hintText: l10n.typeAMessage,
                         filled: true,
-                        fillColor: isDark ? AppColors.darkSurface : Color(0x4CE8F3EA),
+                        fillColor: isDark ? AppColors.darkSurface : const Color(0x4CE8F3EA),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: AppRadius.borderPill,
@@ -149,4 +143,3 @@ class _MessageScreenState extends ConsumerState<MessageScreen> {
     );
   }
 }
-

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -53,30 +54,29 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   }
 
   Future<void> _deleteListing() async {
+    final l = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Listing'),
-        content: const Text('Are you sure you want to remove this listing from the swap market?'),
+        title: Text(l.deleteListing),
+        content: Text(l.deleteListingConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.terracotta900)),
+            child: Text(l.delete, style: const TextStyle(color: AppColors.terracotta900)),
           ),
         ],
       ),
     );
     if (confirm == true) {
-      await FirebaseFirestore.instance
-          .collection('swap_listings')
-          .doc(widget.doc.id)
-          .delete();
+      await FirebaseFirestore.instance.collection('swap_listings').doc(widget.doc.id).delete();
       if (mounted) Navigator.pop(context);
     }
   }
 
   void _editListing(Map<String, dynamic> currentData) {
+    final l = AppLocalizations.of(context);
     final titleCtrl = TextEditingController(text: currentData['title']);
     final descCtrl = TextEditingController(text: currentData['description']);
     final lookCtrl = TextEditingController(text: currentData['lookingFor']);
@@ -92,13 +92,13 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Edit Listing', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(l.editListing, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Title')),
+              TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l.titleLabel)),
               const SizedBox(height: 8),
-              TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Description')),
+              TextField(controller: descCtrl, decoration: InputDecoration(labelText: l.descriptionLabel)),
               const SizedBox(height: 8),
-              TextField(controller: lookCtrl, decoration: const InputDecoration(labelText: 'Looking For')),
+              TextField(controller: lookCtrl, decoration: InputDecoration(labelText: l.lookingFor)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: type,
@@ -106,7 +106,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                     .toList(),
                 onChanged: (v) => setSheetState(() => type = v!),
-                decoration: const InputDecoration(labelText: 'Type'),
+                decoration: InputDecoration(labelText: l.typeLabel),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -119,7 +119,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   });
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
-                child: Text('Save'),
+                child: Text(l.save),
               ),
               const SizedBox(height: 20),
             ],
@@ -131,6 +131,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: StreamBuilder<DocumentSnapshot>(
@@ -152,7 +154,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           final careStreak = currentData['careStreak'] as int? ?? 0;
           final isOwner = _currentUid == ownerUid;
 
-          String timeAgo = 'Recently';
+          String timeAgo = l.recently;
           final timestamp = currentData['timestamp'];
           if (timestamp is Timestamp) {
             final date = timestamp.toDate();
@@ -175,10 +177,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 leading: IconButton(
                   icon: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
                     child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
                   ),
                   onPressed: () => Navigator.pop(context),
@@ -188,10 +187,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     IconButton(
                       icon: Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          shape: BoxShape.circle,
-                        ),
+                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
                         child: const Icon(Icons.edit, color: Colors.white, size: 20),
                       ),
                       onPressed: () => _editListing(currentData),
@@ -199,15 +195,12 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     IconButton(
                       icon: Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          shape: BoxShape.circle,
-                        ),
+                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
                         child: const Icon(Icons.delete_outline, color: Colors.white, size: 20),
                       ),
                       onPressed: _deleteListing,
                     ),
-                  ]
+                  ],
                 ],
                 flexibleSpace: FlexibleSpaceBar(
                   background: imageUrl.isNotEmpty
@@ -232,33 +225,32 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.forest100,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                            decoration: BoxDecoration(color: AppColors.forest100, borderRadius: BorderRadius.circular(20)),
                             child: Text(type, style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
                           ),
                           const Spacer(),
-                          Icon(Icons.access_time, size: 14, color: AppColors.bone500),
+                          const Icon(Icons.access_time, size: 14, color: AppColors.bone500),
                           const SizedBox(width: 4),
-                          Text(timeAgo, style: TextStyle(color: AppColors.bone500, fontSize: 13)),
+                          Text(timeAgo, style: const TextStyle(color: AppColors.bone500, fontSize: 13)),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Text(title, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                      Text(title, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 16, color: AppColors.bone500),
+                          const Icon(Icons.location_on, size: 16, color: AppColors.bone500),
                           const SizedBox(width: 4),
-                          Text(location, style: TextStyle(color: AppColors.bone500, fontSize: 14)),
+                          Text(location, style: const TextStyle(color: AppColors.bone500, fontSize: 14)),
                         ],
                       ),
                       const SizedBox(height: 24),
-                      Text('About this plant', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.onSurface)),
+                      Text(l.aboutThisPlant, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.onSurface)),
                       const SizedBox(height: 8),
-                      Text(description, style: TextStyle(color: AppColors.bone700, fontSize: 15, height: 1.5)),
+                      Text(description, style: const TextStyle(color: AppColors.bone700, fontSize: 15, height: 1.5)),
                       const SizedBox(height: 24),
+
+                      // Looking to swap for
                       Builder(
                         builder: (context) {
                           final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -277,9 +269,12 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Looking to swap for', style: TextStyle(color: isDark ? AppColors.darkTerracotta : AppColors.terracotta900, fontSize: 12, fontWeight: FontWeight.bold)),
+                                      Text(
+                                        l.lookingToSwapFor,
+                                        style: TextStyle(color: isDark ? AppColors.darkTerracotta : AppColors.terracotta900, fontSize: 12, fontWeight: FontWeight.bold),
+                                      ),
                                       const SizedBox(height: 4),
-                                      Text(lookingFor, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                      Text(lookingFor, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                                     ],
                                   ),
                                 ),
@@ -289,6 +284,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         },
                       ),
                       const SizedBox(height: 24),
+
+                      // Owner card
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -307,7 +304,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Listed by', style: TextStyle(color: AppColors.bone500, fontSize: 12)),
+                                Text(l.listedBy, style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
                                 Row(
                                   children: [
                                     Text(ownerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -324,7 +321,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                               border: Border.all(color: isDark ? AppColors.darkBorderDefault : AppColors.terracotta500),
                                             ),
                                             child: Text(
-                                              '🔥 $careStreak day care streak',
+                                              '🔥 $careStreak ${l.careStreak}',
                                               style: TextStyle(color: isDark ? AppColors.darkTerracotta : AppColors.terracotta700, fontSize: 10, fontWeight: FontWeight.bold),
                                             ),
                                           );
@@ -345,7 +342,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               ),
             ],
           );
-        }
+        },
       ),
       bottomNavigationBar: _currentUid == data['ownerUid']
           ? null
@@ -360,9 +357,9 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Message Seller',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  child: Text(
+                    l.messageSeller,
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -371,12 +368,13 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   }
 
   void _showPassportSheet(Map<String, dynamic> currentData) {
+    final l = AppLocalizations.of(context);
     final title = currentData['title'] ?? '';
     final type = currentData['type'] ?? '';
     final description = currentData['description'] ?? '';
     final ownerName = currentData['ownerName'] ?? '';
     final healthScore = currentData['healthScore'];
-    
+
     Widget healthBadge;
     if (healthScore is num) {
       final score = healthScore.toInt();
@@ -389,17 +387,19 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       } else {
         badgeColor = isDark ? AppColors.errorDark : AppColors.errorLight;
       }
-      
       healthBadge = Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(12)),
-        child: Text('Health: $score', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+        child: Text('${l.healthColonPrefix}$score', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
       );
     } else {
       healthBadge = Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12)),
-        child: Text('Health: Not assessed', style: TextStyle(color: AppColors.bone900, fontWeight: FontWeight.bold, fontSize: 12)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(l.healthNotAssessed, style: const TextStyle(color: AppColors.bone900, fontWeight: FontWeight.bold, fontSize: 12)),
       );
     }
 
@@ -420,11 +420,14 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
             Center(
               child: Container(
                 width: 40, height: 4,
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 20),
-            Text(title, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -433,20 +436,20 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(color: AppColors.forest100, borderRadius: BorderRadius.circular(12)),
-                  child: Text(type, style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold, fontSize: 12)),
+                  child: Text(type, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            Text('Passport Details', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            Text(l.passportDetails, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 8),
-            Text(description, style: TextStyle(color: AppColors.bone700, fontSize: 14)),
+            Text(description, style: const TextStyle(color: AppColors.bone700, fontSize: 14)),
             const SizedBox(height: 16),
             Row(
               children: [
                 const Icon(Icons.person, color: AppColors.bone500, size: 20),
                 const SizedBox(width: 8),
-                Text('Listed by $ownerName', style: const TextStyle(color: AppColors.bone500, fontWeight: FontWeight.bold)),
+                Text('${l.listedBy} $ownerName', style: const TextStyle(color: AppColors.bone500, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 24),
@@ -459,7 +462,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: const Text('View Full Listing', style: TextStyle(color: AppColors.forest900)),
+                    child: Text(l.viewFullListing, style: const TextStyle(color: AppColors.forest900)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -474,7 +477,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: const Text('Message Seller 💬', style: TextStyle(color: Colors.white)),
+                    child: Text(l.messageSellerEmoji, style: const TextStyle(color: Colors.white)),
                   ),
                 ),
               ],

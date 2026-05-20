@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -24,7 +25,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
   final ImagePicker _picker = ImagePicker();
   
   bool _isUploading = false;
-  String _listingTitle = 'Loading...';
+  String _listingTitle = '';
   String _listingPlantId = '';
 
   @override
@@ -41,8 +42,8 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
           .get();
       if (doc.exists && mounted) {
         setState(() {
-          _listingTitle = doc.data()?['listingTitle'] ?? 'Chat';
-          _listingPlantId = doc.data()?['listingId'] ?? ''; // Assuming listingId maps to plantId
+          _listingTitle = doc.data()?['listingTitle'] ?? '';
+          _listingPlantId = doc.data()?['listingId'] ?? '';
         });
       }
     } catch (e) {
@@ -67,7 +68,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
       if (imageUrl != null) 'imageUrl': imageUrl,
       if (messageType != null) 'type': messageType,
       'timestamp': FieldValue.serverTimestamp(),
-      'status': 'sent', // For single-check delivery indicator
+      'status': 'sent',
     });
 
     await FirebaseFirestore.instance
@@ -100,7 +101,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send image: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).failedToSendImagePrefix}$e')),
         );
       }
     } finally {
@@ -115,8 +116,8 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
           permission == LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location permission required to share your location'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context).locationPermissionRequired),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -137,7 +138,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not get location: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).couldNotGetLocationPrefix}$e')),
         );
       }
     }
@@ -151,16 +152,19 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Trade Chat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Text(
-              _listingTitle,
-              style: TextStyle(fontSize: 12, color: AppColors.bone500, fontWeight: FontWeight.normal),
-            ),
+            Text(l.tradeChat, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            if (_listingTitle.isNotEmpty)
+              Text(
+                _listingTitle,
+                style: const TextStyle(fontSize: 12, color: AppColors.bone500, fontWeight: FontWeight.normal),
+              ),
           ],
         ),
         actions: [
@@ -175,7 +179,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
                 );
               },
               icon: const Icon(Icons.visibility, size: 16),
-              label: const Text('View Listing'),
+              label: Text(l.viewListing),
               style: TextButton.styleFrom(foregroundColor: AppColors.forest900),
             ),
         ],
@@ -193,7 +197,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                 final docs = snapshot.data!.docs;
-                if (docs.isEmpty) return const Center(child: Text('Start the trade negotiation!', style: TextStyle(color: AppColors.bone500)));
+                if (docs.isEmpty) return Center(child: Text(l.startTradeNegotiation, style: const TextStyle(color: AppColors.bone500)));
 
                 return ListView.builder(
                   reverse: true,
@@ -322,18 +326,18 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
                   IconButton(
                     icon: const Icon(Icons.add_photo_alternate_outlined, color: AppColors.bone500),
                     onPressed: _pickAndSendImage,
-                    tooltip: 'Send Image',
+                    tooltip: l.sendImageTooltip,
                   ),
                   IconButton(
                     icon: const Icon(Icons.location_on_outlined, color: AppColors.bone500),
                     onPressed: _shareLocation,
-                    tooltip: 'Share Location',
+                    tooltip: l.shareLocationTooltip,
                   ),
                   Expanded(
                     child: TextField(
                       controller: _msgController,
                       decoration: InputDecoration(
-                        hintText: 'Message...',
+                        hintText: l.messageHint,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide.none,

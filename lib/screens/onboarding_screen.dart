@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_screen.dart';
 import '../theme/app_theme.dart';
-
 
 class OnboardingScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -30,22 +30,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => SignupScreen(
-          onThemeChanged: widget.onThemeChanged,
-        ),
+        builder: (context) => SignupScreen(onThemeChanged: widget.onThemeChanged),
       ),
     );
   }
 
   void _nextPage() {
-    _pageController.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     const Color accentColor = AppColors.forest900;
 
     return Scaffold(
@@ -56,39 +52,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView(
                 controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
+                onPageChanged: (index) => setState(() => _currentPage = index),
                 children: [
                   _buildPage(
                     icon: Icons.eco,
                     iconSize: 100,
                     iconColor: accentColor,
-                    heading: 'Welcome to Digital Conservatory',
-                    subtitle: 'Your personal AI plant sanctuary. Meet Flora — she knows your plants and keeps them thriving.',
+                    heading: l.welcomeToDigitalConservatory,
+                    subtitle: l.onboardingWelcomeSubtitle,
                   ),
                   _buildPageWithStackedIcon(
                     baseIcon: Icons.calendar_today,
                     overlayIcon: Icons.water_drop,
-                    heading: 'Never Miss a Care Day',
-                    subtitle: 'Flora builds a smart care calendar for every plant you own and reminds you exactly when to water, fertilize, and check in.',
+                    heading: l.neverMissACareDay,
+                    subtitle: l.onboardingCareSubtitle,
                     accentColor: accentColor,
                   ),
                   _buildPage(
                     icon: Icons.camera_alt,
                     iconSize: 80,
                     iconColor: accentColor,
-                    heading: 'Identify Any Plant Instantly',
-                    subtitle: 'Point your camera at any plant for instant AI identification, health diagnosis, and a personalized care plan from Flora.',
+                    heading: l.identifyAnyPlantInstantly,
+                    subtitle: l.onboardingIdentifySubtitle,
                   ),
                   _buildPage(
                     icon: Icons.people,
                     iconSize: 80,
                     iconColor: accentColor,
-                    heading: 'Join the Community',
-                    subtitle: 'Share your journey, swap cuttings with local plant lovers, and get expert advice from thousands of plant parents.',
+                    heading: l.joinTheCommunity,
+                    subtitle: l.onboardingCommunitySubtitle,
                   ),
                 ],
               ),
@@ -115,7 +107,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(height: 32.0),
                   if (_currentPage == 3)
-                    // Last page: single centered CTA
                     SizedBox(
                       width: double.infinity,
                       height: 56.0,
@@ -123,23 +114,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         onPressed: _completeOnboarding,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: accentColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.0),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
                           elevation: 0,
                         ),
-                        child: Text(
-                          'Let\'s grow something 🌱',
-                          style: TextStyle(
-                            color: Theme.of(context).cardColor,
-                            fontSize: 18.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: Text(l.letsGrowSomething, style: TextStyle(color: Theme.of(context).cardColor, fontSize: 18.0, fontWeight: FontWeight.bold)),
                       ),
                     )
                   else
-                    // Pages 1-3: Skip on left, Next on right
                     Row(
                       children: [
                         Expanded(
@@ -148,19 +129,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             child: OutlinedButton(
                               onPressed: _completeOnboarding,
                               style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: accentColor),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16.0),
-                                ),
+                                side: const BorderSide(color: accentColor),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
                               ),
-                              child: Text(
-                                'Skip',
-                                style: TextStyle(
-                                  color: accentColor,
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              child: Text(l.skip, style: const TextStyle(color: accentColor, fontSize: 16.0, fontWeight: FontWeight.w600)),
                             ),
                           ),
                         ),
@@ -173,19 +145,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               onPressed: _nextPage,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: accentColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16.0),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
                                 elevation: 0,
                               ),
-                              child: Text(
-                                'Next',
-                                style: TextStyle(
-                                  color: Theme.of(context).cardColor,
-                                  fontSize: 18.0,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              child: Text(l.nextLabel, style: TextStyle(color: Theme.of(context).cardColor, fontSize: 18.0, fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ),
@@ -214,26 +177,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           Icon(icon, size: iconSize, color: iconColor),
           const SizedBox(height: 48.0),
-          Text(
-            heading,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'serif',
-              fontSize: 28.0,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
+          Text(heading, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'serif', fontSize: 28.0, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 16.0),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16.0,
-              color: AppColors.bone500,
-              height: 1.5,
-            ),
-          ),
+          Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16.0, color: AppColors.bone500, height: 1.5)),
         ],
       ),
     );
@@ -262,10 +208,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   bottom: 0,
                   right: 0,
                   child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, shape: BoxShape.circle),
                     padding: const EdgeInsets.all(4),
                     child: Icon(overlayIcon, size: 40, color: Colors.blue),
                   ),
@@ -274,26 +217,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 48.0),
-          Text(
-            heading,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'serif',
-              fontSize: 28.0,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
+          Text(heading, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'serif', fontSize: 28.0, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 16.0),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16.0,
-              color: AppColors.bone500,
-              height: 1.5,
-            ),
-          ),
+          Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16.0, color: AppColors.bone500, height: 1.5)),
         ],
       ),
     );

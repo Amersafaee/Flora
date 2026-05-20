@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/species_providers.dart';
@@ -10,6 +11,7 @@ class WikiScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final activeFilter = ref.watch(wikiActiveFilterProvider);
     final searchQuery = ref.watch(wikiSearchQueryProvider).toLowerCase();
     
@@ -19,6 +21,16 @@ class WikiScreen extends ConsumerWidget {
     final wishlistedIds = wishlistAsync.valueOrNull ?? {};
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Filter chip labels — keys are the internal filter values, values are localized labels
+    final wikiFilters = <String, String>{
+      'All': l10n.all,
+      'Pet Friendly': l10n.wikiFilterPetFriendly,
+      'Low Light': l10n.lowLight,
+      'Beginner': l10n.wikiFilterBeginner,
+      'Tropical': l10n.wikiFilterTropical,
+      'Succulent': l10n.wikiFilterSucculent,
+    };
 
     return Scaffold(
       body: SafeArea(
@@ -31,7 +43,7 @@ class WikiScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Plant Wiki', style: TextStyle(
+                    Text(l10n.plantWiki, style: TextStyle(
                       fontFamily: 'NotoSerif',
                       fontSize: 32,
                       fontWeight: FontWeight.w700,
@@ -39,25 +51,25 @@ class WikiScreen extends ConsumerWidget {
                       letterSpacing: -0.5,
                     )),
                     const SizedBox(height: 4),
-                    const Text('Find your next green companion.', style: TextStyle(
+                    Text(l10n.findNextGreenCompanion, style: const TextStyle(
                       fontSize: 16, color: AppColors.moss,
                     )),
                     const SizedBox(height: 24),
                     TextField(
                       onChanged: (val) => ref.read(wikiSearchQueryProvider.notifier).state = val,
                       decoration: InputDecoration(
-                        hintText: 'Search by name or type…',
+                        hintText: l10n.searchByNameOrType,
                         prefixIcon: const Icon(Icons.search, color: AppColors.moss),
                         filled: true,
                         fillColor: isDark ? AppColors.darkSurface : Colors.white,
                         contentPadding: const EdgeInsets.symmetric(vertical: 0),
                         border: OutlineInputBorder(
                           borderRadius: AppRadius.borderPill,
-                          borderSide: BorderSide(color: AppColors.mist, width: 1),
+                          borderSide: const BorderSide(color: AppColors.mist, width: 1),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AppRadius.borderPill,
-                          borderSide: BorderSide(color: AppColors.mist, width: 1),
+                          borderSide: const BorderSide(color: AppColors.mist, width: 1),
                         ),
                       ),
                     ),
@@ -74,19 +86,19 @@ class WikiScreen extends ConsumerWidget {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: [
-                    'All', 'Pet Friendly', 'Low Light', 'Beginner', 'Tropical', 'Succulent'
-                  ].map((filter) {
-                    final isActive = activeFilter == filter;
+                  children: wikiFilters.entries.map((entry) {
+                    final key = entry.key;
+                    final label = entry.value;
+                    final isActive = activeFilter == key;
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
-                        label: Text(filter, style: TextStyle(
+                        label: Text(label, style: TextStyle(
                           color: isActive ? Colors.white : AppColors.bark,
                           fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                         )),
                         selected: isActive,
-                        onSelected: (_) => ref.read(wikiActiveFilterProvider.notifier).state = filter,
+                        onSelected: (_) => ref.read(wikiActiveFilterProvider.notifier).state = key,
                         selectedColor: AppColors.forestGreen,
                         backgroundColor: isDark ? AppColors.darkSurface : AppColors.dew,
                         side: BorderSide.none,
@@ -105,7 +117,6 @@ class WikiScreen extends ConsumerWidget {
               loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
               error: (e, _) => SliverFillRemaining(child: Center(child: Text('Error: $e'))),
               data: (speciesList) {
-                // Apply client-side search filter
                 final filtered = speciesList.where((s) {
                   if (searchQuery.isEmpty) return true;
                   return s.commonName.toLowerCase().contains(searchQuery) ||
@@ -122,15 +133,15 @@ class WikiScreen extends ConsumerWidget {
                           children: [
                             const Text('🔍', style: TextStyle(fontSize: 64)),
                             const SizedBox(height: 16),
-                            const Text(
-                              'No plants match',
+                            Text(
+                              l10n.noPlantsMatch,
                               textAlign: TextAlign.center,
-                              style: TextStyle(fontFamily: 'NotoSerif', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.forestGreen),
+                              style: const TextStyle(fontFamily: 'NotoSerif', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.forestGreen),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Try a different filter or search term.',
-                              style: TextStyle(fontSize: 14, color: AppColors.moss),
+                            Text(
+                              l10n.tryDifferentFilterOrSearch,
+                              style: const TextStyle(fontSize: 14, color: AppColors.moss),
                             ),
                           ],
                         ),
@@ -205,7 +216,7 @@ class WikiScreen extends ConsumerWidget {
                                       ),
                                       child: Text(
                                         s.category,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
@@ -230,7 +241,7 @@ class WikiScreen extends ConsumerWidget {
                                     )),
                                     const SizedBox(height: 2),
                                     if (s.scientificName.isNotEmpty)
-                                      Text(s.scientificName, style: TextStyle(
+                                      Text(s.scientificName, style: const TextStyle(
                                         fontStyle: FontStyle.italic,
                                         fontSize: 13,
                                         color: AppColors.moss,
@@ -242,7 +253,7 @@ class WikiScreen extends ConsumerWidget {
                                       children: s.traits.take(3).map((t) => Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: isDark ? AppColors.darkSurface : Color(0x80E8F3EA),
+                                          color: isDark ? AppColors.darkSurface : const Color(0x80E8F3EA),
                                           borderRadius: AppRadius.borderSm,
                                         ),
                                         child: Text(t, style: TextStyle(
@@ -270,4 +281,3 @@ class WikiScreen extends ConsumerWidget {
     );
   }
 }
-

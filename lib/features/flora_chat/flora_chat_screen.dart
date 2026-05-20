@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -97,14 +98,13 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
 
     _scrollToBottom();
 
-    // 2. Fetch prior history for context (excluding the message we just added,
-    //    since server timestamps may be null causing ordering issues)
+    // 2. Fetch prior history for context
     final snap = await FirebaseFirestore.instance
         .collection('users').doc(uid)
         .collection('chats').doc(_currentChatId)
         .collection('messages')
         .orderBy('createdAt', descending: true)
-        .limit(41) // fetch 41, we'll skip the last (just-added) user message if needed
+        .limit(41)
         .get();
 
     // Build alternating role payload
@@ -112,8 +112,6 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
     String? currentRole;
     String currentContent = '';
 
-    // Process docs oldest-first, but skip any doc whose text == current user text
-    // (it may have been saved with a null timestamp and appear at wrong position)
     final orderedDocs = snap.docs.reversed.toList();
     for (var d in orderedDocs) {
       final data = d.data();
@@ -142,7 +140,6 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
     if (messagesPayload.isEmpty || messagesPayload.last['role'] != 'user') {
       messagesPayload.add({'role': 'user', 'content': text});
     } else if (messagesPayload.last['content'] != text) {
-      // The last user message in history isn't the current one — add it explicitly
       messagesPayload.add({'role': 'user', 'content': text});
     }
 
@@ -206,11 +203,10 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
       debugPrint('[Flora] Gemini error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('AI Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context).aiErrorPrefix(e.toString())), backgroundColor: Colors.red),
         );
       }
     } finally {
-      // Always reset typing state regardless of success or failure
       if (mounted) setState(() => _isTyping = false);
     }
   }
@@ -219,7 +215,6 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     
-    // Delete all messages in the chat subcollection
     final msgSnap = await FirebaseFirestore.instance
         .collection('users').doc(uid)
         .collection('chats').doc(chatId)
@@ -229,7 +224,6 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
       await doc.reference.delete();
     }
     
-    // Delete the chat document itself
     await FirebaseFirestore.instance
         .collection('users').doc(uid)
         .collection('chats').doc(chatId).delete();
@@ -272,6 +266,7 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -281,7 +276,7 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
         actions: [
           IconButton(
             icon: const Icon(Icons.add_comment),
-            tooltip: 'New Chat',
+            tooltip: l10n.newChat,
             onPressed: _startNewChat,
           ),
         ],
@@ -310,7 +305,7 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
                   children: [
                     Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppColors.leafGreen, shape: BoxShape.circle)),
                     const SizedBox(width: 4),
-                    const Text('AI Plant Consultant', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.moss)),
+                    Text(l10n.aiPlantConsultant, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.moss)),
                   ],
                 ),
               ],
@@ -323,9 +318,9 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
         child: SafeArea(
           child: Column(
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('Chat History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(l10n.chatHistory, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               Expanded(
                 child: uid == null ? const SizedBox() : StreamBuilder<QuerySnapshot>(
@@ -333,13 +328,13 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
                   builder: (context, snap) {
                     if (!snap.hasData) return const Center(child: CircularProgressIndicator());
                     final docs = snap.data!.docs;
-                    if (docs.isEmpty) return const Center(child: Text('No previous chats.'));
+                    if (docs.isEmpty) return Center(child: Text(l10n.noPreviousChats));
                     return ListView.builder(
                       itemCount: docs.length,
                       itemBuilder: (context, index) {
                         final data = docs[index].data() as Map<String, dynamic>;
                         final chatId = docs[index].id;
-                        final title = data['title'] as String? ?? 'New Chat';
+                        final title = data['title'] as String? ?? l10n.newChat;
                         return ListTile(
                           leading: Icon(
                             Icons.chat_bubble_outline,
@@ -354,11 +349,11 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
                               final confirm = await showDialog<bool>(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
-                                  title: const Text('Delete Chat?'),
-                                  content: const Text('This cannot be undone.'),
+                                  title: Text(AppLocalizations.of(ctx).deleteChatTitle),
+                                  content: Text(AppLocalizations.of(ctx).thisCannotBeUndone),
                                   actions: [
-                                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx).cancel)),
+                                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(ctx).deleteAction, style: const TextStyle(color: Colors.red))),
                                   ],
                                 ),
                               );
@@ -388,7 +383,7 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
           // ── Chat messages ───────────────────────────────────────────────
           Expanded(
             child: uid == null 
-              ? const Center(child: Text('Please sign in first.'))
+              ? Center(child: Text(l10n.pleaseSignInFirst))
               : StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('users').doc(uid)
@@ -399,28 +394,27 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
                   builder: (context, snap) {
                     final docs = snap.data?.docs ?? [];
                     
-                    // We render in reverse because ListView is reversed
                     final itemCount = docs.length + (_isTyping || _streamingMessage.isNotEmpty ? 1 : 0);
 
                     if (itemCount == 0) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 24),
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('🌿', style: TextStyle(fontSize: 64)),
-                              SizedBox(height: 16),
+                              const Text('🌿', style: TextStyle(fontSize: 64)),
+                              const SizedBox(height: 16),
                               Text(
-                                "Hi! I'm Flora",
+                                l10n.hiImFlora,
                                 textAlign: TextAlign.center,
-                                style: TextStyle(fontFamily: 'NotoSerif', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.forestGreen),
+                                style: const TextStyle(fontFamily: 'NotoSerif', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.forestGreen),
                               ),
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Text(
-                                "Your AI plant consultant. Ask me anything about your plants — or just say hello.",
+                                l10n.floraChatIntro,
                                 textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 14, color: AppColors.moss),
+                                style: const TextStyle(fontSize: 14, color: AppColors.moss),
                               ),
                             ],
                           ),
@@ -430,11 +424,10 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
 
                     return ListView.builder(
                       controller: _scroll,
-                      reverse: true, // Latest at bottom
+                      reverse: true,
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                       itemCount: itemCount,
                       itemBuilder: (context, index) {
-                        // The 0th index is the typing/streaming bubble if active
                         if ((_isTyping || _streamingMessage.isNotEmpty) && index == 0) {
                           return _BubbleTile(
                             text: _streamingMessage, 
@@ -443,7 +436,6 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
                           );
                         }
                         
-                        // Otherwise, it's a Firestore document
                         final docIndex = (_isTyping || _streamingMessage.isNotEmpty) ? index - 1 : index;
                         final data = docs[docIndex].data() as Map<String, dynamic>;
                         return _BubbleTile(
@@ -501,7 +493,7 @@ class _FloraChatScreenState extends State<FloraChatScreen> with TickerProviderSt
                       onSubmitted: (_) => _send(),
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
-                        hintText: 'Ask Flora anything…',
+                        hintText: l10n.askFloraAnythingEllipsis,
                         filled: true,
                         fillColor: cs.surface,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -666,4 +658,3 @@ class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerPro
     );
   }
 }
-

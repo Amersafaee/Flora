@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'add_plant_screen.dart';
 import 'flora_chats_list_screen.dart';
 import '../theme/app_theme.dart';
@@ -10,6 +11,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final String name = plantData['name'] ?? 'Unknown';
     final String commonName = plantData['commonName'] ?? '';
@@ -36,8 +38,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
                 Container(
                   height: 300,
                   width: double.infinity,
-                  color: isDark ? AppColors.darkForestSubtle : AppColors.forest100, // soft green
-                  // If we had image we could display it here
+                  color: isDark ? AppColors.darkForestSubtle : AppColors.forest100,
                 ),
                 SafeArea(
                   child: Padding(
@@ -49,22 +50,18 @@ class WikiPlantDetailScreen extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  bottom: 24,
-                  left: 24,
-                  right: 24,
+                  bottom: 24, left: 24, right: 24,
                   child: Text(
                     name,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'serif',
+                      color: Colors.white, fontSize: 32,
+                      fontWeight: FontWeight.bold, fontFamily: 'serif',
                     ),
                   ),
                 ),
               ],
             ),
-            
+
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -76,26 +73,13 @@ class WikiPlantDetailScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (commonName.isNotEmpty)
-                          Text(
-                            commonName,
-                            style: const TextStyle(
-                              color: AppColors.bone500,
-                              fontSize: 16,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
+                          Text(commonName, style: const TextStyle(color: AppColors.bone500, fontSize: 16, fontStyle: FontStyle.italic)),
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -103,88 +87,64 @@ class WikiPlantDetailScreen extends StatelessWidget {
                             color: isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
-                            category,
-                            style: const TextStyle(
-                              color: AppColors.terracotta900,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
+                          child: Text(category, style: const TextStyle(color: AppColors.terracotta900, fontWeight: FontWeight.bold, fontSize: 12)),
                         ),
                         if (tags.isNotEmpty) ...[
                           const SizedBox(height: 16),
                           Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
+                            spacing: 8, runSpacing: 8,
                             children: tags.map((t) => Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: isDark ? AppColors.darkForestSubtle : AppColors.forest100,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Text(
-                                t,
-                                style: TextStyle(
-                                  color: isDark ? AppColors.darkForestPrimary : AppColors.forest600,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              child: Text(t, style: TextStyle(
+                                color: isDark ? AppColors.darkForestPrimary : AppColors.forest600,
+                                fontSize: 12, fontWeight: FontWeight.w600,
+                              )),
                             )).toList(),
                           ),
                         ],
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Info Rows Card
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: Column(
                       children: [
-                        _buildInfoRow(Icons.wb_sunny_outlined, 'Light', lightRequirement, textColor),
+                        _buildInfoRow(Icons.wb_sunny_outlined, l.lightLabel, lightRequirement, textColor),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 12),
                           child: Divider(height: 1, thickness: 1),
                         ),
-                        _buildInfoRow(Icons.water_drop_outlined, 'Watering', wateringFrequency, textColor),
+                        _buildInfoRow(Icons.water_drop_outlined, l.wateringLabel, wateringFrequency, textColor),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 12),
                           child: Divider(height: 1, thickness: 1),
                         ),
-                        _buildInfoRow(Icons.grass, 'Soil', soilType, textColor),
+                        _buildInfoRow(Icons.grass, l.soilLabel, soilType, textColor),
                       ],
                     ),
                   ),
-                  
+
                   if (funFact.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkSurfaceElevated : AppColors.bone50, // Light yellow for fun fact
+                        color: isDark ? AppColors.darkSurfaceElevated : AppColors.bone50,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                         border: Border.all(color: isDark ? AppColors.darkBorderDefault : AppColors.warningLight, width: 1),
                       ),
                       child: Row(
@@ -197,11 +157,10 @@ class WikiPlantDetailScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Did You Know?',
+                                  l.didYouKnow,
                                   style: TextStyle(
                                     color: isDark ? AppColors.warningDark : AppColors.warningLight,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold, fontSize: 16,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -209,8 +168,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
                                   funFact,
                                   style: TextStyle(
                                     color: isDark ? AppColors.darkTextSecondary : AppColors.bone700,
-                                    fontSize: 14,
-                                    height: 1.5,
+                                    fontSize: 14, height: 1.5,
                                   ),
                                 ),
                               ],
@@ -229,24 +187,14 @@ class WikiPlantDetailScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Care Guidelines',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'serif',
-                            ),
+                          Text(
+                            l.careGuidelines,
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'serif'),
                           ),
                           const SizedBox(height: 16),
                           ...careTips.map((tip) => Padding(
@@ -257,14 +205,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
                                 const Icon(Icons.check_circle, color: AppColors.forest600, size: 20),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: Text(
-                                    tip,
-                                    style: TextStyle(
-                                      color: AppColors.bone900,
-                                      fontSize: 14,
-                                      height: 1.4,
-                                    ),
-                                  ),
+                                  child: Text(tip, style: const TextStyle(color: AppColors.bone900, fontSize: 14, height: 1.4)),
                                 ),
                               ],
                             ),
@@ -273,9 +214,9 @@ class WikiPlantDetailScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // Add to My Collection Button
                   SizedBox(
                     width: double.infinity,
@@ -300,15 +241,15 @@ class WikiPlantDetailScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'Add to My Collection',
-                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      child: Text(
+                        l.addToMyCollection,
+                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Ask Flora Button
                   SizedBox(
                     width: double.infinity,
@@ -324,7 +265,7 @@ class WikiPlantDetailScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
                       child: Text(
-                        'Ask Flora About This Plant',
+                        l.askFloraAboutThisPlant,
                         style: TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -346,19 +287,12 @@ class WikiPlantDetailScreen extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: const TextStyle(color: AppColors.bone500, fontSize: 12, fontWeight: FontWeight.bold),
-            ),
+            Text(label, style: const TextStyle(color: AppColors.bone500, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            Text(value, style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
       ],
     );
   }
 }
-

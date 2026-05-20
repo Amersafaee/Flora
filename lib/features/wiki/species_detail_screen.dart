@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/species_providers.dart';
@@ -31,6 +32,7 @@ class _SpeciesDetailScreenState extends ConsumerState<SpeciesDetailScreen> with 
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final speciesAsync = ref.watch(speciesDetailProvider(widget.speciesId));
     final wishlistAsync = ref.watch(wishlistProvider);
     final userPlantsAsync = ref.watch(userPlantsProvider);
@@ -43,12 +45,11 @@ class _SpeciesDetailScreenState extends ConsumerState<SpeciesDetailScreen> with 
       error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
       data: (species) {
         if (species == null) {
-          return const Scaffold(body: Center(child: Text('Species not found.')));
+          return Scaffold(body: Center(child: Text(l10n.speciesNotFound)));
         }
 
         final isWishlisted = (wishlistAsync.valueOrNull ?? {}).contains(species.id);
         
-        // Find if user owns any of these plants (matching commonName)
         final ownedPlants = (userPlantsAsync.valueOrNull ?? [])
             .where((p) => p.commonName.toLowerCase() == species.commonName.toLowerCase() || 
                           p.scientificName.toLowerCase() == species.scientificName.toLowerCase())
@@ -95,7 +96,7 @@ class _SpeciesDetailScreenState extends ConsumerState<SpeciesDetailScreen> with 
                         color: isDark ? Colors.white : AppColors.forestGreen,
                       )),
                       if (species.scientificName.isNotEmpty)
-                        Text(species.scientificName, style: TextStyle(
+                        Text(species.scientificName, style: const TextStyle(
                           fontStyle: FontStyle.italic,
                           fontSize: 16,
                           color: AppColors.moss,
@@ -123,18 +124,18 @@ class _SpeciesDetailScreenState extends ConsumerState<SpeciesDetailScreen> with 
                       // Care Summary Chips
                       Row(
                         children: [
-                          Expanded(child: _CareSummaryChip(icon: Icons.wb_sunny, label: 'Sun', value: species.careDefaults['sun'] ?? 'medium')),
+                          Expanded(child: _CareSummaryChip(icon: Icons.wb_sunny, label: l10n.sunLabel, value: species.careDefaults['sun'] ?? 'medium')),
                           const SizedBox(width: 12),
-                          Expanded(child: _CareSummaryChip(icon: Icons.water_drop, label: 'Water', value: species.careDefaults['water'] ?? 'medium')),
+                          Expanded(child: _CareSummaryChip(icon: Icons.water_drop, label: l10n.waterTab, value: species.careDefaults['water'] ?? 'medium')),
                           const SizedBox(width: 12),
-                          Expanded(child: _CareSummaryChip(icon: Icons.eco, label: 'Feed', value: species.careDefaults['fertilizer'] ?? 'low')),
+                          Expanded(child: _CareSummaryChip(icon: Icons.eco, label: l10n.feedLabel, value: species.careDefaults['fertilizer'] ?? 'low')),
                         ],
                       ),
                       const SizedBox(height: 32),
 
                       // Owned Plants
                       if (ownedPlants.isNotEmpty) ...[
-                        Text('My Collection', style: TextStyle(
+                        Text(l10n.myCollection, style: TextStyle(
                           fontFamily: 'NotoSerif',
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -209,13 +210,13 @@ class _SpeciesDetailScreenState extends ConsumerState<SpeciesDetailScreen> with 
                     unselectedLabelColor: AppColors.moss,
                     indicatorColor: AppColors.forestGreen,
                     labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                    tabs: const [
-                      Tab(text: 'Light'),
-                      Tab(text: 'Water'),
-                      Tab(text: 'Humidity'),
-                      Tab(text: 'Soil'),
-                      Tab(text: 'Temp'),
-                      Tab(text: 'Propagate'),
+                    tabs: [
+                      Tab(text: l10n.lightTab),
+                      Tab(text: l10n.waterTab),
+                      Tab(text: l10n.humidityTab),
+                      Tab(text: l10n.soilTab),
+                      Tab(text: l10n.tempTab),
+                      Tab(text: l10n.propagateTab),
                     ],
                   ),
                   isDark ? AppColors.darkSurface : cs.surface,
@@ -228,26 +229,26 @@ class _SpeciesDetailScreenState extends ConsumerState<SpeciesDetailScreen> with 
                   child: TabBarView(
                     controller: _tabCtrl,
                     children: [
-                      _GuideTabContent(text: species.careGuide['light'] ?? 'No info'),
-                      _GuideTabContent(text: species.careGuide['water'] ?? 'No info'),
-                      _GuideTabContent(text: species.careGuide['humidity'] ?? 'No info'),
-                      _GuideTabContent(text: species.careGuide['soil'] ?? 'No info'),
-                      _GuideTabContent(text: species.careGuide['temperature'] ?? 'No info'),
-                      _GuideTabContent(text: species.careGuide['propagation'] ?? 'No info'),
+                      _GuideTabContent(text: species.careGuide['light'] ?? l10n.noInfo),
+                      _GuideTabContent(text: species.careGuide['water'] ?? l10n.noInfo),
+                      _GuideTabContent(text: species.careGuide['humidity'] ?? l10n.noInfo),
+                      _GuideTabContent(text: species.careGuide['soil'] ?? l10n.noInfo),
+                      _GuideTabContent(text: species.careGuide['temperature'] ?? l10n.noInfo),
+                      _GuideTabContent(text: species.careGuide['propagation'] ?? l10n.noInfo),
                     ],
                   ),
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 80)), // Bottom padding
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
             ],
           ),
           
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => context.go('/identify'), // Quick path to add it
+            onPressed: () => context.go('/identify'),
             backgroundColor: AppColors.forestGreen,
             icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('Add to collection', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: Text(l10n.addToCollectionFab, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         );
@@ -278,7 +279,7 @@ class _CareSummaryChip extends StatelessWidget {
         children: [
           Icon(icon, color: AppColors.moss, size: 24),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: AppColors.moss, fontWeight: FontWeight.w500)),
+          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.moss, fontWeight: FontWeight.w500)),
           Text(value.toUpperCase(), style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -333,4 +334,3 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_TabBarDelegate oldDelegate) => false;
 }
-

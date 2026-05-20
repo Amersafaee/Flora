@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
@@ -39,7 +40,8 @@ class AddPlantScreen extends StatefulWidget {
 class _AddPlantScreenState extends State<AddPlantScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _commonNameController;
-  
+
+  // Internal Firestore values — must stay English
   String _selectedCategory = 'Tropical';
   String _selectedHealth = 'Healthy';
 
@@ -50,7 +52,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   String _initialImageUrl = '';
   String _initialWateringDays = '7';
   final ImagePicker _picker = ImagePicker();
-  
+
   final FirestoreService _firestoreService = FirestoreService();
   final StorageService _storageService = StorageService();
 
@@ -94,14 +96,18 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     setState(() {
       _showNameError = _nameController.text.trim().isEmpty;
     });
-    
+
     if (_showNameError) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       String imageUrl = '';
-      final docRef = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).collection('plants').doc();
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser?.uid)
+          .collection('plants')
+          .doc();
       final plantId = docRef.id;
 
       if (_imageFile != null) {
@@ -112,10 +118,9 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         }
         imageUrl = url;
       } else if (_initialImageUrl.isNotEmpty) {
-        // Pre-filled from identify — use the network URL directly
         imageUrl = _initialImageUrl;
       }
-      
+
       final plant = Plant(
         id: plantId,
         name: _nameController.text.trim(),
@@ -126,17 +131,18 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         healthStatus: _selectedHealth,
         dateAdded: DateTime.now(),
       );
-      
+
       await _firestoreService.addPlant(plant);
-      
+
       if (mounted) {
         _showCareScheduleBottomSheet(plant.name, plantId);
       }
     } catch (e) {
       if (mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+            content: Text('${l.somethingWentWrong} ${l.pleaseTryAgain}'),
             backgroundColor: AppColors.bone500,
             behavior: SnackBarBehavior.floating,
           ),
@@ -151,8 +157,25 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+
+    // Localized display labels for category (Firestore value stays English)
+    final List<Map<String, String>> categories = [
+      {'value': 'Tropical', 'label': 'Tropical'},
+      {'value': 'Succulent', 'label': 'Succulent'},
+      {'value': 'Fern', 'label': 'Fern'},
+      {'value': 'Herb', 'label': 'Herb'},
+      {'value': 'Cactus', 'label': 'Cactus'},
+      {'value': 'Other', 'label': 'Other'},
+    ];
+
+    final List<Map<String, String>> healthOptions = [
+      {'value': 'Healthy', 'label': l.healthy},
+      {'value': 'Needs Attention', 'label': l.needsAttention},
+      {'value': 'Critical', 'label': l.critical},
+    ];
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -167,257 +190,200 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-              // Header
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Add Plant',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
+                    // Header
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              l.addPlant,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 48),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Image Picker
+                    GestureDetector(
+                      onTap: () async {
+                        final picked = await _picker.pickImage(source: ImageSource.gallery);
+                        if (picked != null) {
+                          setState(() {
+                            _imageFile = File(picked.path);
+                            _initialImageUrl = '';
+                          });
+                        }
+                      },
+                      child: Container(
+                        height: 200,
+                        decoration: BoxDecoration(
+                          color: AppColors.forest100,
+                          borderRadius: BorderRadius.circular(16),
+                          image: _imageFile != null
+                              ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
+                              : null,
+                        ),
+                        child: _imageFile != null
+                            ? null
+                            : _initialImageUrl.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Image.network(
+                                      _initialImageUrl,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: 200,
+                                      errorBuilder: (_, __, ___) => const Center(
+                                        child: Icon(Icons.eco, size: 48, color: Color(0x6614301E)),
+                                      ),
+                                    ),
+                                  )
+                                : const Center(
+                                    child: Icon(Icons.eco, size: 48, color: Color(0x6614301E)),
+                                  ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Plant Name
+                    Text(l.plantNameLabel, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        hintText: l.plantNameHint,
+                        hintStyle: const TextStyle(color: AppColors.bone300),
+                        filled: true,
+                        fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                      ),
+                    ),
+                    if (_showNameError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6, left: 4),
+                        child: Text(l.plantNameRequired, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                      ),
+                    const SizedBox(height: 20),
+
+                    // Common Name
+                    Text(l.commonName, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _commonNameController,
+                      decoration: InputDecoration(
+                        hintText: l.commonNameHint,
+                        hintStyle: const TextStyle(color: AppColors.bone300),
+                        filled: true,
+                        fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Category
+                    Text(l.category, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedCategory,
+                          isExpanded: true,
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          items: categories.map((cat) => DropdownMenuItem<String>(
+                            value: cat['value'],
+                            child: Text(cat['label']!),
+                          )).toList(),
+                          onChanged: (newValue) {
+                            setState(() { if (newValue != null) _selectedCategory = newValue; });
+                          },
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 48), // Balance header
-                ],
-              ),
-              const SizedBox(height: 32),
-              
-              // Image Picker Area
-              GestureDetector(
-                onTap: () async {
-                  final picked = await _picker.pickImage(source: ImageSource.gallery);
-                  if (picked != null) {
-                    setState(() {
-                      _imageFile = File(picked.path);
-                      _initialImageUrl = ''; // clear URL if user picks new file
-                    });
-                  }
-                },
-                child: Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: AppColors.forest100,
-                    borderRadius: BorderRadius.circular(16),
-                    image: _imageFile != null
-                        ? DecorationImage(
-                            image: FileImage(_imageFile!),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                  ),
-                  child: _imageFile != null
-                      ? null
-                      : _initialImageUrl.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Image.network(
-                                _initialImageUrl,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: 200,
-                                errorBuilder: (_, __, ___) => Center(
-                                  child: Icon(
-                                    Icons.eco,
-                                    size: 48,
-                                    color: Color(0x6614301E),
-                                  ),
-                                ),
-                              ),
-                            )
-                          : Center(
-                              child: Icon(
-                                Icons.eco,
-                                size: 48,
-                                color: Color(0x6614301E),
-                              ),
-                            ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              
-              // Form Fields
-              Text(
-                'Plant Name',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  hintText: 'e.g. Monstera Deliciosa',
-                  hintStyle: TextStyle(color: AppColors.bone300),
-                  filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.bone300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.bone300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
-                  ),
-                ),
-              ),
-              if (_showNameError)
-                const Padding(
-                  padding: EdgeInsets.only(top: 6, left: 4),
-                  child: Text(
-                    'Plant name is required.',
-                    style: TextStyle(color: Colors.red, fontSize: 12),
-                  ),
-                ),
-              const SizedBox(height: 20),
-              
-              Text(
-                'Common Name',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _commonNameController,
-                decoration: InputDecoration(
-                  hintText: 'e.g. Swiss Cheese Plant',
-                  hintStyle: TextStyle(color: AppColors.bone300),
-                  filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.bone300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.bone300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              Text(
-                'Category',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedCategory,
-                    isExpanded: true,
-                    icon: const Icon(Icons.keyboard_arrow_down),
-                    items: ['Tropical', 'Succulent', 'Fern', 'Herb', 'Cactus', 'Other']
-                        .map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      setState(() {
-                        if (newValue != null) _selectedCategory = newValue;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              Text(
-                'Health Status',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedHealth,
-                    isExpanded: true,
-                    icon: const Icon(Icons.keyboard_arrow_down),
-                    items: ['Healthy', 'Needs Attention', 'Critical']
-                        .map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      setState(() {
-                        if (newValue != null) _selectedHealth = newValue;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 48),
-              
-              // Save Button
-              SizedBox(
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _savePlant,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        )
-                      : const Text(
-                          'Save Plant',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    const SizedBox(height: 20),
+
+                    // Health Status
+                    Text(l.healthStatus, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedHealth,
+                          isExpanded: true,
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          items: healthOptions.map((opt) => DropdownMenuItem<String>(
+                            value: opt['value'],
+                            child: Text(opt['label']!),
+                          )).toList(),
+                          onChanged: (newValue) {
+                            setState(() { if (newValue != null) _selectedHealth = newValue; });
+                          },
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+
+                    // Save Button
+                    SizedBox(
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _savePlant,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24, height: 24,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : Text(
+                                l.savePlant,
+                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ),
+            ),
           ],
         ),
       ),
     );
   }
-  /// Maps a watering-days string extracted from AI to the dropdown label.
+
+  /// Maps a watering-days string extracted from AI to the internal schedule label.
   String _wateringDaysToLabel(String daysStr) {
     final days = int.tryParse(daysStr.trim()) ?? 7;
     if (days <= 1) return 'Every day';
@@ -433,24 +399,23 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
+        final l = AppLocalizations.of(context);
         String wateringVal = _wateringDaysToLabel(_initialWateringDays);
         String fertilizingVal = 'Monthly';
         String mistingVal = 'Skip';
 
+        // These option labels map 1-to-1 to Firestore repeatType values via _saveSchedules
+        // so we keep them as English strings and use them as both display and internal key.
         final List<String> options = [
           'Every day', 'Every 2 days', 'Every 3 days', 'Weekly', 'Every 2 weeks', 'Monthly', 'Skip'
         ];
 
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setSheetState) {
             return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
@@ -459,8 +424,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                   children: [
                     Center(
                       child: Container(
-                        width: 40,
-                        height: 5,
+                        width: 40, height: 5,
                         margin: const EdgeInsets.only(bottom: 24),
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
@@ -470,55 +434,49 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     ),
                     Text(
                       'Set up care for $plantName 🌿',
-                      style: const TextStyle(
-                        fontFamily: 'serif',
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(fontFamily: 'serif', fontSize: 24, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'How often does this plant need care? We will add it to your calendar automatically.',
-                      style: TextStyle(color: AppColors.bone500, fontSize: 14),
+                      l.howOftenCareDesc,
+                      style: const TextStyle(color: AppColors.bone500, fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
-                    
-                    _buildCareRow('Watering', Icons.water_drop, Colors.blue, wateringVal, options, (val) {
-                      setState(() => wateringVal = val!);
+
+                    _buildCareRow(l.watering, Icons.water_drop, Colors.blue, wateringVal, options, (val) {
+                      setSheetState(() => wateringVal = val!);
                     }),
                     const SizedBox(height: 16),
-                    _buildCareRow('Fertilizing', Icons.science, Colors.green, fertilizingVal, options, (val) {
-                      setState(() => fertilizingVal = val!);
+                    _buildCareRow(l.fertilizing, Icons.science, Colors.green, fertilizingVal, options, (val) {
+                      setSheetState(() => fertilizingVal = val!);
                     }),
                     const SizedBox(height: 16),
-                    _buildCareRow('Misting', Icons.air, Colors.cyan, mistingVal, options, (val) {
-                      setState(() => mistingVal = val!);
+                    _buildCareRow(l.misting, Icons.air, Colors.cyan, mistingVal, options, (val) {
+                      setSheetState(() => mistingVal = val!);
                     }),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     OutlinedButton.icon(
                       onPressed: () async {
                         final uid = FirebaseAuth.instance.currentUser?.uid;
                         if (uid == null) return;
-                        final plantName = _nameController.text.trim().isEmpty ? 'your plant' : _nameController.text.trim();
+                        final pName = _nameController.text.trim().isEmpty ? 'your plant' : _nameController.text.trim();
                         final db = FirebaseFirestore.instance;
                         final chatsRef = db.collection('users').doc(uid).collection('flora_chats');
-                        // Create conversation
                         final docRef = await chatsRef.add({
-                          'title': 'Care advice for $plantName',
+                          'title': 'Care advice for $pName',
                           'createdAt': FieldValue.serverTimestamp(),
                           'lastMessageAt': FieldValue.serverTimestamp(),
-                          'lastMessage': 'Care advice for $plantName',
+                          'lastMessage': 'Care advice for $pName',
                         });
                         final conversationId = docRef.id;
                         final messagesRef = chatsRef.doc(conversationId).collection('messages');
-                        // Seed the first message
                         final userText = (widget.analysisResult != null && widget.analysisResult!.isNotEmpty)
                             ? widget.analysisResult!
-                            : 'I just added $plantName to my collection. Can you give me specific advice on watering schedule, fertilizing, and repotting for this plant?';
+                            : 'I just added $pName to my collection. Can you give me specific advice on watering schedule, fertilizing, and repotting for this plant?';
                         await messagesRef.add({
                           'role': 'user',
                           'text': userText,
@@ -526,14 +484,11 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                           'timestamp': FieldValue.serverTimestamp(),
                         });
                         if (!context.mounted) return;
-                        Navigator.pop(context); // close bottom sheet
+                        Navigator.pop(context);
                         Navigator.push(context, MaterialPageRoute(builder: (_) => FloraScreen(conversationId: conversationId)));
                       },
                       icon: const Icon(Icons.psychology, color: AppColors.forest900),
-                      label: const Text(
-                        'Ask Flora for advice 🌿',
-                        style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold),
-                      ),
+                      label: Text(l.askFloraForAdvice, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: const BorderSide(color: AppColors.forest900),
@@ -541,7 +496,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     ElevatedButton(
                       onPressed: () async {
                         await _saveSchedules(plantName, plantId, wateringVal, fertilizingVal, mistingVal);
@@ -551,22 +506,16 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text(
-                        'Save Care Schedule',
-                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                      child: Text(l.saveCareSchedule, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(height: 8),
-                    
+
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context); // close bottom sheet
-                        Navigator.pop(context); // close add plant screen
+                        Navigator.pop(context);
+                        Navigator.pop(context);
                       },
-                      child: Text(
-                        'Skip for now',
-                        style: TextStyle(color: AppColors.bone500),
-                      ),
+                      child: Text(l.skipForNow, style: const TextStyle(color: AppColors.bone500)),
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -584,19 +533,11 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
           child: Icon(icon, color: color, size: 20),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            title,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-        ),
+        Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
@@ -607,7 +548,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: value,
-              items: options.map((String opt) => DropdownMenuItem(value: opt, child: Text(opt))).toList(),
+              items: options.map((opt) => DropdownMenuItem(value: opt, child: Text(opt))).toList(),
               onChanged: onChanged,
             ),
           ),
@@ -617,6 +558,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   }
 
   Future<void> _saveSchedules(String plantName, String plantId, String watering, String fertilizing, String misting) async {
+    final l = AppLocalizations.of(context);
     final now = DateTime.now();
 
     String getRepeatType(String val) {
@@ -633,57 +575,38 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
     if (watering != 'Skip') {
       await _firestoreService.addTask(Task(
-        id: '',
-        plantId: plantId,
-        plantName: plantName,
-        taskType: 'Watering',
-        dueDate: now.add(const Duration(days: 1)),
-        isCompleted: false,
-        notes: '',
+        id: '', plantId: plantId, plantName: plantName, taskType: 'Watering',
+        dueDate: now.add(const Duration(days: 1)), isCompleted: false, notes: '',
         repeatType: getRepeatType(watering),
       ));
     }
-    
+
     if (fertilizing != 'Skip') {
       await _firestoreService.addTask(Task(
-        id: '',
-        plantId: plantId,
-        plantName: plantName,
-        taskType: 'Fertilizing',
-        dueDate: now.add(const Duration(days: 14)),
-        isCompleted: false,
-        notes: '',
+        id: '', plantId: plantId, plantName: plantName, taskType: 'Fertilizing',
+        dueDate: now.add(const Duration(days: 14)), isCompleted: false, notes: '',
         repeatType: getRepeatType(fertilizing),
       ));
     }
 
     if (misting != 'Skip') {
       await _firestoreService.addTask(Task(
-        id: '',
-        plantId: plantId,
-        plantName: plantName,
-        taskType: 'Misting',
-        dueDate: now.add(const Duration(days: 3)),
-        isCompleted: false,
-        notes: '',
+        id: '', plantId: plantId, plantName: plantName, taskType: 'Misting',
+        dueDate: now.add(const Duration(days: 3)), isCompleted: false, notes: '',
         repeatType: getRepeatType(misting),
       ));
     }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Care schedule saved — tasks added to your calendar 🌿'),
+        SnackBar(
+          content: Text(l.careScheduleSaved),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ),
       );
-      Navigator.pop(context); // close sheet
-      Navigator.pop(context); // close screen
+      Navigator.pop(context);
+      Navigator.pop(context);
     }
   }
 }
-
-
-
-

@@ -1,0 +1,34 @@
+{
+    "plantsNeedAttention": {
+        "es": "{count} plantas necesitan atención.",
+        "fr": "{count} plantes nécessitent une attention.",
+        "de": "{count} Pflanzen benötigen Aufmerksamkeit.",
+        "pt": "{count} plantas precisam de atenção.",
+        "ar": "{count} نباتات تحتاج إلى اهتمام.",
+        "fa": "{count} گیاه نیاز به توجه دارند.",
+        "ja": "{count}件の植物の対応が必要です。",
+        "ko": "{count}개의 식물이 주의가 필요합니다.",
+        "it": "{count} piante necessitano attenzione.",
+        "nl": "{count} planten hebben aandacht nodig.",
+        "tr": "{count} bitki ilgilenmeyi gerektiriyor.",
+        "pl": "{count} rośliny wymagają uwagi.",
+        "sv": "{count} växter behöver uppmärksamhet.",
+        "hi": "{count} पौधों पर ध्यान देने की आवश्यकता है।"
+    },
+    "plantsCountLabel": {
+        "es": "{count} Plantas",
+        "fr": "{count} Plantes",
+        "de": "{count} Pflanzen",
+        "pt": "{count} Plantas",
+        "ar": "{count} نباتات",
+        "fa": "{count} گیاه",
+        "ja": "{count} 植物",
+        "ko": "{count} 식물",
+        "it": "{count} Piante",
+        "nl": "{count} Planten",
+        "tr": "{count} Bitki",
+        "pl": "{count} Rośliny",
+        "sv": "{count} Växter",
+        "hi": "{count} पौधे"
+    }
+}

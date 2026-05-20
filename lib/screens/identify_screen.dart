@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/gemini_service.dart';
 import 'identify_result_screen.dart';
@@ -35,17 +36,18 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
   }
 
   void _showFeatureOnboarding() {
+    final l = AppLocalizations.of(context);
     Navigator.push(
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => const OnboardingOverlayScreen(
-          title: 'Welcome to Plant Scanner',
-          description: 'Identify plants and instantly diagnose problems.',
+        builder: (_) => OnboardingOverlayScreen(
+          title: l.welcomeToPlantScanner,
+          description: l.plantScannerDescription,
           tips: [
-            'Snap a photo to identify unknown species',
-            'Scan sick plants for instant AI diagnosis',
-            'Add identified plants to your collection',
+            l.plantScannerTip1,
+            l.plantScannerTip2,
+            l.plantScannerTip3,
           ],
           featureKey: 'identify_screen',
         ),
@@ -79,7 +81,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not access image: $e'),
+            content: Text('${AppLocalizations.of(context).couldNotAccessImagePrefix}$e'),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
@@ -92,8 +94,12 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
     if (_selectedImage == null || _isAnalyzing) return;
     setState(() => _isAnalyzing = true);
     try {
-      final result =
-          await _geminiService.analyzeePlantImage(_selectedImage!, _analysisPrompt);
+      final languageCode = Localizations.localeOf(context).languageCode;
+      final result = await _geminiService.analyzeePlantImage(
+        _selectedImage!,
+        _analysisPrompt,
+        languageCode,
+      );
       if (mounted) {
         Navigator.push(
           context,
@@ -109,7 +115,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Analysis failed. Please try again.'),
+            content: Text(AppLocalizations.of(context).analysisFailed),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
@@ -150,6 +156,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
   // Empty state (no image selected)
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildEmptyImageArea() {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       color: _softGreen,
@@ -165,9 +172,9 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 color: _darkGreen,
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Analyze Your Plant',
-                style: TextStyle(
+              Text(
+                l.analyzeYourPlant,
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: _darkGreen,
@@ -179,14 +186,14 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 children: [
                   _buildPickerButton(
                     icon: Icons.camera_alt,
-                    label: 'Take Photo',
+                    label: l.takePhoto,
                     onTap: () => _pickImage(ImageSource.camera),
                     filled: false,
                   ),
                   const SizedBox(width: 16),
                   _buildPickerButton(
                     icon: Icons.photo_library_outlined,
-                    label: 'From Gallery',
+                    label: l.fromGallery,
                     onTap: () => _pickImage(ImageSource.gallery),
                     filled: true,
                   ),
@@ -301,7 +308,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Color(0x12000000),
             blurRadius: 12,
@@ -340,8 +347,8 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
   }
 
   Widget _buildAnalyzeButton(bool hasImage) {
+    final l = AppLocalizations.of(context);
     if (!hasImage) {
-      // Disabled state
       return Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -349,8 +356,8 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
         ),
         child: Center(
           child: Text(
-            'Select a Photo to Analyze',
-            style: TextStyle(
+            l.selectPhotoToAnalyze,
+            style: const TextStyle(
               color: AppColors.bone500,
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -384,9 +391,9 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Analyzing...',
-                  style: TextStyle(
+                Text(
+                  l.analyzingLabel,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -394,14 +401,14 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 ),
               ],
             )
-          : const Row(
+          : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.auto_awesome, color: Colors.white, size: 20),
-                SizedBox(width: 10),
+                const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
                 Text(
-                  'Analyze with Flora',
-                  style: TextStyle(
+                  l.analyzeWithFlora,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

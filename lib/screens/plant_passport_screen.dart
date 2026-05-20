@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -25,7 +26,8 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
   int _totalTasks = 0;
   bool _hasDisease = false;
   bool _diseaseResolved = false;
-  String _diseaseStatusText = 'Clean Record';
+  // Internal value — resolved to localized string in build()
+  String _diseaseStatusKey = 'cleanRecord';
 
   String _summaryText = '';
   bool _isGeneratingSummary = true;
@@ -44,19 +46,20 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
 
     try {
       // 1. Waterings and Tasks
-      final tasksQuery = await db.collection('users').doc(uid).collection('tasks')
+      final tasksQuery = await db
+          .collection('users')
+          .doc(uid)
+          .collection('tasks')
           .where('plantId', isEqualTo: plantId)
           .get();
-          
+
       int completedWaterings = 0;
       int completed = 0;
       for (var doc in tasksQuery.docs) {
         final data = doc.data();
         if (data['isCompleted'] == true) {
           completed++;
-          if (data['type'] == 'Watering') {
-            completedWaterings++;
-          }
+          if (data['type'] == 'Watering') completedWaterings++;
         }
       }
       _totalTasks = tasksQuery.docs.length;
@@ -64,12 +67,16 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
       _totalWaterings = completedWaterings;
 
       // 2. Growth entries and timeline
-      final growthQuery = await db.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth')
+      final growthQuery = await db
+          .collection('users')
+          .doc(uid)
+          .collection('plants')
+          .doc(plantId)
+          .collection('growth')
           .orderBy('timestamp', descending: true)
           .get();
-          
+
       _totalGrowthEntries = growthQuery.docs.length;
-      
       _timeline = growthQuery.docs.take(5).map((doc) {
         final data = doc.data();
         final ts = data['timestamp'] as Timestamp?;
@@ -81,10 +88,13 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
       }).toList();
 
       // 3. Treatment Cases
-      final casesQuery = await db.collection('users').doc(uid).collection('treatment_cases')
+      final casesQuery = await db
+          .collection('users')
+          .doc(uid)
+          .collection('treatment_cases')
           .where('plantId', isEqualTo: plantId)
           .get();
-          
+
       if (casesQuery.docs.isNotEmpty) {
         _hasDisease = true;
         bool allResolved = true;
@@ -96,7 +106,7 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
           }
         }
         _diseaseResolved = allResolved;
-        _diseaseStatusText = allResolved ? 'Recovered' : 'Active Issue';
+        _diseaseStatusKey = allResolved ? 'recovered' : 'activeIssue';
       }
 
       // Generate Summary
@@ -132,7 +142,7 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
 
   Color _getScoreColor(int score) {
     if (score >= 80) return Colors.green;
-    if (score >= 60) return AppColors.terracotta900; // Terracotta
+    if (score >= 60) return AppColors.terracotta900;
     return Colors.red;
   }
 
@@ -153,12 +163,26 @@ $_summaryText
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final consistency = _totalTasks > 0 ? (_totalCompletedTasks / _totalTasks * 100).round() : 100;
-    
+
+    // Resolve disease status from key to localized string
+    String diseaseStatusText;
+    switch (_diseaseStatusKey) {
+      case 'recovered':
+        diseaseStatusText = l.recovered;
+        break;
+      case 'activeIssue':
+        diseaseStatusText = l.activeIssue;
+        break;
+      default:
+        diseaseStatusText = l.cleanRecord;
+    }
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Plant Passport', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'serif', color: AppColors.bone900)),
+        title: Text(l.plantPassport, style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'serif', color: AppColors.bone900)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.bone900),
@@ -169,7 +193,7 @@ $_summaryText
         actions: [
           TextButton(
             onPressed: _sharePassport,
-            child: Text('Share', style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
+            child: Text(l.share, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -184,11 +208,7 @@ $_summaryText
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.forest900, width: 2),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
                 ],
               ),
               child: Column(
@@ -197,12 +217,12 @@ $_summaryText
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.forest900,
                       borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
                     ),
                     child: Text(
-                      'DIGITAL CONSERVATORY PLANT PASSPORT',
+                      l.passportHeaderLabel,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Theme.of(context).cardColor,
@@ -212,19 +232,14 @@ $_summaryText
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Image
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: widget.plant.imageUrl.isNotEmpty
-                        ? Image.network(
-                            widget.plant.imageUrl,
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                          )
+                        ? Image.network(widget.plant.imageUrl, width: 120, height: 120, fit: BoxFit.cover)
                         : Container(
                             width: 120,
                             height: 120,
@@ -232,9 +247,9 @@ $_summaryText
                             child: const Icon(Icons.eco, size: 48, color: AppColors.forest900),
                           ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   Text(
                     widget.plant.name,
                     style: const TextStyle(
@@ -244,19 +259,16 @@ $_summaryText
                       color: AppColors.forest900,
                     ),
                   ),
-                  
+
                   Text(
-                    widget.plant.commonName.isNotEmpty ? widget.plant.commonName : 'Unknown Species',
-                    style: const TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: AppColors.bone500,
-                    ),
+                    widget.plant.commonName.isNotEmpty ? widget.plant.commonName : l.unknownSpecies,
+                    style: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.bone500),
                   ),
-                  
+
                   const SizedBox(height: 16),
                   const Divider(height: 1),
                   const SizedBox(height: 16),
-                  
+
                   // Stats Grid
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -266,7 +278,7 @@ $_summaryText
                           child: _buildStatItem(
                             context: context,
                             icon: Icons.calendar_today,
-                            label: 'Joined Collection',
+                            label: l.joinedCollection,
                             value: DateFormat.yMMM().format(widget.plant.dateAdded),
                           ),
                         ),
@@ -274,7 +286,7 @@ $_summaryText
                           child: _buildStatItem(
                             context: context,
                             icon: Icons.favorite,
-                            label: 'Health Score',
+                            label: l.healthScore,
                             value: widget.plant.healthScore.toString(),
                             valueColor: _getScoreColor(widget.plant.healthScore),
                           ),
@@ -291,7 +303,7 @@ $_summaryText
                           child: _buildStatItem(
                             context: context,
                             icon: Icons.water_drop,
-                            label: 'Times Watered',
+                            label: l.timesWatered,
                             value: _totalWaterings.toString(),
                           ),
                         ),
@@ -299,7 +311,7 @@ $_summaryText
                           child: _buildStatItem(
                             context: context,
                             icon: Icons.book,
-                            label: 'Journal Entries',
+                            label: l.journalEntries,
                             value: _totalGrowthEntries.toString(),
                           ),
                         ),
@@ -315,26 +327,26 @@ $_summaryText
                           child: _buildStatItem(
                             context: context,
                             icon: Icons.shield,
-                            label: 'Disease History',
-                            value: _diseaseStatusText,
+                            label: l.diseaseHistory,
+                            value: diseaseStatusText,
                           ),
                         ),
                         Expanded(
                           child: _buildStatItem(
                             context: context,
                             icon: Icons.star,
-                            label: 'Care Consistency',
+                            label: l.careConsistency,
                             value: '$consistency%',
                           ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
                   const Divider(height: 1),
                   const SizedBox(height: 16),
-                  
+
                   // AI Summary
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -345,9 +357,9 @@ $_summaryText
                           children: [
                             const Icon(Icons.auto_awesome, color: AppColors.forest900, size: 14),
                             const SizedBox(width: 4),
-                            const Text(
-                              'AI SUMMARY',
-                              style: TextStyle(
+                            Text(
+                              l.aiSummary,
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.forest900,
@@ -368,30 +380,23 @@ $_summaryText
                             : Text(
                                 _summaryText,
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontStyle: FontStyle.italic,
-                                  color: AppColors.bone700,
-                                  height: 1.5,
-                                ),
+                                style: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.bone700, height: 1.5),
                               ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Timeline
                   if (_timeline.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.0),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Care Timeline',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.forest900,
-                          ),
+                          l.careTimeline,
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.forest900),
                         ),
                       ),
                     ),
@@ -410,16 +415,11 @@ $_summaryText
                                 Column(
                                   children: [
                                     Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.forest900,
-                                        shape: BoxShape.circle,
-                                      ),
+                                      width: 8, height: 8,
+                                      decoration: const BoxDecoration(color: AppColors.forest900, shape: BoxShape.circle),
                                     ),
                                     Container(
-                                      width: 2,
-                                      height: 30, // Rough height
+                                      width: 2, height: 30,
                                       color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
                                     ),
                                   ],
@@ -432,7 +432,7 @@ $_summaryText
                                       Text(entry['date'], style: const TextStyle(fontSize: 12, color: AppColors.bone500)),
                                       const SizedBox(height: 2),
                                       Text(
-                                        truncatedNotes.isEmpty ? 'Checked in' : truncatedNotes,
+                                        truncatedNotes.isEmpty ? l.checkedIn : truncatedNotes,
                                         style: const TextStyle(fontSize: 14),
                                       ),
                                     ],
@@ -445,10 +445,10 @@ $_summaryText
                       ),
                     ),
                   ],
-                  
+
                   const SizedBox(height: 16),
-                  
-                  // Fake QR Code Element
+
+                  // QR Code placeholder
                   Container(
                     margin: const EdgeInsets.only(bottom: 24),
                     padding: const EdgeInsets.all(8),
@@ -461,7 +461,9 @@ $_summaryText
                         Icon(Icons.qr_code_2, size: 48, color: Theme.of(context).colorScheme.onSurface),
                         const SizedBox(height: 4),
                         Text(
-                          widget.plant.id.length > 8 ? widget.plant.id.substring(0, 8).toUpperCase() : widget.plant.id.toUpperCase(),
+                          widget.plant.id.length > 8
+                              ? widget.plant.id.substring(0, 8).toUpperCase()
+                              : widget.plant.id.toUpperCase(),
                           style: const TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 10,
@@ -475,9 +477,9 @@ $_summaryText
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Action Buttons
             SizedBox(
               width: double.infinity,
@@ -500,7 +502,7 @@ $_summaryText
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('List on Swap Market', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(l.listOnSwapMarket, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
             const SizedBox(height: 12),
@@ -514,7 +516,7 @@ $_summaryText
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('Share Passport', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(l.sharePassport, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
             const SizedBox(height: 24),
@@ -524,16 +526,18 @@ $_summaryText
     );
   }
 
-  Widget _buildStatItem({required BuildContext context, required IconData icon, required String label, required String value, Color? valueColor}) {
+  Widget _buildStatItem({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String value,
+    Color? valueColor,
+  }) {
     return Column(
       children: [
         Icon(icon, size: 20, color: AppColors.bone500),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: AppColors.bone500),
-          textAlign: TextAlign.center,
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.bone500), textAlign: TextAlign.center),
         const SizedBox(height: 2),
         Text(
           value,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../models/plant_model.dart';
 import '../services/firestore_service.dart';
 import 'plant_detail_screen.dart';
@@ -11,10 +12,11 @@ class AllPlantsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final user = FirebaseAuth.instance.currentUser;
     final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final primaryColor = Theme.of(context).primaryColor;
-    
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -25,27 +27,23 @@ class AllPlantsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'My Plants',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          l.myPlants,
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
       ),
       body: user == null
-          ? const Center(child: Text('Not logged in'))
-            : StreamBuilder<List<Plant>>(
+          ? Center(child: Text(l.notLoggedIn))
+          : StreamBuilder<List<Plant>>(
               stream: FirestoreService().getPlants(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No plants yet. Add one!'));
+                  return Center(child: Text(l.noPlantsYetAddOne));
                 }
-                
+
                 final plants = snapshot.data!;
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -55,7 +53,7 @@ class AllPlantsScreen extends StatelessWidget {
                     final name = plant.name;
                     final category = plant.category;
                     final health = plant.healthStatus;
-                    
+
                     Color healthColor = Colors.green;
                     if (health.toLowerCase() == 'sick') healthColor = Colors.red;
                     if (health.toLowerCase() == 'recovering') healthColor = Colors.orange;
@@ -75,13 +73,7 @@ class AllPlantsScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -90,15 +82,9 @@ class AllPlantsScreen extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    name,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
+                                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    category,
-                                    style: const TextStyle(color: AppColors.bone500, fontSize: 12),
-                                  ),
+                                  Text(category, style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
                                 ],
                               ),
                             ),
@@ -108,10 +94,7 @@ class AllPlantsScreen extends StatelessWidget {
                                 color: healthColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Text(
-                                health,
-                                style: TextStyle(color: healthColor, fontSize: 12, fontWeight: FontWeight.bold),
-                              ),
+                              child: Text(health, style: TextStyle(color: healthColor, fontSize: 12, fontWeight: FontWeight.bold)),
                             ),
                             const SizedBox(width: 12),
                             const Icon(Icons.chevron_right, color: AppColors.bone500),
@@ -133,4 +116,3 @@ class AllPlantsScreen extends StatelessWidget {
     );
   }
 }
-

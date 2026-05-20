@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
@@ -46,7 +47,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
 
     try {
       final postRef = FirebaseFirestore.instance.collection('posts').doc(widget.postId);
-      
+
       await postRef.collection('comments').add({
         'authorUid': user.uid,
         'authorName': user.displayName ?? 'Anonymous',
@@ -56,16 +57,18 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
         'likedBy': [],
       });
 
-      await postRef.update({
-        'commentsCount': FieldValue.increment(1),
-      });
+      await postRef.update({'commentsCount': FieldValue.increment(1)});
 
       final postDoc = await postRef.get();
       final postAuthorUid = postDoc.data()?['authorUid'];
       if (postAuthorUid != null && postAuthorUid != user.uid) {
         String truncatedTitle = widget.postTitle;
         if (truncatedTitle.length > 40) truncatedTitle = '${truncatedTitle.substring(0, 37)}...';
-        await FirebaseFirestore.instance.collection('users').doc(postAuthorUid).collection('notifications').add({
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(postAuthorUid)
+            .collection('notifications')
+            .add({
           'type': 'comment',
           'message': '${user.displayName ?? 'Anonymous'} commented on your post: $truncatedTitle',
           'timestamp': FieldValue.serverTimestamp(),
@@ -79,8 +82,9 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
       if (mounted) FocusScope.of(context).unfocus();
     } catch (e) {
       if (mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to post comment'), backgroundColor: Colors.red),
+          SnackBar(content: Text(l.failedToPostComment), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -90,8 +94,8 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
     }
   }
 
-  String _formatTimestamp(dynamic timestamp) {
-    if (timestamp == null) return 'Just now';
+  String _formatTimestamp(dynamic timestamp, AppLocalizations l) {
+    if (timestamp == null) return l.justNow;
     if (timestamp is Timestamp) {
       final date = timestamp.toDate();
       final difference = DateTime.now().difference(date);
@@ -100,7 +104,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
       } else if (difference.inHours < 24) {
         return '${difference.inHours}h ago';
       } else if (difference.inDays < 2) {
-        return 'Yesterday';
+        return l.yesterday;
       } else {
         return DateFormat.yMMMd().format(date);
       }
@@ -111,23 +115,19 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
   void _showSaveToJournalSheet(BuildContext context, String commentText) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    
+
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
+        final lSheet = AppLocalizations.of(context);
         return Container(
           padding: const EdgeInsets.all(20),
           height: 400,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Save this tip to a plant journal',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              Text(lSheet.saveTipToJournal, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               Expanded(
                 child: FutureBuilder<QuerySnapshot>(
@@ -141,16 +141,16 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError || !snapshot.hasData) {
-                      return const Center(child: Text('Failed to load plants'));
+                      return Center(child: Text(lSheet.failedToLoadPlants));
                     }
-                    
+
                     final docs = snapshot.data!.docs;
                     if (docs.isEmpty) {
-                      return const Center(
-                        child: Text('Add some plants first to save tips', style: TextStyle(color: AppColors.bone500)),
+                      return Center(
+                        child: Text(lSheet.addSomePlantsToSaveTips, style: const TextStyle(color: AppColors.bone500)),
                       );
                     }
-                    
+
                     return ListView.builder(
                       itemCount: docs.length,
                       itemBuilder: (context, index) {
@@ -158,7 +158,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                         final plantId = docs[index].id;
                         final plantName = plantData['name'] ?? 'Unknown Plant';
                         final category = plantData['category'] ?? '';
-                        
+
                         return ListTile(
                           leading: const CircleAvatar(
                             backgroundColor: AppColors.forest100,
@@ -172,7 +172,6 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                             if (truncatedText.length > 200) {
                               truncatedText = '${truncatedText.substring(0, 197)}...';
                             }
-                            
                             try {
                               await FirestoreService().addGrowthEntry(
                                 plantId,
@@ -185,13 +184,19 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                               );
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Saved to $plantName journal 🌿'), backgroundColor: AppColors.forest700),
+                                  SnackBar(
+                                    content: Text('Saved to $plantName journal 🌿'),
+                                    backgroundColor: AppColors.forest700,
+                                  ),
                                 );
                               }
                             } catch (e) {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Failed to save to journal'), backgroundColor: Colors.red),
+                                  SnackBar(
+                                    content: Text(lSheet.failedToSaveToJournal),
+                                    backgroundColor: Colors.red,
+                                  ),
                                 );
                               }
                             }
@@ -218,17 +223,19 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
-    
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Comments', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(l.comments, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 1,
         shadowColor: Colors.black12,
       ),
       body: Column(
         children: [
+          // Post preview
           StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance.collection('posts').doc(widget.postId).snapshots(),
             builder: (context, snapshot) {
@@ -237,10 +244,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   color: Theme.of(context).cardColor,
-                  child: Text(
-                    widget.postTitle,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
+                  child: Text(widget.postTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 );
               }
               final postData = snapshot.data!.data() as Map<String, dynamic>;
@@ -254,34 +258,25 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     if (body.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      Text(
-                        body,
-                        style: TextStyle(color: AppColors.bone500, fontSize: 14),
-                      ),
+                      Text(body, style: const TextStyle(color: AppColors.bone500, fontSize: 14)),
                     ],
                     if (imageUrl.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          imageUrl,
-                          width: double.infinity,
-                          height: 200,
-                          fit: BoxFit.cover,
-                        ),
+                        child: Image.network(imageUrl, width: double.infinity, height: 200, fit: BoxFit.cover),
                       ),
-                    ]
+                    ],
                   ],
                 ),
               );
             },
           ),
+
+          // Comments list
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -292,7 +287,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Failed to load comments'));
+                  return Center(child: Text(l.failedToLoadComments));
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -300,8 +295,8 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
 
                 final comments = snapshot.data?.docs ?? [];
                 if (comments.isEmpty) {
-                  return const Center(
-                    child: Text('No comments yet. Be the first to reply!', style: TextStyle(color: AppColors.bone500)),
+                  return Center(
+                    child: Text(l.noCommentsYet, style: const TextStyle(color: AppColors.bone500)),
                   );
                 }
 
@@ -317,141 +312,139 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (data['isFloraAnswer'] == true)
-                            const CircleAvatar(
-                              radius: 16,
-                              backgroundColor: AppColors.forest900,
-                              child: Icon(Icons.eco, color: Colors.white, size: 16),
-                            )
-                          else
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: primaryColor.withValues(alpha: 0.2),
-                              backgroundImage: data['authorPhotoUrl'] != null && data['authorPhotoUrl'].toString().isNotEmpty
-                                  ? NetworkImage(data['authorPhotoUrl'])
-                                  : null,
-                              child: data['authorPhotoUrl'] == null || data['authorPhotoUrl'].toString().isEmpty
-                                  ? Text(
-                                      (data['authorName'] ?? '?')[0].toUpperCase(),
-                                      style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 14),
-                                    )
-                                  : null,
-                            ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Container(
-                              padding: EdgeInsets.all(data['isFloraAnswer'] == true ? 12.0 : 0),
-                              decoration: BoxDecoration(
-                                color: data['isFloraAnswer'] == true ? AppColors.forest100 : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
+                          children: [
+                            if (data['isFloraAnswer'] == true)
+                              const CircleAvatar(
+                                radius: 16,
+                                backgroundColor: AppColors.forest900,
+                                child: Icon(Icons.eco, color: Colors.white, size: 16),
+                              )
+                            else
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: primaryColor.withValues(alpha: 0.2),
+                                backgroundImage: data['authorPhotoUrl'] != null && data['authorPhotoUrl'].toString().isNotEmpty
+                                    ? NetworkImage(data['authorPhotoUrl'])
+                                    : null,
+                                child: data['authorPhotoUrl'] == null || data['authorPhotoUrl'].toString().isEmpty
+                                    ? Text(
+                                        (data['authorName'] ?? '?')[0].toUpperCase(),
+                                        style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 14),
+                                      )
+                                    : null,
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      if (data['isFloraAnswer'] == true) ...[
-                                        const Icon(Icons.eco, color: AppColors.forest900, size: 12),
-                                        const SizedBox(width: 4),
-                                        const Text(
-                                          'FLORA AI EXPERT ANSWER',
-                                          style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold, fontSize: 11),
-                                        ),
-                                        const Spacer(),
-                                      ] else ...[
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Container(
+                                padding: EdgeInsets.all(data['isFloraAnswer'] == true ? 12.0 : 0),
+                                decoration: BoxDecoration(
+                                  color: data['isFloraAnswer'] == true ? AppColors.forest100 : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        if (data['isFloraAnswer'] == true) ...[
+                                          const Icon(Icons.eco, color: AppColors.forest900, size: 12),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            l.floraAiExpertAnswer,
+                                            style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold, fontSize: 11),
+                                          ),
+                                          const Spacer(),
+                                        ] else ...[
+                                          Text(
+                                            data['authorName'] ?? 'Anonymous',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          ),
+                                        ],
+                                        const SizedBox(width: 8),
                                         Text(
-                                          data['authorName'] ?? 'Anonymous',
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          _formatTimestamp(data['timestamp'], l),
+                                          style: const TextStyle(color: AppColors.bone500, fontSize: 12),
                                         ),
                                       ],
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        _formatTimestamp(data['timestamp']),
-                                        style: const TextStyle(color: AppColors.bone500, fontSize: 12),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    data['text'] ?? '',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: data['isFloraAnswer'] == true ? AppColors.forest900 : null,
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () async {
-                                          final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-                                          if (currentUserId == null) return;
-                                          
-                                          final likedBy = List<String>.from(data['likedBy'] ?? []);
-                                          final isLiked = likedBy.contains(currentUserId);
-                                          
-                                          final commentRef = FirebaseFirestore.instance
-                                              .collection('posts')
-                                              .doc(widget.postId)
-                                              .collection('comments')
-                                              .doc(comments[index].id);
-                                              
-                                          if (isLiked) {
-                                            await commentRef.update({
-                                              'likedBy': FieldValue.arrayRemove([currentUserId])
-                                            });
-                                          } else {
-                                            await commentRef.update({
-                                              'likedBy': FieldValue.arrayUnion([currentUserId])
-                                            });
-                                          }
-                                        },
-                                        child: Icon(
-                                          (List<String>.from(data['likedBy'] ?? []).contains(FirebaseAuth.instance.currentUser?.uid)) 
-                                            ? Icons.favorite 
-                                            : Icons.favorite_border,
-                                          size: 16,
-                                          color: (List<String>.from(data['likedBy'] ?? []).contains(FirebaseAuth.instance.currentUser?.uid)) 
-                                            ? AppColors.terracotta900 
-                                            : AppColors.bone500,
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      data['text'] ?? '',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: data['isFloraAnswer'] == true ? AppColors.forest900 : null,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+                                            if (currentUserId == null) return;
+
+                                            final likedBy = List<String>.from(data['likedBy'] ?? []);
+                                            final isLiked = likedBy.contains(currentUserId);
+
+                                            final commentRef = FirebaseFirestore.instance
+                                                .collection('posts')
+                                                .doc(widget.postId)
+                                                .collection('comments')
+                                                .doc(comments[index].id);
+
+                                            if (isLiked) {
+                                              await commentRef.update({'likedBy': FieldValue.arrayRemove([currentUserId])});
+                                            } else {
+                                              await commentRef.update({'likedBy': FieldValue.arrayUnion([currentUserId])});
+                                            }
+                                          },
+                                          child: Icon(
+                                            (List<String>.from(data['likedBy'] ?? []).contains(FirebaseAuth.instance.currentUser?.uid))
+                                                ? Icons.favorite
+                                                : Icons.favorite_border,
+                                            size: 16,
+                                            color: (List<String>.from(data['likedBy'] ?? []).contains(FirebaseAuth.instance.currentUser?.uid))
+                                                ? AppColors.terracotta900
+                                                : AppColors.bone500,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${(data['likedBy'] as List?)?.length ?? 0}',
-                                        style: const TextStyle(fontSize: 12, color: AppColors.bone500),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      GestureDetector(
-                                        onTap: () {
-                                          final authorName = data['authorName'] ?? 'Anonymous';
-                                          _commentController.text = '@$authorName ';
-                                          _commentController.selection = TextSelection.fromPosition(
-                                            TextPosition(offset: _commentController.text.length),
-                                          );
-                                          _commentFocusNode.requestFocus();
-                                        },
-                                        child: const Text(
-                                          'Reply',
-                                          style: TextStyle(fontSize: 12, color: AppColors.bone500, fontWeight: FontWeight.w500),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${(data['likedBy'] as List?)?.length ?? 0}',
+                                          style: const TextStyle(fontSize: 12, color: AppColors.bone500),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                        const SizedBox(width: 12),
+                                        GestureDetector(
+                                          onTap: () {
+                                            final authorName = data['authorName'] ?? 'Anonymous';
+                                            _commentController.text = '@$authorName ';
+                                            _commentController.selection = TextSelection.fromPosition(
+                                              TextPosition(offset: _commentController.text.length),
+                                            );
+                                            _commentFocusNode.requestFocus();
+                                          },
+                                          child: Text(
+                                            l.reply,
+                                            style: const TextStyle(fontSize: 12, color: AppColors.bone500, fontWeight: FontWeight.w500),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
                     );
                   },
                 );
               },
             ),
           ),
+
+          // Comment input bar
           Container(
             padding: EdgeInsets.only(
               left: 16,
@@ -462,11 +455,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, -2),
-                ),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, -2)),
               ],
             ),
             child: Row(
@@ -476,7 +465,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                     controller: _commentController,
                     focusNode: _commentFocusNode,
                     decoration: InputDecoration(
-                      hintText: 'Add a comment...',
+                      hintText: l.addAComment,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
@@ -505,4 +494,3 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
     );
   }
 }
-

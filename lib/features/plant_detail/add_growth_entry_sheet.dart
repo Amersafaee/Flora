@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../theme/app_theme.dart';
@@ -44,6 +45,7 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context);
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
@@ -53,7 +55,7 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
 
     if (note.isEmpty && _photoBase64 == null && heightCm == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Add a photo, note, or height to save.'),
+        content: Text(l10n.addPhotoNoteOrHeight),
         backgroundColor: AppColors.terracotta,
       ));
       return;
@@ -83,7 +85,7 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('📝 Growth entry added!'),
+          content: Text(AppLocalizations.of(context).growthEntryAdded),
           backgroundColor: AppColors.leafGreen,
         ));
       }
@@ -91,7 +93,7 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
       debugPrint('[Flora] Growth entry error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to save: $e'),
+          content: Text(AppLocalizations.of(context).failedToSavePrefix(e.toString())),
           backgroundColor: AppColors.error,
         ));
       }
@@ -102,11 +104,12 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
@@ -127,7 +130,7 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
             const SizedBox(height: 20),
 
             // Title
-            const Text('Add Growth Entry', style: TextStyle(
+            Text(l10n.addGrowthEntry, style: const TextStyle(
               fontFamily: 'NotoSerif', fontSize: 22, fontWeight: FontWeight.w700,
               color: AppColors.forestGreen,
             )),
@@ -140,7 +143,7 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
                   child: OutlinedButton.icon(
                     onPressed: () => _pickImage(ImageSource.camera),
                     icon: const Icon(Icons.camera_alt),
-                    label: const Text('Take Photo'),
+                    label: Text(l10n.takePhoto),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.forestGreen,
                       side: const BorderSide(color: AppColors.forestGreen),
@@ -154,7 +157,7 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
                   child: OutlinedButton.icon(
                     onPressed: () => _pickImage(ImageSource.gallery),
                     icon: const Icon(Icons.photo_library),
-                    label: const Text('Gallery'),
+                    label: Text(l10n.galleryAction),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.forestGreen,
                       side: const BorderSide(color: AppColors.forestGreen),
@@ -186,8 +189,8 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
               controller: _noteCtrl,
               maxLines: 3,
               decoration: InputDecoration(
-                labelText: 'Note',
-                hintText: 'How is your plant doing?',
+                labelText: l10n.noteField,
+                hintText: l10n.howIsYourPlantDoing,
                 border: OutlineInputBorder(borderRadius: AppRadius.borderMd),
               ),
             ),
@@ -198,7 +201,7 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
               controller: _heightCtrl,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Height (cm) — optional',
+                labelText: l10n.heightCmOptional,
                 border: OutlineInputBorder(borderRadius: AppRadius.borderMd),
               ),
             ),
@@ -215,7 +218,7 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
                 ),
                 child: _saving
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Save Entry', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    : Text(l10n.saveEntry, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ),
             ),
           ],
@@ -224,4 +227,3 @@ class _AddGrowthEntrySheetState extends State<AddGrowthEntrySheet> {
     );
   }
 }
-

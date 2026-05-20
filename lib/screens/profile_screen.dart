@@ -7,6 +7,8 @@ import 'dart:io';
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
+import '../services/locale_service.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'login_screen.dart';
 import 'badges_screen.dart';
 import 'vacation_mode_screen.dart';
@@ -21,7 +23,8 @@ import '../services/weather_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
-  const ProfileScreen({super.key, this.onThemeChanged});
+  final ValueChanged<Locale>? onLocaleChanged;
+  const ProfileScreen({super.key, this.onThemeChanged, this.onLocaleChanged});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -35,11 +38,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isDarkMode = false;
   bool _isUploadingPhoto = false;
   String? _profilePhotoUrl;
+  String _currentLocaleCode = 'en';
+
+  // Language display names in their own language
+  static const Map<String, String> _languageNames = {
+    'en': 'English',
+    'es': 'Español',
+    'fr': 'Français',
+    'de': 'Deutsch',
+    'pt': 'Português',
+    'ar': 'العربية',
+    'fa': 'فارسی',
+    'ja': '日本語',
+    'ko': '한국어',
+    'it': 'Italiano',
+    'nl': 'Nederlands',
+    'tr': 'Türkçe',
+    'pl': 'Polski',
+    'sv': 'Svenska',
+    'hi': 'हिन्दी',
+  };
 
   @override
   void initState() {
     super.initState();
     _loadStats();
+    LocaleService.getInitialLocale().then((loc) {
+      if (mounted) setState(() => _currentLocaleCode = loc.languageCode);
+    });
   }
 
   Future<void> _loadStats() async {
@@ -90,17 +116,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Change Profile Photo',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context).changeProfilePhoto,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Take a Photo'),
+              title: Text(AppLocalizations.of(context).takeAPhoto),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from Gallery'),
+              title: Text(AppLocalizations.of(context).chooseFromGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
@@ -143,8 +169,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() => _profilePhotoUrl = downloadUrl);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile photo updated!'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).profilePhotoUpdated),
             backgroundColor: AppColors.forest900,
           ),
         );
@@ -208,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Expanded(
                     child: Center(
                       child: Text(
-                        'My Profile',
+                        AppLocalizations.of(context).myProfile,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -358,7 +384,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             side: BorderSide(color: primaryColor),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           ),
-                          child: Text('Edit Profile', style: TextStyle(color: primaryColor)),
+                          child: Text(AppLocalizations.of(context).editProfile, style: TextStyle(color: primaryColor)),
                         ),
                       ],
                     ),
@@ -389,7 +415,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       builder: (context, snapshot) {
                         return _buildStatColumn(
                           count: snapshot.hasData ? snapshot.data.toString() : '...',
-                          label: 'Plants',
+                          label: AppLocalizations.of(context).plants,
                           primaryColor: primaryColor,
                         );
                       },
@@ -400,7 +426,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       builder: (context, snapshot) {
                         return _buildStatColumn(
                           count: snapshot.hasData ? snapshot.data.toString() : '...',
-                          label: 'Tasks Done',
+                          label: AppLocalizations.of(context).tasksDone,
                           primaryColor: primaryColor,
                         );
                       },
@@ -411,7 +437,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       builder: (context, snapshot) {
                         return _buildStatColumn(
                           count: snapshot.hasData ? snapshot.data.toString() : '...',
-                          label: 'Journal Entries',
+                          label: AppLocalizations.of(context).journalEntries,
                           primaryColor: primaryColor,
                         );
                       },
@@ -422,9 +448,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 32),
               
               // Settings Title
-              const Text(
-                'SETTINGS',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).settingsHeader,
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: AppColors.bone500,
@@ -436,7 +462,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // Settings List
               _buildSettingsRow(
                 icon: Icons.emoji_events_outlined,
-                title: 'My Badges and Level',
+                title: AppLocalizations.of(context).myBadgesAndLevel,
                 softGreen: softGreen,
                 primaryColor: primaryColor,
                 onTap: () {
@@ -449,7 +475,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               _buildSettingsRow(
                 icon: Icons.notifications_outlined,
-                title: 'Notification Settings',
+                title: AppLocalizations.of(context).notificationSettings,
                 softGreen: softGreen,
                 primaryColor: primaryColor,
                 onTap: () {
@@ -461,7 +487,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 12),
               _buildSettingsRow(
                 icon: Icons.wb_sunny_outlined,
-                title: 'Vacation Mode',
+                title: AppLocalizations.of(context).vacationMode,
                 softGreen: softGreen,
                 primaryColor: primaryColor,
                 onTap: () {
@@ -473,7 +499,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 12),
               _buildSettingsRow(
                 icon: Icons.dark_mode_outlined,
-                title: 'Dark Mode',
+                title: AppLocalizations.of(context).darkMode,
                 softGreen: softGreen,
                 primaryColor: primaryColor,
                 isToggle: true,
@@ -487,6 +513,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const SizedBox(height: 12),
+              // Language selector row
+              _buildLanguageRow(
+                softGreen: softGreen,
+                primaryColor: primaryColor,
+              ),
+              const SizedBox(height: 12),
               FutureBuilder<(String?, WeatherData?)>(
                 future: () async {
                   final ws = WeatherService();
@@ -497,7 +529,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 builder: (context, snapshot) {
                   final city = snapshot.data?.$1;
                   final weather = snapshot.data?.$2;
-                  String subtitle = 'Tap to set your city';
+                  String subtitle = AppLocalizations.of(context).tapToSetYourCity;
                   if (city != null && city.isNotEmpty) {
                     if (weather != null) {
                       subtitle = '$city · ${weather.temperatureCelsius.toStringAsFixed(1)}°C · ${weather.humidity.toStringAsFixed(0)}% humidity';
@@ -511,7 +543,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       await showDialog(
                         context: context,
                         builder: (ctx) => AlertDialog(
-                          title: const Text('My City'),
+                          title: Text(AppLocalizations.of(context).myCity),
                           content: TextField(
                             controller: cityController,
                             decoration: const InputDecoration(
@@ -522,7 +554,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx),
-                              child: const Text('Cancel'),
+                              child: Text(AppLocalizations.of(context).cancel),
                             ),
                             ElevatedButton(
                               onPressed: () async {
@@ -530,17 +562,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 if (newCity.isNotEmpty) {
                                   final nav = Navigator.of(ctx);
                                   final messenger = ScaffoldMessenger.of(context);
+                                  final l10n = AppLocalizations.of(context);
                                   await WeatherService().saveCity(newCity);
                                   if (mounted) {
                                     nav.pop();
                                     setState(() {});
                                     messenger.showSnackBar(
-                                      SnackBar(content: Text('City set to $newCity 🌤️')),
+                                      SnackBar(content: Text(l10n.citySetTo(newCity))),
                                     );
                                   }
                                 }
                               },
-                              child: const Text('Save'),
+                              child: Text(AppLocalizations.of(context).save),
                             ),
                           ],
                         ),
@@ -575,7 +608,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'My City',
+                                  AppLocalizations.of(context).myCity,
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -603,7 +636,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
               ListTile(
                 leading: const Icon(Icons.history, color: AppColors.forest900),
-                title: const Text('Plant History'),
+                title: Text(AppLocalizations.of(context).plantHistory),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
                   Navigator.of(context).push(
@@ -613,7 +646,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.psychology, color: AppColors.forest900),
-                title: const Text('My Collection Personality'),
+                title: Text(AppLocalizations.of(context).myCollectionPersonality),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
                   Navigator.of(context).push(
@@ -624,9 +657,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
               
               // About Title
-              const Text(
-                'ABOUT',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).aboutHeader,
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: AppColors.bone500,
@@ -637,7 +670,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               
               _buildSettingsRow(
                 icon: Icons.info_outline,
-                title: 'Digital Conservatory v1.0.0',
+                title: AppLocalizations.of(context).digitalConservatoryVersion,
                 softGreen: softGreen,
                 primaryColor: primaryColor,
                 isInfo: true,
@@ -645,7 +678,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 12),
               _buildSettingsRow(
                 icon: Icons.email_outlined,
-                title: 'Send Feedback',
+                title: AppLocalizations.of(context).sendFeedback,
                 softGreen: softGreen,
                 primaryColor: primaryColor,
                 onTap: () async {
@@ -658,7 +691,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 12),
               _buildSettingsRow(
                 icon: Icons.shield_outlined,
-                title: 'Privacy Policy',
+                title: AppLocalizations.of(context).privacyPolicy,
                 softGreen: softGreen,
                 primaryColor: primaryColor,
                 onTap: () async {
@@ -682,9 +715,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text(
-                    'Sign Out',
-                    style: TextStyle(
+                  child: Text(
+                    AppLocalizations.of(context).signOut,
+                    style: const TextStyle(
                       color: Colors.red,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -697,6 +730,166 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLanguageRow({
+    required Color softGreen,
+    required Color primaryColor,
+  }) {
+    final currentName = _languageNames[_currentLocaleCode] ?? _currentLocaleCode;
+    return GestureDetector(
+      onTap: () => _showLanguagePicker(softGreen: softGreen, primaryColor: primaryColor),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: softGreen,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.language, color: primaryColor, size: 20),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppLocalizations.of(context).language,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    currentName,
+                    style: const TextStyle(fontSize: 12, color: AppColors.bone500),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.bone500),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLanguagePicker({
+    required Color softGreen,
+    required Color primaryColor,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.only(top: 12, bottom: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle bar
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                    child: Text(
+                      AppLocalizations.of(context).selectLanguage,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Language list
+                  ...LocaleService.supportedLanguageCodes.map((code) {
+                    final name = _languageNames[code] ?? code;
+                    final isSelected = code == _currentLocaleCode;
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: isSelected ? primaryColor.withValues(alpha: 0.12) : softGreen,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          code.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? primaryColor : AppColors.bone500,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected
+                              ? primaryColor
+                              : Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      trailing: isSelected
+                          ? Icon(Icons.check_circle, color: primaryColor)
+                          : null,
+                      onTap: () async {
+                        await LocaleService.saveLocale(code);
+                        final newLocale = Locale(code);
+                        if (widget.onLocaleChanged != null) {
+                          widget.onLocaleChanged!(newLocale);
+                        }
+                        if (mounted) {
+                          setState(() => _currentLocaleCode = code);
+                        }
+                        if (ctx.mounted) {
+                          Navigator.of(ctx).pop();
+                        }
+                      },
+                    );
+                  }),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -806,7 +999,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(AppLocalizations.of(context).notifications, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     TextButton(
                       onPressed: () async {
                         final qs = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').where('isRead', isEqualTo: false).get();
@@ -816,7 +1009,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         }
                         await batch.commit();
                       },
-                      child: const Text('Mark all as read'),
+                      child: Text(AppLocalizations.of(context).markAllAsRead),
                     ),
                   ],
                 ),
@@ -828,7 +1021,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                       final docs = snapshot.data!.docs;
                       if (docs.isEmpty) {
-                        return const Center(child: Text('No new notifications 🌿', style: TextStyle(color: AppColors.bone500)));
+                        return Center(child: Text(AppLocalizations.of(context).noNewNotifications, style: const TextStyle(color: AppColors.bone500)));
                       }
                       return ListView.builder(
                         itemCount: docs.length,
@@ -837,7 +1030,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final isRead = data['isRead'] == true;
                           final message = data['message'] ?? '';
                           final timestamp = data['timestamp'] as Timestamp?;
-                          final timeAgo = timestamp != null ? _formatTimestampForNotification(timestamp.toDate()) : 'Just now';
+                          final timeAgo = timestamp != null ? _formatTimestampForNotification(timestamp.toDate()) : AppLocalizations.of(context).justNow;
                           return ListTile(
                             leading: Icon(Icons.notifications, color: isRead ? AppColors.bone500 : Theme.of(context).primaryColor),
                             title: Text(message, style: TextStyle(fontWeight: isRead ? FontWeight.normal : FontWeight.bold)),
@@ -861,10 +1054,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _formatTimestampForNotification(DateTime date) {
     final difference = DateTime.now().difference(date);
-    if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
-    if (difference.inHours < 24) return '${difference.inHours}h ago';
-    if (difference.inDays < 2) return 'Yesterday';
-    return '${difference.inDays}d ago';
+    if (difference.inMinutes < 60) return AppLocalizations.of(context).minutesAgoShort(difference.inMinutes);
+    if (difference.inHours < 24) return AppLocalizations.of(context).hoursAgoShort(difference.inHours);
+    if (difference.inDays < 2) return AppLocalizations.of(context).yesterday;
+    return '${difference.inDays} ${AppLocalizations.of(context).daysAgo}';
   }
 }
 

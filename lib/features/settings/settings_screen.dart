@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -64,18 +65,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Name', style: TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context).editNameTitle, style: const TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.bold)),
         content: Form(
           key: formKey,
           child: TextFormField(
             controller: ctrl,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(hintText: 'Your name'),
-            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+            decoration: InputDecoration(hintText: AppLocalizations.of(context).yourNameHint),
+            validator: (val) => val == null || val.isEmpty ? AppLocalizations.of(context).requiredValidator : null,
           ),
         ),
         actions: [
-          TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
+          TextButton(onPressed: () => context.pop(), child: Text(AppLocalizations.of(context).cancel)),
           ElevatedButton(
             onPressed: () async {
               if (formKey.currentState!.validate()) {
@@ -90,7 +91,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.forestGreen),
-            child: const Text('Save', style: TextStyle(color: Colors.white)),
+            child: Text(AppLocalizations.of(context).saveAction, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -106,14 +107,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Account?', style: TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.bold)),
-        content: const Text('This will permanently delete your account, plants, chats, and swap listings. This cannot be undone.'),
+        title: Text(AppLocalizations.of(context).deleteAccountTitle, style: const TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.bold)),
+        content: Text(AppLocalizations.of(context).deleteAccountConfirmBody),
         actions: [
-          TextButton(onPressed: () => context.pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => context.pop(false), child: Text(AppLocalizations.of(context).cancel)),
           ElevatedButton(
             onPressed: () => context.pop(true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.terracotta),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: Text(AppLocalizations.of(context).delete, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -149,7 +150,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         if (mounted) context.go('/welcome');
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete account: $e', style: const TextStyle(color: Colors.white)), backgroundColor: AppColors.terracotta, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 4), ));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).failedToDeleteAccount(e.toString()), style: const TextStyle(color: Colors.white)), backgroundColor: AppColors.terracotta, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 4), ));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -164,13 +165,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final user = FirebaseAuth.instance.currentUser;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final initials = user?.displayName?.isNotEmpty == true ? user!.displayName!.substring(0, 1).toUpperCase() : '?';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.w700)),
+        title: Text(l10n.settingsTitle, style: const TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.w700)),
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
@@ -178,7 +180,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             children: [
               // ── 1. Profile ────────────────────────────────────────────────
-              Text('Profile', style: TextStyle(color: AppColors.moss, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
+              Text(l10n.profileSection, style: TextStyle(color: AppColors.moss, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -199,7 +201,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(user?.displayName ?? 'Plant Lover', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                          Text(user?.displayName ?? l10n.plantLover, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                           Text(user?.email ?? '', style: const TextStyle(fontSize: 14, color: AppColors.moss)),
                         ],
                       ),
@@ -214,18 +216,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 32),
 
               // ── 2. Notifications ──────────────────────────────────────────
-              Text('Notifications', style: TextStyle(color: AppColors.moss, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
+              Text(l10n.notificationsSection, style: TextStyle(color: AppColors.moss, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.notifications_outlined,
-                title: 'Daily Care Reminder',
+                title: l10n.dailyCareReminder,
                 trailing: Text(_reminderTime.format(context), style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.forestGreen)),
                 onTap: _pickReminderTime,
               ),
               const SizedBox(height: 8),
               _SettingsToggle(
                 icon: Icons.water_drop_outlined,
-                title: 'Care Tasks',
+                title: l10n.careTasksToggle,
                 value: _notifCare,
                 onChanged: (v) {
                   setState(() => _notifCare = v);
@@ -235,7 +237,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 8),
               _SettingsToggle(
                 icon: Icons.chat_bubble_outline,
-                title: 'Flora Chat Messages',
+                title: l10n.floraChatMessages,
                 value: _notifChat,
                 onChanged: (v) {
                   setState(() => _notifChat = v);
@@ -245,7 +247,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 8),
               _SettingsToggle(
                 icon: Icons.swap_horiz_rounded,
-                title: 'Swap Market Messages',
+                title: l10n.swapMarketMessages,
                 value: _notifSwap,
                 onChanged: (v) {
                   setState(() => _notifSwap = v);
@@ -255,49 +257,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 32),
 
               // ── 3. App ───────────────────────────────────────────────────
-              Text('App', style: TextStyle(color: AppColors.moss, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
+              Text(l10n.appSection, style: TextStyle(color: AppColors.moss, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.favorite_border,
-                title: 'My Wishlist',
+                title: l10n.myWishlist,
                 onTap: () => context.push('/wishlist'),
               ),
               const SizedBox(height: 32),
 
               // ── 4. About ─────────────────────────────────────────────────
-              Text('About', style: TextStyle(color: AppColors.moss, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
+              Text(l10n.aboutSection, style: TextStyle(color: AppColors.moss, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.info_outline,
-                title: 'App Version',
+                title: l10n.appVersion,
                 trailing: const Text('1.0.0', style: TextStyle(color: AppColors.moss)),
               ),
               const SizedBox(height: 8),
               _SettingsTile(
                 icon: Icons.privacy_tip_outlined,
-                title: 'Privacy Policy',
-                onTap: () => _openUrl('https://flora-99ff7.web.app/privacy.html'), // Assuming hosted here
+                title: l10n.privacyPolicy,
+                onTap: () => _openUrl('https://flora-99ff7.web.app/privacy.html'),
               ),
               const SizedBox(height: 8),
               _SettingsTile(
                 icon: Icons.description_outlined,
-                title: 'Terms of Service',
+                title: l10n.termsOfService,
                 onTap: () => _openUrl('https://flora-99ff7.web.app/terms.html'),
               ),
               const SizedBox(height: 32),
 
               // ── 5. Account ───────────────────────────────────────────────
-              Text('Account', style: TextStyle(color: AppColors.moss, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
+              Text(l10n.accountSection, style: TextStyle(color: AppColors.moss, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.logout,
-                title: 'Sign Out',
+                title: l10n.signOut,
                 onTap: _signOut,
               ),
               const SizedBox(height: 8),
               _SettingsTile(
                 icon: Icons.delete_outline,
-                title: 'Delete Account',
+                title: l10n.deleteAccount,
                 textColor: AppColors.terracotta,
                 iconColor: AppColors.terracotta,
                 onTap: _deleteAccount,
@@ -373,5 +375,3 @@ class _SettingsToggle extends StatelessWidget {
     );
   }
 }
-
-

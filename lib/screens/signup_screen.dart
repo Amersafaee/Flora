@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
 import '../services/onboarding_service.dart';
@@ -39,18 +40,14 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _pickProfileImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-      maxWidth: 512,
-      maxHeight: 512,
-    );
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 512, maxHeight: 512);
     if (picked != null && mounted) {
       setState(() => _profileImage = File(picked.path));
     }
   }
 
   void _signup() async {
+    final l = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
@@ -59,7 +56,7 @@ class _SignupScreenState extends State<SignupScreen> {
     if (name.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please enter your full name', style: TextStyle(color: Colors.white)),
+          content: Text(l.pleaseEnterFullName, style: const TextStyle(color: Colors.white)),
           backgroundColor: colorScheme.error,
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
@@ -72,7 +69,6 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     if (email.isEmpty || password.isEmpty) return;
-
     setState(() => _isLoading = true);
 
     try {
@@ -82,13 +78,13 @@ class _SignupScreenState extends State<SignupScreen> {
         setState(() => _isLoading = false);
         String friendlyMessage;
         if (result == null) {
-          friendlyMessage = 'An unexpected error occurred. Please try again.';
+          friendlyMessage = l.unexpectedError;
         } else if (result.contains('email-already-in-use') || result.contains('account already exists')) {
-          friendlyMessage = 'An account with this email already exists';
+          friendlyMessage = l.emailAlreadyInUse;
         } else if (result.contains('weak-password') || result.contains('too weak')) {
-          friendlyMessage = 'Password must be at least 6 characters';
+          friendlyMessage = l.passwordTooWeak;
         } else if (result.contains('invalid-email') || result.contains('badly formatted')) {
-          friendlyMessage = 'Please enter a valid email address';
+          friendlyMessage = l.invalidEmail;
         } else {
           friendlyMessage = result;
         }
@@ -107,7 +103,6 @@ class _SignupScreenState extends State<SignupScreen> {
       }
 
       if (result == 'Success' && mounted) {
-        // Save fullName and profile data to Firestore
         final uid = FirebaseAuth.instance.currentUser?.uid;
         if (uid != null) {
           final userData = <String, dynamic>{
@@ -117,30 +112,18 @@ class _SignupScreenState extends State<SignupScreen> {
             'createdAt': FieldValue.serverTimestamp(),
           };
 
-          // Upload profile photo if selected — skip entirely if null
           if (_profileImage != null) {
             try {
-              final storageRef = FirebaseStorage.instance
-                  .ref()
-                  .child('users/$uid/profile/profile.jpg');
-              await storageRef.putFile(
-                _profileImage!,
-                SettableMetadata(contentType: 'image/jpeg'),
-              );
+              final storageRef = FirebaseStorage.instance.ref().child('users/$uid/profile/profile.jpg');
+              await storageRef.putFile(_profileImage!, SettableMetadata(contentType: 'image/jpeg'));
               final downloadUrl = await storageRef.getDownloadURL();
               userData['profilePhotoUrl'] = downloadUrl;
             } catch (e) {
               debugPrint('Profile photo upload failed during signup: $e');
-              // Non-fatal — continue signup without photo
             }
           }
 
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(uid)
-              .set(userData, SetOptions(merge: true));
-
-          // Also update FirebaseAuth displayName
+          await FirebaseFirestore.instance.collection('users').doc(uid).set(userData, SetOptions(merge: true));
           if (name.isNotEmpty) {
             await FirebaseAuth.instance.currentUser?.updateDisplayName(name);
           }
@@ -151,7 +134,6 @@ class _SignupScreenState extends State<SignupScreen> {
         if (!mounted) return;
         setState(() => _isLoading = false);
 
-        // Explicit navigation to MainTabScreen as fallback (same pattern as login)
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) => MainTabScreen(
@@ -165,14 +147,15 @@ class _SignupScreenState extends State<SignupScreen> {
     } catch (e) {
       debugPrint('Signup error: $e');
       if (mounted) {
+        final l2 = AppLocalizations.of(context);
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Sign up failed: ${e.toString().replaceAll('Exception: ', '')}',
+              '${l2.signUpFailedPrefix}${e.toString().replaceAll('Exception: ', '')}',
               style: const TextStyle(color: Colors.white),
             ),
-            backgroundColor: colorScheme.error,
+            backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -185,6 +168,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
+    final l = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     setState(() => _isLoading = true);
     try {
@@ -199,7 +183,6 @@ class _SignupScreenState extends State<SignupScreen> {
             await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'isNewUser': false});
           }
         }
-        
         if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => MainTabScreen(
@@ -210,7 +193,7 @@ class _SignupScreenState extends State<SignupScreen> {
         );
       } else if (result != 'cancelled') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: const Text('Google sign in failed. Please try again.'), backgroundColor: colorScheme.error),
+          SnackBar(content: Text(l.googleSignInFailed), backgroundColor: colorScheme.error),
         );
       }
     } finally {
@@ -220,6 +203,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
 
@@ -241,12 +225,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       CircleAvatar(
                         radius: 48,
                         backgroundColor: primaryColor.withValues(alpha: 0.15),
-                        backgroundImage: _profileImage != null
-                            ? FileImage(_profileImage!)
-                            : null,
-                        child: _profileImage == null
-                            ? Icon(Icons.person, color: primaryColor, size: 44)
-                            : null,
+                        backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                        child: _profileImage == null ? Icon(Icons.person, color: primaryColor, size: 44) : null,
                       ),
                       Container(
                         padding: const EdgeInsets.all(6),
@@ -263,43 +243,17 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               const SizedBox(height: 8),
               Center(
-                child: Text(
-                  'Add Photo (optional)',
-                  style: TextStyle(color: AppColors.bone500, fontSize: 12),
-                ),
+                child: Text(l.addPhotoOptional, style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
               ),
               const SizedBox(height: 20),
 
-              // Title and Subtitle
-              Text(
-                'Create Account',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'serif',
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
-                ),
-              ),
+              Text(l.createAccount, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'serif', fontSize: 28, fontWeight: FontWeight.bold, color: primaryColor)),
               const SizedBox(height: 8),
-              const Text(
-                'Start your plant journey today',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.bone500,
-                  fontSize: 16,
-                ),
-              ),
+              Text(l.startYourPlantJourney, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.bone500, fontSize: 16)),
               const SizedBox(height: 32),
 
-              // Name Input
-              Text(
-                'Full Name',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+              // Full Name
+              Text(l.fullName, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               TextField(
                 controller: _nameController,
@@ -308,30 +262,15 @@ class _SignupScreenState extends State<SignupScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Email Input
-              Text(
-                'Email',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+              // Email
+              Text(l.email, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
@@ -341,30 +280,15 @@ class _SignupScreenState extends State<SignupScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Password Input
-              Text(
-                'Password',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+              // Password
+              Text(l.password, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               TextField(
                 controller: _passwordController,
@@ -376,26 +300,12 @@ class _SignupScreenState extends State<SignupScreen> {
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      color: AppColors.bone500,
-                    ),
-                    onPressed: _isLoading
-                        ? null
-                        : () => setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppColors.bone500),
+                    onPressed: _isLoading ? null : () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
                 ),
               ),
               const SizedBox(height: 40),
@@ -408,24 +318,11 @@ class _SignupScreenState extends State<SignupScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
                     disabledBackgroundColor: primaryColor.withValues(alpha: 0.6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        )
-                      : const Text(
-                          'Create Account',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text(l.createAccount, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -435,7 +332,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   Expanded(child: Divider(color: Theme.of(context).colorScheme.outline, thickness: 1)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: const Text('or', style: TextStyle(color: AppColors.bone500)),
+                    child: Text(l.or, style: const TextStyle(color: AppColors.bone500)),
                   ),
                   Expanded(child: Divider(color: Theme.of(context).colorScheme.outline, thickness: 1)),
                 ],
@@ -460,25 +357,19 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
                       ),
-                      child: const Center(
-                        child: Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
+                      child: const Center(child: Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.bold, fontSize: 16))),
                     ),
                     const SizedBox(width: 12),
-                    Text('Continue with Google', style: Theme.of(context).textTheme.labelLarge),
+                    Text(l.continueWithGoogle, style: Theme.of(context).textTheme.labelLarge),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Already have an account? Sign In
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    "Already have an account?",
-                    style: TextStyle(color: AppColors.bone500),
-                  ),
+                  Text(l.alreadyHaveAccountQ, style: const TextStyle(color: AppColors.bone500)),
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: _isLoading
@@ -487,20 +378,14 @@ class _SignupScreenState extends State<SignupScreen> {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                  builder: (_) => LoginScreen(
-                                    onThemeChanged: widget.onThemeChanged,
-                                    onLocaleChanged: widget.onLocaleChanged,
-                                  ),
+                                builder: (_) => LoginScreen(
+                                  onThemeChanged: widget.onThemeChanged,
+                                  onLocaleChanged: widget.onLocaleChanged,
+                                ),
                               ),
                             );
                           },
-                    child: const Text(
-                      'Sign In',
-                      style: TextStyle(
-                        color: AppColors.terracotta900,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: Text(l.signIn, style: const TextStyle(color: AppColors.terracotta900, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),

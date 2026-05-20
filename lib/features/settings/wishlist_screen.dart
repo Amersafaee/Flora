@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/species_providers.dart';
@@ -10,13 +11,14 @@ class WishlistScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final speciesAsync = ref.watch(speciesListProvider);
     final wishlistAsync = ref.watch(wishlistProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Wishlist', style: TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.bold)),
+        title: Text(l10n.myWishlistTitle, style: const TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.bold)),
       ),
       body: wishlistAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -29,12 +31,12 @@ class WishlistScreen extends ConsumerWidget {
                 children: [
                   const Icon(Icons.favorite_border, size: 64, color: AppColors.mist),
                   const SizedBox(height: 16),
-                  Text('Your wishlist is empty.', style: TextStyle(color: AppColors.moss, fontSize: 16)),
+                  Text(l10n.wishlistIsEmpty, style: TextStyle(color: AppColors.moss, fontSize: 16)),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => context.go('/wiki'),
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.forestGreen),
-                    child: const Text('Explore Plant Wiki', style: TextStyle(color: Colors.white)),
+                    child: Text(l10n.explorePlantWiki, style: const TextStyle(color: Colors.white)),
                   )
                 ],
               ),
@@ -46,14 +48,12 @@ class WishlistScreen extends ConsumerWidget {
             error: (e, _) => Center(child: Text('Error: $e')),
             data: (allSpecies) {
               final wishlistedSpecies = allSpecies.where((s) => wishlistedIds.contains(s.id)).toList();
-
               return ListView.separated(
                 padding: const EdgeInsets.all(20),
                 itemCount: wishlistedSpecies.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final s = wishlistedSpecies[index];
-
                   return GestureDetector(
                     onTap: () => context.push('/species/${s.id}'),
                     child: Container(
@@ -66,8 +66,7 @@ class WishlistScreen extends ConsumerWidget {
                       child: Row(
                         children: [
                           SizedBox(
-                            width: 100,
-                            height: 100,
+                            width: 100, height: 100,
                             child: Image.network(
                               'https://source.unsplash.com/200x200/?${Uri.encodeComponent(s.imageQuery)}',
                               fit: BoxFit.cover,
@@ -80,23 +79,10 @@ class WishlistScreen extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(s.commonName, style: TextStyle(
-                                    fontFamily: 'NotoSerif',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDark ? Colors.white : AppColors.forestGreen,
-                                  )),
-                                  Text(s.scientificName, style: const TextStyle(
-                                    fontStyle: FontStyle.italic,
-                                    fontSize: 12,
-                                    color: AppColors.moss,
-                                  )),
+                                  Text(s.commonName, style: TextStyle(fontFamily: 'NotoSerif', fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? Colors.white : AppColors.forestGreen)),
+                                  Text(s.scientificName, style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 12, color: AppColors.moss)),
                                   const SizedBox(height: 8),
-                                  Text(s.category, style: const TextStyle(
-                                    color: AppColors.leafGreen,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  )),
+                                  Text(s.category, style: const TextStyle(color: AppColors.leafGreen, fontSize: 11, fontWeight: FontWeight.bold)),
                                 ],
                               ),
                             ),
@@ -119,4 +105,3 @@ class WishlistScreen extends ConsumerWidget {
     );
   }
 }
-

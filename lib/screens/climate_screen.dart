@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'global_search_screen.dart';
@@ -45,7 +46,6 @@ class _ClimateScreenState extends State<ClimateScreen> {
         .doc('main_zone')
         .collection('readings');
 
-    // Listen to temp
     ref.where('type', isEqualTo: 'temperature')
        .snapshots()
        .listen((snap) {
@@ -63,7 +63,6 @@ class _ClimateScreenState extends State<ClimateScreen> {
          });
        });
 
-    // Listen to humidity
     ref.where('type', isEqualTo: 'humidity')
        .snapshots()
        .listen((snap) {
@@ -83,11 +82,11 @@ class _ClimateScreenState extends State<ClimateScreen> {
   }
 
   Future<void> _saveReading(String type, String valueStr) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    
     final value = double.tryParse(valueStr);
     if (value == null) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
     await FirebaseFirestore.instance
         .collection('users')
@@ -109,13 +108,14 @@ class _ClimateScreenState extends State<ClimateScreen> {
         _humController.clear();
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reading saved'), backgroundColor: AppColors.successLight),
+        SnackBar(content: Text(AppLocalizations.of(context).readingSaved), backgroundColor: AppColors.successLight),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
@@ -140,7 +140,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     Text(
-                      'Digital Conservatory',
+                      l.digitalConservatory,
                       style: TextStyle(
                         color: primaryColor,
                         fontWeight: FontWeight.bold,
@@ -164,7 +164,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Living Room Climate',
+                      l.livingRoomClimate,
                       style: TextStyle(
                         fontFamily: 'serif',
                         fontSize: 32,
@@ -174,8 +174,8 @@ class _ClimateScreenState extends State<ClimateScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Monitoring your plant's environment",
-                      style: TextStyle(
+                      l.monitoringEnvironment,
+                      style: const TextStyle(
                         color: AppColors.bone500,
                         fontSize: 16,
                       ),
@@ -191,23 +191,25 @@ class _ClimateScreenState extends State<ClimateScreen> {
                 child: Row(
                   children: [
                     Expanded(child: _buildInputCard(
-                      label: 'TEMPERATURE',
+                      label: l.temperatureLabel,
                       icon: Icons.thermostat,
                       iconColor: terracotta,
                       currentValue: _currentTemp,
                       unit: '°C',
                       controller: _tempController,
                       onSave: () => _saveReading('temperature', _tempController.text),
+                      hintText: l.enterHint,
                     )),
                     const SizedBox(width: 16),
                     Expanded(child: _buildInputCard(
-                      label: 'HUMIDITY',
+                      label: l.humidityLabel,
                       icon: Icons.water_drop,
                       iconColor: primaryColor,
                       currentValue: _currentHum,
                       unit: '%',
                       controller: _humController,
                       onSave: () => _saveReading('humidity', _humController.text),
+                      hintText: l.enterHint,
                     )),
                   ],
                 ),
@@ -237,7 +239,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Recent Readings',
+                            l.recentReadings,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
@@ -246,9 +248,9 @@ class _ClimateScreenState extends State<ClimateScreen> {
                           ),
                           Row(
                             children: [
-                              _buildLegendDot('Temp', primaryColor),
+                              _buildLegendDot(l.tempLegend, primaryColor),
                               const SizedBox(width: 12),
-                              _buildLegendDot('Humidity', humidityColor),
+                              _buildLegendDot(l.humidityLegend, humidityColor),
                             ],
                           ),
                         ],
@@ -320,6 +322,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
     required String unit,
     required TextEditingController controller,
     required VoidCallback onSave,
+    required String hintText,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -342,7 +345,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
             children: [
               Text(
                 label,
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.bone500,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
@@ -365,7 +368,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
                   controller: controller,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    hintText: 'Enter',
+                    hintText: hintText,
                     suffixText: unit,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -376,7 +379,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
               const SizedBox(width: 8),
               IconButton(
                 onPressed: onSave,
-                icon: Icon(Icons.save),
+                icon: const Icon(Icons.save),
                 color: Theme.of(context).primaryColor,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -402,7 +405,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
         const SizedBox(width: 6),
         Text(
           text,
-          style: TextStyle(
+          style: const TextStyle(
             color: AppColors.bone700,
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -428,8 +431,8 @@ class RealChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    _drawPath(canvas, size, tempReadings, tempColor, 0, 50); // Temp min 0 max 50
-    _drawPath(canvas, size, humReadings, humidityColor, 0, 100); // Hum min 0 max 100
+    _drawPath(canvas, size, tempReadings, tempColor, 0, 50);
+    _drawPath(canvas, size, humReadings, humidityColor, 0, 100);
   }
 
   void _drawPath(Canvas canvas, Size size, List<Map<String, dynamic>> readings, Color color, double minVal, double maxVal) {
@@ -474,6 +477,3 @@ class RealChartPainter extends CustomPainter {
     return oldDelegate.tempReadings != tempReadings || oldDelegate.humReadings != humReadings;
   }
 }
-
-
-

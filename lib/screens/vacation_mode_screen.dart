@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,11 +23,11 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isGenerating = false;
-  
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _generatedPlanController = TextEditingController();
-  
+
   final FirestoreService _firestoreService = FirestoreService();
   final NotificationService _notificationService = NotificationService();
 
@@ -63,11 +64,8 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
   }
 
   Future<void> _toggleVacationMode(bool value) async {
-    setState(() {
-      _isEnabled = value;
-    });
+    setState(() { _isEnabled = value; });
     await _saveState();
-
     if (_isEnabled) {
       await _notificationService.cancelAllNotifications();
     } else {
@@ -79,52 +77,32 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
     final uid = _firestoreService.currentUserId;
     if (uid == null) return;
 
-    // Calculate how many days the vacation lasted
     final vacationDays = (_startDate != null && _endDate != null)
-        ? _endDate!.difference(_startDate!).inDays
-        : 0;
-
+        ? _endDate!.difference(_startDate!).inDays : 0;
     final tomorrow = DateTime.now().add(const Duration(days: 1));
 
     final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('tasks')
-        .where('isCompleted', isEqualTo: false)
-        .get();
+        .collection('users').doc(uid).collection('tasks')
+        .where('isCompleted', isEqualTo: false).get();
 
     final batch = FirebaseFirestore.instance.batch();
 
     for (var doc in snapshot.docs) {
       final task = Task.fromMap(doc.data());
-      // Shift original dueDate forward by vacation length
       final shiftedDate = task.dueDate.add(Duration(days: vacationDays));
-      // If still in the past, default to tomorrow
-      final rescheduleDate = shiftedDate.isBefore(DateTime.now())
-          ? tomorrow
-          : shiftedDate;
-
-      // Update Firestore dueDate so the Care screen reflects the new schedule
-      batch.update(doc.reference, {
-        'dueDate': Timestamp.fromDate(rescheduleDate),
-      });
-
+      final rescheduleDate = shiftedDate.isBefore(DateTime.now()) ? tomorrow : shiftedDate;
+      batch.update(doc.reference, {'dueDate': Timestamp.fromDate(rescheduleDate)});
       await _notificationService.scheduleTaskNotification(
-        task.id,
-        task.plantName,
-        task.taskType,
-        rescheduleDate,
-      );
+          task.id, task.plantName, task.taskType, rescheduleDate);
     }
-
     await batch.commit();
   }
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
-    final initialDate = isStart 
-        ? (_startDate ?? DateTime.now()) 
+    final initialDate = isStart
+        ? (_startDate ?? DateTime.now())
         : (_endDate ?? (_startDate ?? DateTime.now()));
-        
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -148,14 +126,10 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
       setState(() {
         if (isStart) {
           _startDate = picked;
-          if (_endDate != null && _endDate!.isBefore(_startDate!)) {
-            _endDate = _startDate;
-          }
+          if (_endDate != null && _endDate!.isBefore(_startDate!)) _endDate = _startDate;
         } else {
           _endDate = picked;
-          if (_startDate != null && _startDate!.isAfter(_endDate!)) {
-            _startDate = _endDate;
-          }
+          if (_startDate != null && _startDate!.isAfter(_endDate!)) _startDate = _endDate;
         }
       });
       await _saveState();
@@ -163,12 +137,13 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
   }
 
   Future<void> _generateCarePlan() async {
+    final l = AppLocalizations.of(context);
     final uid = _firestoreService.currentUserId;
     if (uid == null) return;
 
     if (_startDate == null || _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select start and end dates.'), backgroundColor: Colors.red),
+        SnackBar(content: Text(l.pleaseSelectDates), backgroundColor: Colors.red),
       );
       return;
     }
@@ -177,16 +152,12 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
 
     final startStr = DateFormat('MMM d, yyyy').format(_startDate!);
     final endStr = DateFormat('MMM d, yyyy').format(_endDate!);
-
     final user = FirebaseAuth.instance.currentUser;
     final userName = user?.displayName ?? 'Your';
     final userEmail = user?.email ?? 'Unknown';
 
     final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('plants')
-        .get();
+        .collection('users').doc(uid).collection('plants').get();
 
     final buffer = StringBuffer();
     buffer.writeln("Care plan for $userName's plants while away $startStr to $endStr:");
@@ -194,35 +165,32 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
     for (var doc in snapshot.docs) {
       final data = doc.data();
       final name = data['name'] ?? 'Unknown Plant';
-      
+
       final tasksSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('tasks')
-          .where('plantName', isEqualTo: name)
-          .get();
+          .collection('users').doc(uid).collection('tasks')
+          .where('plantName', isEqualTo: name).get();
 
       if (tasksSnapshot.docs.isEmpty) {
         buffer.writeln('• $name: Water when soil feels dry.');
       } else {
         final tasks = tasksSnapshot.docs.map((d) => d.data()).toList();
         final taskTypes = tasks.map((t) => t['taskType'] as String).toSet();
-        
+
         for (final type in taskTypes) {
           final typeTasks = tasks.where((t) => t['taskType'] == type).toList();
           final pending = typeTasks.where((t) => t['isCompleted'] == false).toList();
           final completed = typeTasks.where((t) => t['isCompleted'] == true).toList();
-          
+
           completed.sort((a, b) {
             final tA = a['dueDate'] as Timestamp?;
             final tB = b['dueDate'] as Timestamp?;
             if (tA == null || tB == null) return 0;
             return tB.compareTo(tA);
           });
-          
+
           final scheduleTask = pending.isNotEmpty ? pending.first : typeTasks.first;
           final repeatType = scheduleTask['repeatType'] as String? ?? 'none';
-          
+
           String repeatStr = '';
           if (repeatType == 'daily') {
             repeatStr = '1';
@@ -240,15 +208,13 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
           } else {
             repeatStr = repeatType;
           }
-          
+
           String lastDateStr = 'never';
           if (completed.isNotEmpty) {
             final lastDate = (completed.first['dueDate'] as Timestamp?)?.toDate();
-            if (lastDate != null) {
-              lastDateStr = DateFormat('MMM d').format(lastDate);
-            }
+            if (lastDate != null) lastDateStr = DateFormat('MMM d').format(lastDate);
           }
-          
+
           buffer.writeln('• $name: $type every $repeatStr days. Last done: $lastDateStr.');
         }
       }
@@ -258,7 +224,6 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
     buffer.writeln('Emergency contact: $userEmail');
     buffer.writeln('- Sent from Digital Conservatory');
 
-    // Show the plan in the editable TextField instead of copying directly
     setState(() {
       _generatedPlanController.text = buffer.toString();
       _isGenerating = false;
@@ -275,6 +240,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     const Color primaryColor = AppColors.forest900;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     const Color terracotta = AppColors.terracotta900;
@@ -290,12 +256,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
           icon: Icon(Icons.arrow_back, color: textColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
-          'Vacation Mode', style: TextStyle(color: textColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
+        title: Text(l.vacationMode, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 20)),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -304,25 +265,18 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Illustration Area
               const SizedBox(height: 16),
               const Icon(Icons.wb_sunny, size: 64, color: terracotta),
               const SizedBox(height: 16),
               Text(
-                'Going somewhere?', style: TextStyle(color: textColor,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'serif',
-                ),
+                l.goingSomewhere,
+                style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'serif'),
               ),
               const SizedBox(height: 8),
               Text(
-                'We will take care of your reminders while you are away.',
+                l.takeCareOfReminders,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.bone500,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: AppColors.bone500, fontSize: 14),
               ),
               const SizedBox(height: 32),
 
@@ -332,13 +286,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                 decoration: BoxDecoration(
                   color: _isEnabled ? lightGreen : Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Row(
                   children: [
@@ -346,85 +294,42 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Enable Vacation Mode', style: TextStyle(color: textColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
+                          Text(l.enableVacationMode, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
                           const SizedBox(height: 4),
-                          Text(
-                            'Pauses all plant care notifications.',
-                            style: TextStyle(
-                              color: AppColors.bone500,
-                              fontSize: 13,
-                            ),
-                          ),
+                          Text(l.pausesAllNotifications, style: const TextStyle(color: AppColors.bone500, fontSize: 13)),
                         ],
                       ),
                     ),
-                    Switch(
-                      value: _isEnabled,
-                      onChanged: _toggleVacationMode,
-                      activeColor: primaryColor,
-                    ),
+                    Switch(value: _isEnabled, onChanged: _toggleVacationMode, activeColor: primaryColor),
                   ],
                 ),
               ),
-              
+
               if (_isEnabled) ...[
                 const SizedBox(height: 24),
-                // Trip Settings Card
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'YOUR TRIP',
-                        style: TextStyle(
-                          color: AppColors.bone500,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
+                      Text(l.yourTrip, style: const TextStyle(color: AppColors.bone500, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                       const SizedBox(height: 16),
                       // Start Date
                       Row(
                         children: [
                           const Icon(Icons.calendar_today, color: AppColors.bone500, size: 20),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Start Date',
-                              style: TextStyle(
-                                color: textColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
+                          Expanded(child: Text(l.startDate, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15))),
                           GestureDetector(
                             onTap: () => _selectDate(context, true),
                             child: Text(
-                              _startDate != null ? DateFormat('MMM d, yyyy').format(_startDate!) : 'Select Date',
-                              style: TextStyle(
-                                color: _startDate != null ? primaryColor : AppColors.bone500,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              ),
+                              _startDate != null ? DateFormat('MMM d, yyyy').format(_startDate!) : l.selectDate,
+                              style: TextStyle(color: _startDate != null ? primaryColor : AppColors.bone500, fontWeight: FontWeight.w600, fontSize: 15),
                             ),
                           ),
                         ],
@@ -435,25 +340,12 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                         children: [
                           const Icon(Icons.event, color: AppColors.bone500, size: 20),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'End Date',
-                              style: TextStyle(
-                                color: textColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
+                          Expanded(child: Text(l.endDate, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15))),
                           GestureDetector(
                             onTap: () => _selectDate(context, false),
                             child: Text(
-                              _endDate != null ? DateFormat('MMM d, yyyy').format(_endDate!) : 'Select Date',
-                              style: TextStyle(
-                                color: _endDate != null ? primaryColor : AppColors.bone500,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              ),
+                              _endDate != null ? DateFormat('MMM d, yyyy').format(_endDate!) : l.selectDate,
+                              style: TextStyle(color: _endDate != null ? primaryColor : AppColors.bone500, fontWeight: FontWeight.w600, fontSize: 15),
                             ),
                           ),
                         ],
@@ -467,43 +359,29 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
                           child: _isGenerating
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                )
-                              : const Text(
-                                  'Generate Care Plan 🌿',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : Text(l.generateCarePlanAction, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                       ),
-                      // Editable plan preview
                       if (_generatedPlanController.text.isNotEmpty) ...[
                         const SizedBox(height: 20),
                         TextField(
                           controller: _generatedPlanController,
                           maxLines: 12,
                           decoration: InputDecoration(
-                            labelText: 'Your Care Plan',
-                            labelStyle: TextStyle(color: primaryColor),
+                            labelText: l.yourCarePlan,
+                            labelStyle: const TextStyle(color: primaryColor),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: primaryColor, width: 2),
+                              borderSide: const BorderSide(color: primaryColor, width: 2),
                             ),
                             contentPadding: const EdgeInsets.all(16),
-                            hintText: 'Edit your care plan before sharing…',
+                            hintText: l.editCarePlanHint,
                           ),
                           style: const TextStyle(fontSize: 13, height: 1.5),
                         ),
@@ -512,10 +390,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.share, color: Colors.white),
-                            label: const Text(
-                              'Share 🌿',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
+                            label: Text(l.shareEmoji, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                             onPressed: () {
                               final text = _generatedPlanController.text.trim();
                               if (text.isNotEmpty) {
@@ -533,12 +408,12 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                         const SizedBox(height: 8),
                         TextButton.icon(
                           icon: const Icon(Icons.copy, size: 18),
-                          label: const Text('Copy to Clipboard'),
+                          label: Text(l.copyToClipboard),
                           onPressed: () async {
                             final messenger = ScaffoldMessenger.of(context);
                             await Clipboard.setData(ClipboardData(text: _generatedPlanController.text));
                             messenger.showSnackBar(
-                              const SnackBar(content: Text('Copied to clipboard 📋'), backgroundColor: AppColors.forest900),
+                              SnackBar(content: Text(l.copiedToClipboard), backgroundColor: AppColors.forest900),
                             );
                           },
                         ),
@@ -554,10 +429,3 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
     );
   }
 }
-
-
-
-
-
-
-

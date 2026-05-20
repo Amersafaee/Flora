@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../models/plant_model.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
 
 class EditPlantScreen extends StatefulWidget {
   final String plantId;
-  
+
   const EditPlantScreen({super.key, required this.plantId});
 
   @override
@@ -38,8 +39,13 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
   void _fetchPlant() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
-    
-    final doc = await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(widget.plantId).get();
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('plants')
+        .doc(widget.plantId)
+        .get();
     if (doc.exists && doc.data() != null) {
       final data = doc.data()!;
       data['id'] = widget.plantId;
@@ -66,9 +72,10 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
   }
 
   void _saveChanges() async {
+    final l = AppLocalizations.of(context);
     if (_nameController.text.trim().isEmpty || _plant == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Plant name cannot be empty'), backgroundColor: Colors.red),
+        SnackBar(content: Text(l.plantNameEmpty), backgroundColor: Colors.red),
       );
       return;
     }
@@ -97,13 +104,13 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Plant updated'), backgroundColor: Colors.green),
+          SnackBar(content: Text(l.plantUpdated), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update plant'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context).failedToUpdatePlant), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -115,9 +122,10 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Plant', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l.editPlant, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -125,29 +133,29 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
               ? const Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())
               : TextButton(
                   onPressed: _isFetching ? null : _saveChanges,
-                  child: Text('Save Changes', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+                  child: Text(l.saveChanges, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
                 ),
         ],
       ),
-      body: _isFetching 
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildTextField('Name', _nameController),
-                const SizedBox(height: 16),
-                _buildTextField('Common Name', _commonNameController),
-                const SizedBox(height: 16),
-                _buildTextField('Category', _categoryController),
-                const SizedBox(height: 16),
-                _buildTextField('Zone', _zoneController),
-                const SizedBox(height: 16),
-                _buildTextField('Health Status', _healthStatusController),
-              ],
+      body: _isFetching
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildTextField(l.name, _nameController),
+                  const SizedBox(height: 16),
+                  _buildTextField(l.commonName, _commonNameController),
+                  const SizedBox(height: 16),
+                  _buildTextField(l.category, _categoryController),
+                  const SizedBox(height: 16),
+                  _buildTextField(l.zone, _zoneController),
+                  const SizedBox(height: 16),
+                  _buildTextField(l.healthStatus, _healthStatusController),
+                ],
+              ),
             ),
-          ),
     );
   }
 

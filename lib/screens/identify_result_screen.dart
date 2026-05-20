@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'add_plant_screen.dart';
 import 'flora_screen.dart';
 import 'wiki_plant_detail_screen.dart';
@@ -46,16 +47,13 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
     return isDark ? AppColors.errorDark : AppColors.errorLight;
   }
 
-  String _scoreLabel(int score) {
-    if (score > 70) return 'Healthy';
-    if (score >= 40) return 'Needs Attention';
-    return 'Critical';
+  String _scoreLabel(int score, AppLocalizations l) {
+    if (score > 70) return l.healthy;
+    if (score >= 40) return l.needsAttention;
+    return l.critical;
   }
 
-  /// Tries to pull the first meaningful noun from the analysis result to use
-  /// as the plant name in the conversation title. Falls back to "this plant".
   String _extractPlantName() {
-    // Try common patterns first
     final patterns = [
       RegExp(r'(?:Plant Name|Species|Common Name|Name):\s*([^\n\r]+)', caseSensitive: false),
       RegExp(r'(?:This is a|This appears to be a|Identified as)\s+([A-Z][a-zA-Z\s]+?)(?:\.|,|\n)', caseSensitive: false),
@@ -65,7 +63,6 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
       final match = pattern.firstMatch(widget.analysisResult);
       if (match != null) {
         final name = match.group(1)?.trim() ?? '';
-        // Reject if the extracted name contains common false positives
         final rejectWords = ['identification', 'analysis', 'assessment', 'result', 'note', 'warning', 'however', 'please', 'the plant'];
         final nameLower = name.toLowerCase();
         if (name.isNotEmpty && !rejectWords.any((w) => nameLower.contains(w)) && name.length < 50) {
@@ -130,17 +127,16 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
     return '7';
   }
 
-  /// Creates a new Flora conversation pre-seeded with the identify result,
-  /// then navigates directly into the chat.
   Future<void> _openFloraWithPlantContext() async {
     if (_isOpeningFlora) return;
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       if (mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please sign in to continue with Flora.'),
+          SnackBar(
+            content: Text(l.pleaseSignInToContinue),
             backgroundColor: AppColors.terracotta900,
           ),
         );
@@ -155,7 +151,6 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
       final db = FirebaseFirestore.instance;
       final chatsRef = db.collection('users').doc(uid).collection('flora_chats');
 
-      // 1. Create the conversation document
       final docRef = await chatsRef.add({
         'title': 'About $plantName',
         'createdAt': FieldValue.serverTimestamp(),
@@ -166,15 +161,13 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
       final conversationId = docRef.id;
       final messagesRef = chatsRef.doc(conversationId).collection('messages');
 
-      // 2. Save the user's photo as the first message (mirrors the identify action)
       await messagesRef.add({
         'role': 'user',
         'text': 'Please analyze this plant',
-        'imageUrl': '', // local file — no remote URL available at this point
+        'imageUrl': '',
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // 3. Save Flora's warm introduction as the seeded model reply
       final snippet = widget.analysisResult.length > 600
           ? '${widget.analysisResult.substring(0, 597)}…'
           : widget.analysisResult;
@@ -193,7 +186,6 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // 4. Update the conversation's lastMessage preview
       await docRef.update({
         'lastMessage': 'Flora has analyzed your plant',
         'lastMessageAt': FieldValue.serverTimestamp(),
@@ -201,18 +193,16 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
 
       if (!mounted) return;
 
-      // 5. Navigate into the pre-seeded conversation
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => FloraScreen(conversationId: conversationId),
-        ),
+        MaterialPageRoute(builder: (_) => FloraScreen(conversationId: conversationId)),
       );
     } catch (e) {
       if (mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not open Flora: $e'),
+            content: Text('${l.couldNotOpenFloraPrefix}$e'),
             backgroundColor: AppColors.terracotta900,
           ),
         );
@@ -224,6 +214,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final int? healthScore = _extractHealthScore();
 
     return Scaffold(
@@ -240,19 +231,15 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                     icon: const Icon(Icons.arrow_back, color: AppColors.forest900),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Center(
                       child: Text(
-                        'Plant Analysis',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.forest900,
-                        ),
+                        l.plantAnalysis,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.forest900),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 48), // balance
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
@@ -269,11 +256,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                       borderRadius: BorderRadius.circular(20),
                       child: SizedBox(
                         height: 220,
-                        child: Image.file(
-                          widget.imageFile,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        ),
+                        child: Image.file(widget.imageFile, fit: BoxFit.cover, width: double.infinity),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -283,29 +266,20 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Health score badge (if extracted)
                             if (healthScore != null) ...[
                               Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: _scoreColor(healthScore, context)
-                                          .withValues(alpha: 0.1),
+                                      color: _scoreColor(healthScore, context).withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(40),
                                     ),
                                     child: Row(
@@ -313,30 +287,16 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                       children: [
                                         Text(
                                           '$healthScore',
-                                          style: TextStyle(
-                                            fontSize: 28,
-                                            fontWeight: FontWeight.bold,
-                                            color: _scoreColor(healthScore, context),
-                                            height: 1,
-                                          ),
+                                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _scoreColor(healthScore, context), height: 1),
                                         ),
                                         Text(
                                           '/100',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: _scoreColor(healthScore, context)
-                                                .withValues(alpha: 0.7),
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: TextStyle(fontSize: 14, color: _scoreColor(healthScore, context).withValues(alpha: 0.7), fontWeight: FontWeight.w600),
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          _scoreLabel(healthScore),
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: _scoreColor(healthScore, context),
-                                          ),
+                                          _scoreLabel(healthScore, l),
+                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _scoreColor(healthScore, context)),
                                         ),
                                       ],
                                     ),
@@ -347,28 +307,24 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                               Divider(color: Theme.of(context).colorScheme.surfaceContainerHighest, height: 1),
                               const SizedBox(height: 16),
                             ],
-
-                            // Full response text
                             Text(
                               widget.analysisResult,
-                              style: TextStyle(
-                                fontSize: 14.5,
-                                color: Theme.of(context).colorScheme.onSurface,
-                                height: 1.6,
-                              ),
+                              style: TextStyle(fontSize: 14.5, color: Theme.of(context).colorScheme.onSurface, height: 1.6),
                             ),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // Wiki care guide link (if matching species found)
                     FutureBuilder<QuerySnapshot>(
                       future: FirebaseFirestore.instance.collection('species').get(),
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) return const SizedBox.shrink();
                         final docs = snapshot.data!.docs;
                         final pName = _extractPlantName().toLowerCase();
-                        
+
                         Map<String, dynamic>? match;
                         for (var d in docs) {
                           final data = d.data() as Map<String, dynamic>;
@@ -381,9 +337,9 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                             match = data; break;
                           }
                         }
-                        
+
                         if (match == null) return const SizedBox.shrink();
-                        
+
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16.0),
                           child: GestureDetector(
@@ -401,16 +357,13 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.forest100,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                    decoration: BoxDecoration(color: AppColors.forest100, borderRadius: BorderRadius.circular(12)),
                                     child: const Icon(Icons.menu_book, color: AppColors.forest600),
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Text(
-                                      'Read the full care guide for ${match['commonName'] ?? match['name'] ?? 'this plant'}',
+                                      l.readFullCareGuide,
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                     ),
                                   ),
@@ -424,7 +377,6 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // ── Action buttons ───────────────────────────────────
                     // Add to My Collection
                     SizedBox(
                       height: 52,
@@ -452,20 +404,13 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.forest900,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
-                        icon: Icon(Icons.add_circle_outline,
-                            color: Colors.white, size: 20),
-                        label: const Text(
-                          'Add to My Collection',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 20),
+                        label: Text(
+                          l.addToMyCollection,
+                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -477,58 +422,38 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: AppColors.forest900, width: 1.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                          side: const BorderSide(color: AppColors.forest900, width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        icon: const Icon(Icons.refresh,
-                            color: AppColors.forest900, size: 20),
-                        label: const Text(
-                          'Analyze Another',
-                          style: TextStyle(
-                            color: AppColors.forest900,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        icon: const Icon(Icons.refresh, color: AppColors.forest900, size: 20),
+                        label: Text(
+                          l.analyzeAnother,
+                          style: const TextStyle(color: AppColors.forest900, fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
 
-                    // Continue with Flora — pre-seeds a new conversation
+                    // Continue with Flora
                     SizedBox(
                       height: 52,
                       child: ElevatedButton.icon(
                         onPressed: _isOpeningFlora ? null : _openFloraWithPlantContext,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.forest600,
-                          disabledBackgroundColor:
-                              Color(0x8C2E7D32),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                          disabledBackgroundColor: const Color(0x8C2E7D32),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
                         icon: _isOpeningFlora
                             ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
+                                width: 18, height: 18,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                               )
-                            : Icon(Icons.eco,
-                                color: Colors.white, size: 20),
+                            : const Icon(Icons.eco, color: Colors.white, size: 20),
                         label: Text(
-                          _isOpeningFlora ? 'Opening Flora…' : 'Continue with Flora 🌿',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          _isOpeningFlora ? l.openingFlora : l.continueWithFlora,
+                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),

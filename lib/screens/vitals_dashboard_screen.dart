@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math' as math;
@@ -22,10 +23,11 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      return const Scaffold(body: Center(child: Text('Not logged in')));
+      return Scaffold(body: Center(child: Text(l.notLoggedIn)));
     }
 
     return Scaffold(
@@ -46,15 +48,12 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
           }
 
           final plants = snapshot.data?.docs.map((d) => d.data() as Map<String, dynamic>).toList() ?? [];
-          
+
           for (var i = 0; i < plants.length; i++) {
             plants[i]['id'] = snapshot.data!.docs[i].id;
-            if (!plants[i].containsKey('healthScore')) {
-              plants[i]['healthScore'] = 100;
-            }
+            if (!plants[i].containsKey('healthScore')) plants[i]['healthScore'] = 100;
           }
 
-          // Sort ascending
           plants.sort((a, b) => (a['healthScore'] as int).compareTo(b['healthScore'] as int));
 
           int totalScore = 0;
@@ -80,28 +79,23 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Plant Vitals',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'serif',
-                          color: AppColors.forest900,
+                      Text(
+                        l.plantVitals,
+                        style: const TextStyle(
+                          fontSize: 28, fontWeight: FontWeight.bold,
+                          fontFamily: 'serif', color: AppColors.forest900,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Your collection health overview',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.bone500,
-                        ),
+                        l.collectionHealthOverview,
+                        style: const TextStyle(fontSize: 14, color: AppColors.bone500),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Summary Card
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -110,41 +104,34 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildStatColumn(avgScore.toString(), 'Collection Health', avgColor),
+                        _buildStatColumn(avgScore.toString(), l.collectionHealth, avgColor),
                         Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                        _buildStatColumn(thrivingCount.toString(), 'Thriving', AppColors.forest900),
+                        _buildStatColumn(thrivingCount.toString(), l.thriving, AppColors.forest900),
                         Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                        _buildStatColumn(needHelpCount.toString(), 'Need Help', isDark ? AppColors.errorDark : AppColors.errorLight),
+                        _buildStatColumn(needHelpCount.toString(), l.needHelp, isDark ? AppColors.errorDark : AppColors.errorLight),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Text(
-                    'Your Plants',
+                    l.yourPlants,
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 18, fontWeight: FontWeight.bold,
                       color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Plant List
                 Expanded(
                   child: ListView.builder(
@@ -155,7 +142,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                       final score = plant['healthScore'] as int;
                       final prevScore = plant['previousHealthScore'] as int?;
                       final color = _getScoreColor(score);
-                      
+
                       Widget trendIcon = Icon(Icons.arrow_forward, color: AppColors.bone300, size: 20);
                       if (prevScore != null) {
                         if (score > prevScore + 5) {
@@ -165,7 +152,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                         }
                       }
 
-                      String statusText = plant['healthStatus']?.toString() ?? 'Healthy';
+                      String statusText = plant['healthStatus']?.toString() ?? l.healthy;
                       if (plant.containsKey('lastAssessment') && plant['lastAssessment'] != null) {
                         statusText = plant['lastAssessment']['condition']?.toString() ?? statusText;
                       }
@@ -175,10 +162,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => PlantDetailScreen(
-                                plantId: plant['id'],
-                                plantName: plant['name'],
-                              ),
+                              builder: (_) => PlantDetailScreen(plantId: plant['id'], plantName: plant['name']),
                             ),
                           );
                         },
@@ -188,13 +172,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                           decoration: BoxDecoration(
                             color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,20 +180,13 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                               Row(
                                 children: [
                                   SizedBox(
-                                    width: 56,
-                                    height: 56,
+                                    width: 56, height: 56,
                                     child: CustomPaint(
-                                      painter: HealthRingPainter(
-                                        percentage: score / 100,
-                                        color: color,
-                                      ),
+                                      painter: HealthRingPainter(percentage: score / 100, color: color),
                                       child: Center(
                                         child: Text(
                                           score.toString(),
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          ),
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                         ),
                                       ),
                                     ),
@@ -227,18 +198,11 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                                       children: [
                                         Text(
                                           plant['name'],
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            color: AppColors.bone900,
-                                          ),
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.bone900),
                                         ),
                                         Text(
                                           plant['category'] ?? '',
-                                          style: TextStyle(
-                                            color: AppColors.bone500,
-                                            fontSize: 12,
-                                          ),
+                                          style: const TextStyle(color: AppColors.bone500, fontSize: 12),
                                         ),
                                       ],
                                     ),
@@ -248,8 +212,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                               ),
                               const SizedBox(height: 16),
                               Container(
-                                height: 4,
-                                width: double.infinity,
+                                height: 4, width: double.infinity,
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(2),
@@ -260,10 +223,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                                       alignment: Alignment.centerLeft,
                                       child: Container(
                                         width: constraints.maxWidth * (score / 100),
-                                        decoration: BoxDecoration(
-                                          color: color,
-                                          borderRadius: BorderRadius.circular(2),
-                                        ),
+                                        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
                                       ),
                                     );
                                   },
@@ -272,11 +232,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 statusText,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.bone500,
-                                  fontStyle: FontStyle.italic,
-                                ),
+                                style: const TextStyle(fontSize: 12, color: AppColors.bone500, fontStyle: FontStyle.italic),
                               ),
                             ],
                           ),
@@ -296,22 +252,9 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
   Widget _buildStatColumn(String value, String label, Color color) {
     return Column(
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
+        Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: AppColors.bone500,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.bone500)),
       ],
     );
   }
@@ -327,13 +270,12 @@ class HealthRingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width / 2, size.height / 2) - 4;
-    
+
     final bgPaint = Paint()
       ..color = const Color(0xFFEEEEEE)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round;
-      
     canvas.drawCircle(center, radius, bgPaint);
 
     final fgPaint = Paint()
@@ -343,13 +285,7 @@ class HealthRingPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final sweepAngle = 2 * math.pi * percentage;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      sweepAngle,
-      false,
-      fgPaint,
-    );
+    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), -math.pi / 2, sweepAngle, false, fgPaint);
   }
 
   @override

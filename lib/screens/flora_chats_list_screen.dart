@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -55,29 +56,28 @@ class FloraChatsListScreen extends StatelessWidget {
 
   Future<void> _deleteConversation(
       BuildContext context, String docId) async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Conversation'),
-        content: const Text(
-            'Are you sure you want to delete this conversation? This cannot be undone.'),
+        title: Text(l.deleteConversation),
+        content: Text(l.deleteConversationConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete',
-                style: TextStyle(color: AppColors.terracotta900)),
+            child: Text(l.delete,
+                style: const TextStyle(color: AppColors.terracotta900)),
           ),
         ],
       ),
     );
 
     if (confirmed == true) {
-      // Delete all messages in the sub-collection first
       final messagesSnap =
           await _chatsRef().doc(docId).collection('messages').get();
       final batch = FirebaseFirestore.instance.batch();
@@ -104,6 +104,7 @@ class FloraChatsListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final primaryColor = Theme.of(context).primaryColor;
     final uid = _uid();
 
@@ -134,7 +135,7 @@ class FloraChatsListScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Flora',
+                        l.flora,
                         style: TextStyle(
                           fontFamily: 'serif',
                           color: primaryColor,
@@ -143,8 +144,8 @@ class FloraChatsListScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'AI Plant Consultant',
-                        style: TextStyle(
+                        l.aiPlantConsultant,
+                        style: const TextStyle(
                           color: AppColors.bone500,
                           fontSize: 12,
                         ),
@@ -157,7 +158,7 @@ class FloraChatsListScreen extends StatelessWidget {
             const Divider(height: 1, thickness: 1, color: Colors.black12),
             Expanded(
               child: uid.isEmpty
-                  ? const Center(child: Text('Please log in to use Flora.'))
+                  ? Center(child: Text(l.pleaseLogInToUseFlora))
                   : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                       stream: _chatsRef()
                           .orderBy('lastMessageAt', descending: true)
@@ -172,7 +173,7 @@ class FloraChatsListScreen extends StatelessWidget {
                         final docs = snapshot.data?.docs ?? [];
 
                         if (docs.isEmpty) {
-                          return _buildEmptyState(primaryColor);
+                          return _buildEmptyState(context, primaryColor);
                         }
 
                         return ListView.builder(
@@ -253,7 +254,7 @@ class FloraChatsListScreen extends StatelessWidget {
                                                 lastMessage,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
+                                                style: const TextStyle(
                                                   fontSize: 13,
                                                   color: AppColors.bone500,
                                                 ),
@@ -265,7 +266,7 @@ class FloraChatsListScreen extends StatelessWidget {
                                       const SizedBox(width: 8),
                                       Text(
                                         _formatTimeAgo(lastMessageAt),
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 12,
                                           color: AppColors.bone300,
                                         ),
@@ -291,7 +292,8 @@ class FloraChatsListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(Color primaryColor) {
+  Widget _buildEmptyState(BuildContext context, Color primaryColor) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -307,20 +309,20 @@ class FloraChatsListScreen extends StatelessWidget {
               child: Icon(Icons.eco, color: primaryColor, size: 48),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Start your first conversation with Flora',
+            Text(
+              l.startFirstConversation,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: AppColors.bone500,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Tap the + button below to begin',
+            Text(
+              l.tapPlusToBegin,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppColors.bone500),
+              style: const TextStyle(fontSize: 13, color: AppColors.bone500),
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../models/plant_model.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
@@ -9,6 +10,7 @@ class MemorialGardenScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sepiaBg = isDark ? AppColors.darkCanvas : AppColors.bone25;
     final sepiaCard = isDark ? AppColors.darkSurface : AppColors.bone50;
@@ -20,7 +22,7 @@ class MemorialGardenScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: sepiaBg,
       appBar: AppBar(
-        title: const Text('Memorial Garden'),
+        title: Text(l.memorialGarden),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: sepiaText),
@@ -39,17 +41,17 @@ class MemorialGardenScreen extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
-              return const Center(child: Text('Something went wrong', style: TextStyle(color: AppColors.bone500)));
+              return Center(child: Text(l.somethingWentWrong, style: const TextStyle(color: AppColors.bone500)));
             }
 
             final deceasedPlants = (snapshot.data ?? []).where((p) => p.isDeceased).toList();
-            
+
             if (deceasedPlants.isEmpty) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Text(
-                    'No plants in the memorial garden yet — every plant lives a full life here first 🌿',
+                    l.memorialGardenEmpty,
                     textAlign: TextAlign.center,
                     style: TextStyle(color: sepiaMuted, fontSize: 16, fontStyle: FontStyle.italic),
                   ),
@@ -71,11 +73,13 @@ class MemorialGardenScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final plant = deceasedPlants[index];
                 final dateJoinedStr = DateFormat.yMMMMd().format(plant.dateAdded);
-                final datePassedStr = plant.deceasedDate != null 
+                final datePassedStr = plant.deceasedDate != null
                     ? DateFormat.yMMMMd().format(plant.deceasedDate!)
-                    : 'Unknown date';
-                
-                final note = plant.memorialNote?.isNotEmpty == true ? plant.memorialNote! : (plant.eulogy?.isNotEmpty == true ? plant.eulogy! : 'May this plant rest peacefully in the soil.');
+                    : l.unknownDate;
+
+                final note = plant.memorialNote?.isNotEmpty == true
+                    ? plant.memorialNote!
+                    : (plant.eulogy?.isNotEmpty == true ? plant.eulogy! : l.memorialMessage);
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -117,14 +121,14 @@ class MemorialGardenScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Joined: $dateJoinedStr',
+                            '${l.joinedLabel}: $dateJoinedStr',
                             style: TextStyle(
                               color: sepiaMuted,
                               fontSize: 12,
                             ),
                           ),
                           Text(
-                            'Passed: $datePassedStr',
+                            '${l.passedLabel}: $datePassedStr',
                             style: TextStyle(
                               color: sepiaMuted,
                               fontSize: 12,

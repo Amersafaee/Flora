@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 import '../models/task_model.dart';
@@ -17,16 +18,16 @@ class AddTaskScreen extends StatefulWidget {
 class _AddTaskScreenState extends State<AddTaskScreen> {
   late TextEditingController _plantNameController;
   late TextEditingController _notesController;
-  
+
   String? _selectedTaskType;
   DateTime _selectedDate = DateTime.now();
   String _repeatType = 'none';
-  
+
   bool _isLoading = false;
   bool _showNameError = false;
   bool _showTypeError = false;
   String _selectedPlantId = '';
-  
+
   final FirestoreService _firestoreService = FirestoreService();
 
   @override
@@ -34,13 +35,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     super.initState();
     _plantNameController = TextEditingController(text: widget.task?.plantName ?? '');
     _notesController = TextEditingController(text: widget.task?.notes ?? '');
-    
+
     if (widget.task != null) {
       _selectedPlantId = widget.task!.plantId;
       _selectedTaskType = widget.task!.taskType;
       _selectedDate = widget.task!.dueDate;
       _repeatType = widget.task!.repeatType;
-
     }
   }
 
@@ -52,24 +52,36 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   void _saveTask() async {
+    final l = AppLocalizations.of(context);
     setState(() {
       _showNameError = _plantNameController.text.trim().isEmpty;
       _showTypeError = _selectedTaskType == null;
     });
-    
+
     if (_showNameError || _showTypeError) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
-      final taskId = widget.task?.id ?? FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).collection('tasks').doc().id;
+      final taskId = widget.task?.id ??
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(FirebaseAuth.instance.currentUser?.uid)
+              .collection('tasks')
+              .doc()
+              .id;
 
       String lookedUpPlantId = _selectedPlantId;
       if (lookedUpPlantId.isEmpty && _plantNameController.text.trim().isNotEmpty) {
         final uid = _firestoreService.currentUserId;
         if (uid != null) {
-          final query = await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants')
-              .where('name', isEqualTo: _plantNameController.text.trim()).limit(1).get();
+          final query = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .collection('plants')
+              .where('name', isEqualTo: _plantNameController.text.trim())
+              .limit(1)
+              .get();
           if (query.docs.isNotEmpty) {
             lookedUpPlantId = query.docs.first.id;
             _selectedPlantId = lookedUpPlantId;
@@ -88,24 +100,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         repeatType: _repeatType,
         repeatDays: 0,
       );
-      
+
       if (widget.task != null) {
         await _firestoreService.updateTask(task);
       } else {
         await _firestoreService.addTask(task);
       }
-      
-      await NotificationService().scheduleTaskNotification(
-        taskId,
-        task.plantName,
-        task.taskType,
-        task.dueDate,
-      );
-      
+
+      await NotificationService().scheduleTaskNotification(taskId, task.plantName, task.taskType, task.dueDate);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.task != null ? 'Task updated successfully' : 'Task added successfully'),
+            content: Text(widget.task != null ? l.taskUpdatedSuccessfully : l.taskAddedSuccessfully),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -115,8 +122,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).somethingWentWrong),
             backgroundColor: AppColors.bone500,
             behavior: SnackBarBehavior.floating,
           ),
@@ -137,19 +144,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       lastDate: DateTime(2101),
     );
     if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
+      setState(() => _selectedDate = picked);
     }
   }
 
   String _formatDate(DateTime date) {
-    
-    return '//';
+    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
 
@@ -171,12 +176,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   Expanded(
                     child: Center(
                       child: Text(
-                        widget.task != null ? 'Edit Task' : 'Add Task',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                        widget.task != null ? l.editTask : l.addTask,
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ),
                   ),
@@ -184,14 +185,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ],
               ),
               const SizedBox(height: 32),
-              
-              Text('Plant Name', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+
+              Text(l.plantNameLabel, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               TextField(
                 controller: _plantNameController,
                 decoration: InputDecoration(
-                  hintText: 'e.g. Monstera Deliciosa',
-                  hintStyle: TextStyle(color: AppColors.bone300),
+                  hintText: l.plantNameHint,
+                  hintStyle: const TextStyle(color: AppColors.bone300),
                   filled: true,
                   fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -201,72 +202,76 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ),
               ),
               if (_showNameError)
-                const Padding(padding: EdgeInsets.only(top: 6, left: 4), child: Text('Plant name is required.', style: TextStyle(color: Colors.red, fontSize: 12))),
+                Padding(padding: const EdgeInsets.only(top: 6, left: 4), child: Text(l.plantNameRequired, style: const TextStyle(color: Colors.red, fontSize: 12))),
               const SizedBox(height: 24),
-              
-              Text('Task Type', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+
+              Text(l.taskType, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  _buildTaskTypeChip('Watering'),
+                  _buildTaskTypeChip(l.watering, 'Watering'),
                   const SizedBox(width: 12),
-                  _buildTaskTypeChip('Fertilizing'),
+                  _buildTaskTypeChip(l.fertilizing, 'Fertilizing'),
                   const SizedBox(width: 12),
-                  _buildTaskTypeChip('Repotting'),
+                  _buildTaskTypeChip(l.repotting, 'Repotting'),
                 ],
               ),
               if (_showTypeError)
-                const Padding(padding: EdgeInsets.only(top: 6, left: 4), child: Text('Please select a task type.', style: TextStyle(color: Colors.red, fontSize: 12))),
+                Padding(padding: const EdgeInsets.only(top: 6, left: 4), child: Text(l.pleaseSelectTaskType, style: const TextStyle(color: Colors.red, fontSize: 12))),
               const SizedBox(height: 24),
-              
-              Text('Due Date', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+
+              Text(l.dueDate, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: () => _selectDate(context),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(_formatDate(_selectedDate), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
-                      Icon(Icons.calendar_today, color: AppColors.bone500, size: 20),
+                      const Icon(Icons.calendar_today, color: AppColors.bone500, size: 20),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-              
-              Text('Repeat', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+
+              Text(l.repeat, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildRepeatTypeChip('Does Not Repeat', 'none'),
+                    _buildRepeatTypeChip(l.doesNotRepeat, 'none'),
                     const SizedBox(width: 8),
-                    _buildRepeatTypeChip('Daily', 'daily'),
+                    _buildRepeatTypeChip(l.daily, 'daily'),
                     const SizedBox(width: 8),
-                    _buildRepeatTypeChip('Every 2 days', 'every2days'),
+                    _buildRepeatTypeChip(l.everyTwoDays, 'every2days'),
                     const SizedBox(width: 8),
-                    _buildRepeatTypeChip('Weekly', 'weekly'),
+                    _buildRepeatTypeChip(l.weekly, 'weekly'),
                     const SizedBox(width: 8),
-                    _buildRepeatTypeChip('Every 2 weeks', 'biweekly'),
+                    _buildRepeatTypeChip(l.everyTwoWeeks, 'biweekly'),
                     const SizedBox(width: 8),
-                    _buildRepeatTypeChip('Monthly', 'monthly'),
+                    _buildRepeatTypeChip(l.monthly, 'monthly'),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              
-              Text('Notes', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+
+              Text(l.notesLabel, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               TextField(
                 controller: _notesController,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText: 'Any additional notes...',
-                  hintStyle: TextStyle(color: AppColors.bone300),
+                  hintText: l.notesHint,
+                  hintStyle: const TextStyle(color: AppColors.bone300),
                   filled: true,
                   fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -276,7 +281,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ),
               ),
               const SizedBox(height: 48),
-              
+
               SizedBox(
                 height: 54,
                 child: ElevatedButton(
@@ -289,7 +294,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   child: _isLoading
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : Text(
-                          widget.task != null ? 'Update Task' : 'Save Task',
+                          widget.task != null ? l.updateTask : l.saveTask,
                           style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                 ),
@@ -302,15 +307,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
   }
 
-  Widget _buildTaskTypeChip(String label) {
-    final bool isSelected = _selectedTaskType == label;
+  Widget _buildTaskTypeChip(String label, String value) {
+    final bool isSelected = _selectedTaskType == value;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTaskType = label;
-          _showTypeError = false;
-        });
-      },
+      onTap: () => setState(() {
+        _selectedTaskType = value;
+        _showTypeError = false;
+      }),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
@@ -318,22 +321,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
         ),
-        child: Text(
-          label,
-          style: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 14),
-        ),
+        child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 14)),
       ),
     );
   }
-  
+
   Widget _buildRepeatTypeChip(String label, String value) {
     final bool isSelected = _repeatType == value;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _repeatType = value;
-        });
-      },
+      onTap: () => setState(() => _repeatType = value),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -341,20 +337,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
         ),
-        child: Text(
-          label,
-          style: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 13),
-        ),
+        child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
       ),
     );
   }
 }
-
-
-
-
-
-
-
-
-

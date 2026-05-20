@@ -286,13 +286,17 @@ class MockGeminiService extends _i1.Mock implements _i6.GeminiService {
           as _i5.Future<String>);
 
   @override
-  _i5.Future<String> analyzeePlantImage(_i8.File? image, [String? question]) =>
+  _i5.Future<String> analyzeePlantImage(
+    _i8.File? image, [
+    String? question,
+    String? languageCode = 'en',
+  ]) =>
       (super.noSuchMethod(
-            Invocation.method(#analyzeePlantImage, [image, question]),
+            Invocation.method(#analyzeePlantImage, [image, question, languageCode]),
             returnValue: _i5.Future<String>.value(
               _i7.dummyValue<String>(
                 this,
-                Invocation.method(#analyzeePlantImage, [image, question]),
+                Invocation.method(#analyzeePlantImage, [image, question, languageCode]),
               ),
             ),
           )

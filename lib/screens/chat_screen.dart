@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -61,8 +62,7 @@ class _ChatScreenState extends State<ChatScreen> {
         .doc(conversationId)
         .collection('messages')
         .add(message);
-        
-    // Scroll to bottom after sending
+
     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
   }
 
@@ -75,6 +75,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
@@ -99,11 +100,7 @@ class _ChatScreenState extends State<ChatScreen> {
             const SizedBox(width: 8),
             Text(
               widget.otherUserName,
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ],
         ),
@@ -129,32 +126,23 @@ class _ChatScreenState extends State<ChatScreen> {
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
-                    return const Center(
-                      child: Text(
-                        'Could not load messages.',
-                        style: TextStyle(color: AppColors.bone500),
-                      ),
+                    return Center(
+                      child: Text(l.couldNotLoadMessages, style: const TextStyle(color: AppColors.bone500)),
                     );
                   }
 
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
+                    return const Center(child: CircularProgressIndicator());
                   }
 
                   final docs = snapshot.data?.docs ?? [];
 
                   if (docs.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Say hello and start the conversation.',
-                        style: TextStyle(color: AppColors.bone500),
-                      ),
+                    return Center(
+                      child: Text(l.sayHelloStartConversation, style: const TextStyle(color: AppColors.bone500)),
                     );
                   }
 
-                  // Auto-scroll to bottom when new messages arrive and we are near the bottom
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (_scrollController.hasClients) {
                       _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
@@ -172,7 +160,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       final timestamp = data['timestamp'] as Timestamp?;
                       final timeString = timestamp != null
                           ? DateFormat('h:mm a').format(timestamp.toDate())
-                          : 'Sending...';
+                          : l.sending;
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16.0),
@@ -181,33 +169,18 @@ class _ChatScreenState extends State<ChatScreen> {
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width * 0.75,
-                              ),
+                              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
                               decoration: BoxDecoration(
                                 color: isMe ? primaryColor : Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(20).copyWith(
+                                borderRadius: BorderRadius.circular(20).copyWith(
                                   bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
                                   bottomLeft: !isMe ? const Radius.circular(4) : const Radius.circular(20),
                                 ),
                               ),
-                              child: Text(
-                                text,
-                                style: TextStyle(
-                                  color: isMe ? Colors.white : textColor,
-                                  fontSize: 15,
-                                  height: 1.3,
-                                ),
-                              ),
+                              child: Text(text, style: TextStyle(color: isMe ? Colors.white : textColor, fontSize: 15, height: 1.3)),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              timeString,
-                              style: const TextStyle(
-                                color: AppColors.bone500,
-                                fontSize: 10,
-                              ),
-                            ),
+                            Text(timeString, style: const TextStyle(color: AppColors.bone500, fontSize: 10)),
                           ],
                         ),
                       );
@@ -216,7 +189,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 },
               ),
             ),
-            
+
             // Input Area
             Container(
               padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 12),
@@ -235,8 +208,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => _sendMessage(),
                         decoration: InputDecoration(
-                          hintText: 'Type a message...',
-                          hintStyle: TextStyle(color: AppColors.bone300, fontSize: 15),
+                          hintText: l.typeMessageHint,
+                          hintStyle: const TextStyle(color: AppColors.bone300, fontSize: 15),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                         ),
@@ -249,15 +222,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     onTap: _sendMessage,
                     child: Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: primaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.send,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                      decoration: BoxDecoration(color: primaryColor, shape: BoxShape.circle),
+                      child: const Icon(Icons.send, color: Colors.white, size: 20),
                     ),
                   ),
                 ],
@@ -269,6 +235,3 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
-
-
-

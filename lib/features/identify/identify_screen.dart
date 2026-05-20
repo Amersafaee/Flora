@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/gemini_service.dart';
 import '../../screens/identify_result_screen.dart';
@@ -86,6 +87,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
   }
 
   Future<void> _captureOrPick({required bool fromGallery}) async {
+    final l10n = AppLocalizations.of(context);
     XFile? file;
     if (fromGallery) {
       file = await _picker.pickImage(source: ImageSource.gallery);
@@ -94,7 +96,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
       try {
         file = await _controller!.takePicture();
       } catch (e) {
-        _showError('Failed to capture photo');
+        _showError(l10n.failedToCapturePhoto);
         return;
       }
     }
@@ -127,7 +129,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showError('Failed to identify: $e');
+      _showError(AppLocalizations.of(context).failedToIdentifyPrefix(e.toString()));
     }
   }
 
@@ -150,7 +152,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
           child: Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.leafGreen,
               shape: BoxShape.circle,
             ),
@@ -162,6 +164,8 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     if (_controller == null || !_controller!.value.isInitialized) {
       return Container(
         color: AppColors.darkBackground,
@@ -171,11 +175,11 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
             children: [
               const Icon(Icons.camera_alt, color: Colors.white54, size: 48),
               const SizedBox(height: 16),
-              const Text('Camera access is required', style: TextStyle(color: Colors.white)),
+              Text(l10n.cameraAccessRequired, style: const TextStyle(color: Colors.white)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _initCamera,
-                child: const Text('Grant Access'),
+                child: Text(l10n.grantAccess),
               )
             ],
           ),
@@ -227,7 +231,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -242,12 +246,12 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _ModeToggle(
-                        title: 'ID Species',
+                        title: l10n.idSpeciesMode,
                         isActive: _mode == 'species',
                         onTap: () => setState(() => _mode = 'species'),
                       ),
                       _ModeToggle(
-                        title: 'Detect Disease',
+                        title: l10n.detectDiseaseMode,
                         isActive: _mode == 'disease',
                         onTap: () => setState(() => _mode = 'disease'),
                       ),
@@ -266,7 +270,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
                       backgroundColor: AppColors.forestGreen,
                       shape: RoundedRectangleBorder(borderRadius: AppRadius.borderPill),
                     ),
-                    child: const Text('Capture & Identify', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: Text(l10n.captureAndIdentify, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -274,9 +278,9 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
                 // Gallery Link
                 GestureDetector(
                   onTap: () => _captureOrPick(fromGallery: true),
-                  child: const Text(
-                    'or pick from gallery',
-                    style: TextStyle(color: AppColors.moss, decoration: TextDecoration.underline),
+                  child: Text(
+                    l10n.orPickFromGallery,
+                    style: const TextStyle(color: AppColors.moss, decoration: TextDecoration.underline),
                   ),
                 ),
               ],
@@ -310,9 +314,9 @@ class _IdentifyScreenState extends State<IdentifyScreen> with SingleTickerProvid
                         ],
                       ),
                       const SizedBox(height: 24),
-                      const Text(
-                        'Analyzing your plant...',
-                        style: TextStyle(
+                      Text(
+                        l10n.analyzingYourPlant,
+                        style: const TextStyle(
                           color: AppColors.forestGreen,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -381,4 +385,3 @@ class _BracketPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-

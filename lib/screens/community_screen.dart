@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'profile_screen.dart';
 import 'create_post_screen.dart';
 import 'post_comments_screen.dart';
@@ -56,13 +57,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => const OnboardingOverlayScreen(
-          title: 'Welcome to Community',
-          description: 'Connect with other plant lovers and experts.',
+        builder: (ctx) => OnboardingOverlayScreen(
+          title: AppLocalizations.of(ctx).welcomeToCommunity,
+          description: AppLocalizations.of(ctx).communityOnboardingDesc,
           tips: [
-            'Share your plant progress and tips',
-            'Ask for help with sick plants',
-            'Join weekly growing challenges',
+            AppLocalizations.of(ctx).communityTip1,
+            AppLocalizations.of(ctx).communityTip2,
+            AppLocalizations.of(ctx).communityTip3,
           ],
           featureKey: 'community_screen',
         ),
@@ -175,7 +176,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Community',
+                      AppLocalizations.of(context).community,
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -206,7 +207,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     });
                   },
                   decoration: InputDecoration(
-                    hintText: 'Search discussions...',
+                    hintText: AppLocalizations.of(context).searchDiscussions,
                     hintStyle: TextStyle(color: AppColors.bone300),
                     prefixIcon: Icon(Icons.search, color: AppColors.bone300),
                     filled: true,
@@ -226,7 +227,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 child: Row(
                   children: [
                     ChoiceChip(
-                      label: Text('For My Garden'),
+                      label: Text(AppLocalizations.of(context).forMyGarden),
                       selected: _feedMode == 'mine',
                       onSelected: (selected) {
                         if (selected) setState(() => _feedMode = 'mine');
@@ -241,7 +242,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     ),
                     const SizedBox(width: 8),
                     ChoiceChip(
-                      label: Text('All Posts'),
+                      label: Text(AppLocalizations.of(context).allPosts),
                       selected: _feedMode == 'all',
                       onSelected: (selected) {
                         if (selected) setState(() => _feedMode = 'all');
@@ -324,7 +325,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                 ),
                               ),
                               Text(
-                                '$daysLeft days left',
+                                AppLocalizations.of(context).daysLeft(daysLeft),
                                 style: const TextStyle(color: Colors.white, fontSize: 12),
                               ),
                             ],
@@ -346,7 +347,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                 foregroundColor: AppColors.forest900,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
-                              child: const Text('Join Challenge', style: TextStyle(fontWeight: FontWeight.bold)),
+                              child: Text(AppLocalizations.of(context).joinChallenge, style: const TextStyle(fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],
@@ -390,7 +391,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Plant Swap Market',
+                                AppLocalizations.of(context).plantSwapMarket,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -399,7 +400,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Trade cuttings and seeds locally',
+                                AppLocalizations.of(context).tradeCuttingsLocally,
                                 style: TextStyle(
                                   color: AppColors.bone500,
                                   fontSize: 13,
@@ -427,7 +428,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return const Center(child: Text('Failed to load posts', style: TextStyle(color: AppColors.bone500)));
+                      return Center(child: Text(AppLocalizations.of(context).failedToLoadPosts, style: const TextStyle(color: AppColors.bone500)));
                     }
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: Padding(padding: EdgeInsets.all(40.0), child: CircularProgressIndicator()));
@@ -469,7 +470,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             Icon(Icons.people, size: 60, color: AppColors.forest900),
                             const SizedBox(height: 20),
                             Text(
-                              'Be the first to share',
+                              AppLocalizations.of(context).beTheFirstToShare,
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -477,10 +478,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            const Text(
-                              'The community is waiting for your plant story. Share a tip, ask a question, or show off your collection.',
+                            Text(
+                              AppLocalizations.of(context).communityWaiting,
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: AppColors.bone500, fontSize: 14),
+                              style: const TextStyle(color: AppColors.bone500, fontSize: 14),
                             ),
                             const SizedBox(height: 24),
                             ElevatedButton(
@@ -492,7 +493,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
-                              child: const Text('Start a Discussion', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              child: Text(AppLocalizations.of(context).startADiscussion, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -508,7 +509,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             children: [
                               const Icon(Icons.eco_outlined, size: 60, color: AppColors.forest900),
                               const SizedBox(height: 20),
-                              const Text('No community posts about your plants yet. Be the first to share! 🌿', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: AppColors.bone500)),
+                              Text(AppLocalizations.of(context).noCommunityPostsYet, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, color: AppColors.bone500)),
                               const SizedBox(height: 24),
                               ElevatedButton(
                                 onPressed: () {
@@ -519,16 +520,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
-                                child: const Text('Create Post', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                child: Text(AppLocalizations.of(context).createPost, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                               ),
                             ],
                           ),
                         );
                       }
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(40.0),
-                          child: Text('No posts found for your search.', style: TextStyle(color: AppColors.bone500)),
+                          padding: const EdgeInsets.all(40.0),
+                          child: Text(AppLocalizations.of(context).noPostsFoundForSearch, style: const TextStyle(color: AppColors.bone500)),
                         ),
                       );
                     }
@@ -681,14 +682,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         children: [
                           ListTile(
                             leading: const Icon(Icons.flag_outlined),
-                            title: const Text('Report Post'),
+                            title: Text(AppLocalizations.of(context).reportPost),
                             onTap: () {
                               Navigator.pop(context);
                               // FIX 9: Prevent self-reporting
                               if (currentUserId != null && currentUserId == authorUid) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('You cannot report your own post'),
+                                  SnackBar(
+                                    content: Text(AppLocalizations.of(context).cannotReportOwnPost),
                                     backgroundColor: AppColors.bone500,
                                     behavior: SnackBarBehavior.floating,
                                   ),
@@ -702,9 +703,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Padding(
-                                        padding: EdgeInsets.all(16.0),
-                                        child: Text('Report this post', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                      Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Text(AppLocalizations.of(context).reportThisPost, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                       ),
                                       ...['Spam', 'Misinformation', 'Inappropriate content', 'Off topic', 'Other'].map((reason) => ListTile(
                                         title: Text(reason),
@@ -721,8 +722,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                           await _saveReportedPost(postDoc.id);
                                           if (context.mounted) {
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Post hidden. Thank you for keeping the community safe.'),
+                                              SnackBar(
+                                                content: Text(AppLocalizations.of(context).postHiddenThankYou),
                                                 backgroundColor: Colors.green,
                                                 behavior: SnackBarBehavior.floating,
                                               ),
@@ -739,28 +740,28 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           if (currentUserId == authorUid)
                             ListTile(
                               leading: const Icon(Icons.delete_outline, color: AppColors.terracotta900),
-                              title: const Text('Delete Post', style: TextStyle(color: AppColors.terracotta900)),
+                              title: Text(AppLocalizations.of(context).deletePost, style: const TextStyle(color: AppColors.terracotta900)),
                               onTap: () {
                                 Navigator.pop(context);
                                 showDialog(
                                   context: context,
                                   builder: (context) => AlertDialog(
-                                    title: const Text('Delete Post'),
-                                    content: const Text('Are you sure you want to delete this post?'),
+                                    title: Text(AppLocalizations.of(context).deletePost),
+                                    content: Text(AppLocalizations.of(context).deletePostConfirm),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(context),
-                                        child: const Text('Cancel'),
+                                        child: Text(AppLocalizations.of(context).cancel),
                                       ),
                                       TextButton(
                                         onPressed: () async {
                                           await FirebaseFirestore.instance.collection('posts').doc(postDoc.id).delete();
                                           if (context.mounted) {
                                             Navigator.pop(context);
-                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post deleted'), backgroundColor: Colors.green));
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).postDeleted), backgroundColor: Colors.green));
                                           }
                                         },
-                                        child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                        child: Text(AppLocalizations.of(context).delete, style: const TextStyle(color: Colors.red)),
                                       ),
                                     ],
                                   ),
@@ -805,7 +806,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     const Text('🌿', style: TextStyle(fontSize: 12)),
                     const SizedBox(width: 4),
                     Text(
-                      'You grow this',
+                      AppLocalizations.of(context).youGrowThis,
                       style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                   ],
@@ -936,7 +937,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 icon: Icon(Icons.share_outlined, color: AppColors.bone500, size: 20),
                 onPressed: () {
                   // ignore: deprecated_member_use
-                  Share.share("Check out this plant discussion on Digital Conservatory: $title");
+                  Share.share(AppLocalizations.of(context).sharePostPrefix + title);
                 },
               ),
             ],

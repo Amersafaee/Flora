@@ -1,6 +1,7 @@
 import '../services/badges_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'care_screen.dart';
 import 'community_screen.dart';
 
@@ -100,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             Icon(Icons.wb_cloudy_outlined, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 12),
-            Text('Loading weather...', style: Theme.of(context).textTheme.bodyMedium),
+            Text(AppLocalizations.of(context).loadingWeather, style: Theme.of(context).textTheme.bodyMedium),
           ],
         ),
       );
@@ -128,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  weather.cityName.isNotEmpty ? weather.cityName : 'Current Location',
+                  weather.cityName.isNotEmpty ? weather.cityName : AppLocalizations.of(context).currentLocation,
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
                 Text(
@@ -254,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     child: buildUserAvatar(radius: 18),
                     ),
                     Text(
-                      'Digital Conservatory',
+                      AppLocalizations.of(context).digitalConservatory,
                       style: TextStyle(
                         color: AppColors.forest900,
                         fontWeight: FontWeight.bold,
@@ -284,9 +285,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     }
                   }
 
+                  final l10n = AppLocalizations.of(context);
                   final greeting = () {
                     final hour = DateTime.now().hour;
-                    final timeStr = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+                    final timeStr = hour < 12 ? l10n.goodMorning : hour < 17 ? l10n.goodAfternoon : l10n.goodEvening;
                     return name.isNotEmpty ? '$timeStr, $name' : timeStr;
                   }();
 
@@ -387,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        '💧 ${overdueWatering.plantName} is thirsty — watering overdue by $daysOverdue days',
+                                        AppLocalizations.of(context).thirstyOverdueByDays(overdueWatering.plantName, daysOverdue),
                                         style: TextStyle(color: Colors.blue.shade900, fontWeight: FontWeight.w600, fontSize: 14),
                                       ),
                                     ),
@@ -412,7 +414,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        '🚨 ${urgentPlant.name} needs urgent attention',
+                                        AppLocalizations.of(context).needsUrgentAttention(urgentPlant.name),
                                         style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.w600, fontSize: 14),
                                       ),
                                     ),
@@ -437,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        '📋 You have $tasksToday care task${tasksToday == 1 ? '' : 's'} today',
+                                        AppLocalizations.of(context).careTasksToday(tasksToday),
                                         style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 14),
                                       ),
                                     ),
@@ -463,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        '🌱 Add your first plant to get started',
+                                        AppLocalizations.of(context).addFirstPlantToGetStarted,
                                         style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 14),
                                       ),
                                     ),
@@ -489,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        '🌿 All ${plants.length} plant${plants.length == 1 ? '' : 's'} are thriving today',
+                                        AppLocalizations.of(context).allPlantsThrivingToday(plants.length),
                                         style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 14),
                                       ),
                                     ),
@@ -523,14 +525,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            '$careStreak day care streak',
+                                            '$careStreak ${AppLocalizations.of(context).dayCareStreak}',
                                             style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.terracotta900, fontWeight: FontWeight.bold, fontSize: 18),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            careStreak == 0 
-                                              ? 'Start your streak — complete a care task today'
-                                              : (tasksToday > 0 ? 'Keep it going — you have tasks today' : 'Perfect — nothing due today'),
+                                            careStreak == 0
+                                              ? AppLocalizations.of(context).completeACareTaskToday
+                                              : (tasksToday > 0 ? AppLocalizations.of(context).keepItGoingTasksToday : AppLocalizations.of(context).perfectNothingDueToday),
                                             style: TextStyle(color: isDark ? AppColors.darkTerracotta : AppColors.terracotta700, fontSize: 13),
                                           ),
                                         ],
@@ -557,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Daily Care',
+                    AppLocalizations.of(context).dailyCare,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -565,8 +567,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   Text(
-                    'VIEW ALL',
-                    style: TextStyle(
+                    AppLocalizations.of(context).viewAll,
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: AppColors.bone500,
@@ -622,12 +624,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   });
 
                   if (tasks.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
+                        padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Text(
-                          'No tasks for today.',
-                          style: TextStyle(color: AppColors.bone500),
+                          AppLocalizations.of(context).noTasksForToday,
+                          style: const TextStyle(color: AppColors.bone500),
                         ),
                       ),
                     );
@@ -703,12 +705,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     if (isOverdue) ...[
                                       const SizedBox(height: 4),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
                                           color: AppColors.terracotta900,
                                           borderRadius: BorderRadius.circular(4),
                                         ),
-                                        child: const Text('Overdue', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                        child: Text(AppLocalizations.of(context).overdue, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                                       ),
                                     ],
                                   ],
@@ -749,7 +751,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           return const ShimmerBox(width: double.infinity, height: 60, borderRadius: 12);
                         }
                         final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                        return _buildCompactStatCard(context, 'Tasks Done', '$count', Icons.check_circle_outline, Colors.green);
+                        return _buildCompactStatCard(context, AppLocalizations.of(context).tasksCompleted, '$count', Icons.check_circle_outline, Colors.green);
                       },
                     ),
                   ),
@@ -763,7 +765,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         }
                         final plants = snapshot.data?.where((p) => p['isDeceased'] != true).toList() ?? [];
                         final count = plants.length;
-                        return _buildCompactStatCard(context, 'Plants', '$count', Icons.energy_savings_leaf, primaryColor);
+                        return _buildCompactStatCard(context, AppLocalizations.of(context).plantsLabel, '$count', Icons.energy_savings_leaf, primaryColor);
                       },
                     ),
                   ),
@@ -780,13 +782,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         if (assessed.isEmpty) {
                           return GestureDetector(
                             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen())),
-                            child: _buildCompactStatCard(context, 'Assess a plant', '', Icons.camera_alt, AppColors.bone500),
+                            child: _buildCompactStatCard(context, AppLocalizations.of(context).assessAPlant, '', Icons.camera_alt, AppColors.bone500),
                           );
                         }
                         int sum = 0;
                         for (var p in assessed) { sum += (p['healthScore'] as num?)?.toInt() ?? 100; }
                         final avgHealth = assessed.isNotEmpty ? (sum / assessed.length).round() : 0;
-                        return _buildCompactStatCard(context, 'Avg Health', '$avgHealth', Icons.favorite, Colors.red);
+                        return _buildCompactStatCard(context, AppLocalizations.of(context).avgHealth, '$avgHealth', Icons.favorite, Colors.red);
                       },
                     ),
                   ),
@@ -797,16 +799,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildQuickAction(context, Icons.camera_alt_outlined, 'Identify 📷', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()))),
-                  _buildQuickAction(context, Icons.calendar_today_outlined, 'Care 🗓️', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareScreen()))),
-                  _buildQuickAction(context, Icons.people_outline, 'Community 🌱', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()))),
+                  _buildQuickAction(context, Icons.camera_alt_outlined, AppLocalizations.of(context).identifyEmoji, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()))),
+                  _buildQuickAction(context, Icons.calendar_today_outlined, AppLocalizations.of(context).careEmoji, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareScreen()))),
+                  _buildQuickAction(context, Icons.people_outline, AppLocalizations.of(context).communityEmoji, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()))),
                 ],
               ),
               const SizedBox(height: 16),
               
               // My Plants Section
               Text(
-                'My Plants',
+                AppLocalizations.of(context).myPlants,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -861,7 +863,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                             const SizedBox(height: 24),
                             Text(
-                              'Your conservatory is empty',
+                              AppLocalizations.of(context).yourConservatoryIsEmpty,
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -869,10 +871,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            const Text(
-                              'Add your first plant and Flora will build a personalised care plan for it automatically',
+                            Text(
+                              AppLocalizations.of(context).addFirstPlantDescription,
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: AppColors.bone500, fontSize: 14),
+                              style: const TextStyle(color: AppColors.bone500, fontSize: 14),
                             ),
                             const SizedBox(height: 24),
                             SizedBox(
@@ -886,7 +888,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   backgroundColor: AppColors.forest900,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
-                                child: const Text('Add Your First Plant 🌱', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                child: Text(AppLocalizations.of(context).addYourFirstPlantEmoji, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -894,7 +896,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               onPressed: () {
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()));
                               },
-                              child: const Text('Or identify a plant with your camera', style: TextStyle(color: AppColors.forest900)),
+                              child: Text(AppLocalizations.of(context).orIdentifyWithCamera, style: const TextStyle(color: AppColors.forest900)),
                             ),
                           ],
                         ),
@@ -1001,7 +1003,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Text(
-                                            plant.category.isEmpty ? 'Plant' : plant.category,
+                                            plant.category.isEmpty ? AppLocalizations.of(context).plantFallbackCategory : plant.category,
                                             style: const TextStyle(
                                               color: AppColors.forest900,
                                               fontSize: 11,
@@ -1028,7 +1030,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               // ── From the Community ──────────────────────────────────────
               Text(
-                'From the Community',
+                AppLocalizations.of(context).fromTheCommunity,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -1050,7 +1052,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   if (docs.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text('No community posts yet.',
+                      child: Text(AppLocalizations.of(context).noCommunityPostsYet,
                           style: TextStyle(color: AppColors.bone500)),
                     );
                   }
@@ -1131,7 +1133,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               // ── Learn Something New ─────────────────────────────────────
               Text(
-                'Learn Something New',
+                AppLocalizations.of(context).learnSomethingNew,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -1153,7 +1155,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   if (docs.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text('Plant guides loading…',
+                      child: Text(AppLocalizations.of(context).plantGuidesLoading,
                           style: TextStyle(color: AppColors.bone500)),
                     );
                   }

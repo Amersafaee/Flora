@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -12,7 +13,6 @@ class CreateListingScreen extends StatefulWidget {
   final String? initialType;
   final int? initialHealthScore;
   final String? initialPlantId;
-  /// Existing image URL — populated when editing an existing listing.
   final String? initialImageUrl;
 
   const CreateListingScreen({
@@ -37,10 +37,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
   String _selectedType = 'Cutting';
   bool _isLoading = false;
-
-  /// Newly picked image file (not yet uploaded).
   File? _imageFile;
-  /// Existing network image URL (from edit mode or after upload).
   String _existingImageUrl = '';
 
   final List<String> _types = ['Cutting', 'Free Seeds', 'Whole Plant', 'Adoption'];
@@ -71,47 +68,37 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     if (picked != null) {
       setState(() {
         _imageFile = File(picked.path);
-        _existingImageUrl = ''; // clear network URL when a new file is picked
+        _existingImageUrl = '';
       });
     }
   }
 
   void _showImagePickerSheet() {
+    final l = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from Gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
+              title: Text(l.chooseFromGallery),
+              onTap: () { Navigator.pop(context); _pickImage(ImageSource.gallery); },
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Take a Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
+              title: Text(l.takeAPhoto),
+              onTap: () { Navigator.pop(context); _pickImage(ImageSource.camera); },
             ),
             if (_imageFile != null || _existingImageUrl.isNotEmpty)
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                title: Text(l.removePhoto, style: const TextStyle(color: Colors.red)),
                 onTap: () {
                   Navigator.pop(context);
-                  setState(() {
-                    _imageFile = null;
-                    _existingImageUrl = '';
-                  });
+                  setState(() { _imageFile = null; _existingImageUrl = ''; });
                 },
               ),
           ],
@@ -122,31 +109,28 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
   Future<String> _uploadImageIfNeeded(String userId) async {
     if (_imageFile == null) return _existingImageUrl;
-
     final ext = _imageFile!.path.split('.').last;
     final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
-    final ref = FirebaseStorage.instance
-        .ref()
-        .child('swap_listings/$userId/$fileName');
+    final ref = FirebaseStorage.instance.ref().child('swap_listings/$userId/$fileName');
     await ref.putFile(_imageFile!);
     return await ref.getDownloadURL();
   }
 
   void _saveListing() async {
+    final l = AppLocalizations.of(context);
     final title = _titleController.text.trim();
     final description = _descriptionController.text.trim();
     final location = _locationController.text.trim();
 
     if (title.isEmpty || description.isEmpty || location.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title, description, and location are required.'), backgroundColor: Colors.red),
+        SnackBar(content: Text(l.titleDescLocationRequired), backgroundColor: Colors.red),
       );
       return;
     }
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-
     setState(() => _isLoading = true);
 
     try {
@@ -156,13 +140,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
       if (plantId == null) {
         final plantsSnap = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('plants')
-            .where('name', isEqualTo: title)
-            .limit(1)
-            .get();
-
+            .collection('users').doc(user.uid).collection('plants')
+            .where('name', isEqualTo: title).limit(1).get();
         if (plantsSnap.docs.isNotEmpty) {
           final plantDoc = plantsSnap.docs.first;
           final plantData = plantDoc.data();
@@ -172,11 +151,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         }
       } else {
         final plantDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('plants')
-            .doc(plantId)
-            .get();
+            .collection('users').doc(user.uid).collection('plants').doc(plantId).get();
         if (plantDoc.exists) {
           final plantData = plantDoc.data()!;
           healthScore ??= plantData['healthScore'] as int?;
@@ -186,9 +161,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
       int? careStreak;
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      if (userDoc.exists) {
-        careStreak = userDoc.data()?['careStreak'] as int?;
-      }
+      if (userDoc.exists) careStreak = userDoc.data()?['careStreak'] as int?;
 
       final imageUrl = await _uploadImageIfNeeded(user.uid);
 
@@ -216,29 +189,28 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Listing created successfully!'), backgroundColor: Colors.green),
+          SnackBar(content: Text(l.listingCreatedSuccessfully), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save listing: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${l.failedToSaveListingPrefix}$e'), backgroundColor: Colors.red),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final hasImage = _imageFile != null || _existingImageUrl.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('List Your Plant', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l.listYourPlant, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         actions: [
@@ -246,7 +218,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               ? const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
               : TextButton(
                   onPressed: _saveListing,
-                  child: Text('Save', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Text(l.save, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
         ],
       ),
@@ -255,7 +227,6 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Image Picker ──────────────────────────────────────────────
             GestureDetector(
               onTap: _showImagePickerSheet,
               child: Container(
@@ -271,160 +242,94 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: _imageFile != null
-                      ? Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.file(_imageFile!, fit: BoxFit.cover),
-                            Positioned(
-                              bottom: 8,
-                              right: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.edit, color: Colors.white, size: 14),
-                                    SizedBox(width: 4),
-                                    Text('Change', style: TextStyle(color: Colors.white, fontSize: 12)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
+                      ? Stack(fit: StackFit.expand, children: [
+                          Image.file(_imageFile!, fit: BoxFit.cover),
+                          Positioned(
+                            bottom: 8, right: 8,
+                            child: _editChip(l.changeLabel),
+                          ),
+                        ])
                       : _existingImageUrl.isNotEmpty
-                          ? Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Image.network(
-                                  _existingImageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Center(
-                                    child: Icon(Icons.broken_image, size: 40, color: AppColors.bone500),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 8,
-                                  right: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.edit, color: Colors.white, size: 14),
-                                        SizedBox(width: 4),
-                                        Text('Change', style: TextStyle(color: Colors.white, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )
-                          : const Column(
+                          ? Stack(fit: StackFit.expand, children: [
+                              Image.network(_existingImageUrl, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image, size: 40, color: AppColors.bone500))),
+                              Positioned(bottom: 8, right: 8, child: _editChip(l.changeLabel)),
+                            ])
+                          : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.add_photo_alternate_outlined, size: 40, color: AppColors.forest900),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Add a photo',
-                                  style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.w500),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Tap to choose from gallery or camera',
-                                  style: TextStyle(color: AppColors.bone500, fontSize: 12),
-                                ),
+                                const Icon(Icons.add_photo_alternate_outlined, size: 40, color: AppColors.forest900),
+                                const SizedBox(height: 8),
+                                Text(l.addAPhoto, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.w500)),
+                                const SizedBox(height: 4),
+                                Text(l.tapToChoosePhoto, style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
                               ],
                             ),
                 ),
               ),
             ),
             const SizedBox(height: 24),
-
-            Text('Title', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            _label(l.titleLabel, context),
             const SizedBox(height: 8),
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                hintText: 'e.g. Monstera Albo cutting',
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
-              ),
-            ),
+            _field(_titleController, l.listingTitleHint, context),
             const SizedBox(height: 24),
-
-            Text('Type', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            _label(l.typeLabel, context),
             const SizedBox(height: 8),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 8, runSpacing: 8,
               children: _types.map((type) => ChoiceChip(
                 label: Text(type),
                 selected: _selectedType == type,
-                onSelected: (selected) {
-                  if (selected) setState(() => _selectedType = type);
-                },
+                onSelected: (selected) { if (selected) setState(() => _selectedType = type); },
                 selectedColor: Theme.of(context).primaryColor,
                 labelStyle: TextStyle(color: _selectedType == type ? Colors.white : Theme.of(context).colorScheme.onSurface),
               )).toList(),
             ),
             const SizedBox(height: 24),
-
-            Text('Description', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            _label(l.descriptionLabel, context),
             const SizedBox(height: 8),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: 'Describe your plant or cutting',
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
-              ),
-            ),
+            _field(_descriptionController, l.descriptionHint, context, maxLines: 4),
             const SizedBox(height: 24),
-
-            Text('Looking For', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            _label(l.lookingFor, context),
             const SizedBox(height: 8),
-            TextField(
-              controller: _lookingForController,
-              decoration: InputDecoration(
-                hintText: 'e.g. Rare Philodendrons or leave empty if free',
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
-              ),
-            ),
+            _field(_lookingForController, l.lookingForHint, context),
             const SizedBox(height: 24),
-
-            Text('Location', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            _label(l.locationLabel, context),
             const SizedBox(height: 8),
-            TextField(
-              controller: _locationController,
-              decoration: InputDecoration(
-                hintText: 'e.g. North London',
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
-              ),
-            ),
+            _field(_locationController, l.locationHint, context),
             const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
+
+  Widget _label(String text, BuildContext context) =>
+      Text(text, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface));
+
+  Widget _field(TextEditingController controller, String hint, BuildContext context, {int maxLines = 1}) =>
+      TextField(
+        controller: controller,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          hintText: hint,
+          filled: true,
+          fillColor: Theme.of(context).cardColor,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
+        ),
+      );
+
+  Widget _editChip(String label) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.edit, color: Colors.white, size: 14),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+      ],
+    ),
+  );
 }

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/calendar_service.dart';
 import 'add_task_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'global_search_screen.dart';
 import 'climate_screen.dart';
 import 'light_meter_screen.dart';
@@ -71,13 +72,13 @@ class _CareScreenState extends State<CareScreen> {
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => const OnboardingOverlayScreen(
-          title: 'Welcome to Care Calendar',
-          description: 'Manage all your plant care tasks in one place.',
+        builder: (ctx) => OnboardingOverlayScreen(
+          title: AppLocalizations.of(ctx).careCalendar,
+          description: AppLocalizations.of(ctx).monitoringEnvironment,
           tips: [
-            'View upcoming watering and fertilizing tasks',
-            'Track your care history',
-            'Complete weekly community challenges',
+            AppLocalizations.of(ctx).checkSoilBeforeWatering,
+            AppLocalizations.of(ctx).careHistory,
+            AppLocalizations.of(ctx).weeklyChallenge,
           ],
           featureKey: 'care_screen',
         ),
@@ -218,7 +219,7 @@ class _CareScreenState extends State<CareScreen> {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.calendar_month_outlined),
-                        tooltip: 'Sync to Calendar',
+                        tooltip: AppLocalizations.of(context).syncToCalendar,
                         onPressed: _syncToCalendar,
                       ),
                       IconButton(
@@ -236,9 +237,9 @@ class _CareScreenState extends State<CareScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Row(
                 children: [
-                  _buildTab('Upcoming', 0),
+                  _buildTab(AppLocalizations.of(context).upcoming, 0),
                   const SizedBox(width: 24),
-                  _buildTab('History', 1),
+                  _buildTab(AppLocalizations.of(context).historyTab, 1),
                 ],
               ),
             ),
@@ -313,7 +314,7 @@ class _CareScreenState extends State<CareScreen> {
                   final isToday = DateTime(selectedDay.year, selectedDay.month, selectedDay.day) ==
                       DateTime(today.year, today.month, today.day);
                   final label = isToday
-                      ? "Today's Tasks"
+                      ? AppLocalizations.of(context).todaysTasks
                       : DateFormat('EEEE\'s Tasks').format(selectedDay);
                   return Text(
                     label,
@@ -340,9 +341,9 @@ class _CareScreenState extends State<CareScreen> {
                               );
                             }
                             if (snapshot.hasError) {
-                              return const Padding(
-                                padding: EdgeInsets.all(20.0),
-                                child: Center(child: Text('Something went wrong', style: TextStyle(color: AppColors.bone500, fontSize: 12))),
+                              return Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: Center(child: Text(AppLocalizations.of(context).somethingWentWrong, style: const TextStyle(color: AppColors.bone500, fontSize: 12))),
                               );
                             }
                             final tasks = snapshot.data ?? [];
@@ -411,7 +412,7 @@ class _CareScreenState extends State<CareScreen> {
                                                     const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
                                                     const SizedBox(width: 8),
                                                     Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
-                                                    Text('$completedCount tasks done this week', style: TextStyle(color: AppColors.bone500, fontSize: 12)),
+                                                    Text(AppLocalizations.of(context).tasksDoneThisWeek(completedCount), style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
                                                   ],
                                                 ),
                                                 const SizedBox(height: 8),
@@ -436,9 +437,9 @@ class _CareScreenState extends State<CareScreen> {
                                           children: [
                                             Icon(Icons.calendar_today, size: 60, color: AppColors.forest900),
                                             const SizedBox(height: 20),
-                                            Text('No care tasks yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                                            Text(AppLocalizations.of(context).noCareTasksYet, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                                             const SizedBox(height: 12),
-                                            const Text('Add a plant to get a care schedule built automatically by Flora', textAlign: TextAlign.center, style: TextStyle(color: AppColors.bone500, fontSize: 14)),
+                                            Text(AppLocalizations.of(context).addPlantForCareSchedule, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.bone500, fontSize: 14)),
                                             const SizedBox(height: 24),
                                             ElevatedButton(
                                               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen())),
@@ -447,7 +448,7 @@ class _CareScreenState extends State<CareScreen> {
                                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                               ),
-                                              child: const Text('Add a Plant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                              child: Text(AppLocalizations.of(context).addAPlant, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                             ),
                                           ],
                                         ),
@@ -472,13 +473,13 @@ class _CareScreenState extends State<CareScreen> {
                                                 child: const Icon(Icons.flash_on, color: Colors.white),
                                               ),
                                               const SizedBox(width: 16),
-                                              const Expanded(
+                                              Expanded(
                                                 child: Column(
                                                   crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
-                                                    Text('Quick Care Mode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                                    SizedBox(height: 4),
-                                                    Text('Swipe through all tasks fast', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                                    const Text('Quick Care Mode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                                    const SizedBox(height: 4),
+                                                    Text(AppLocalizations.of(context).swipeThroughTasksFast, style: const TextStyle(color: Colors.white70, fontSize: 13)),
                                                   ],
                                                 ),
                                               ),
@@ -518,9 +519,9 @@ class _CareScreenState extends State<CareScreen> {
                         // Climate & Light Meter
                         Row(
                           children: [
-                            Expanded(child: _buildQuickButton(context, Icons.thermostat, 'Room\nClimate', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClimateScreen())))),
+                            Expanded(child: _buildQuickButton(context, Icons.thermostat, AppLocalizations.of(context).roomClimate, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClimateScreen())))),
                             const SizedBox(width: 16),
-                            Expanded(child: _buildQuickButton(context, Icons.wb_sunny_outlined, 'Light\nMeter', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LightMeterScreen())))),
+                            Expanded(child: _buildQuickButton(context, Icons.wb_sunny_outlined, AppLocalizations.of(context).lightMeter, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LightMeterScreen())))),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -549,7 +550,7 @@ class _CareScreenState extends State<CareScreen> {
                                     children: [
                                       const Text('Smart Care Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.forest900)),
                                       const SizedBox(height: 4),
-                                      Text('Personalized schedule based on your home', style: TextStyle(color: AppColors.bone500, fontSize: 13)),
+                                      Text(AppLocalizations.of(context).personalizedScheduleBasedOnHome, style: const TextStyle(color: AppColors.bone500, fontSize: 13)),
                                     ],
                                   ),
                                 ),
@@ -619,7 +620,7 @@ class _CareScreenState extends State<CareScreen> {
   Widget _buildHistoryTab() {
     final uid = _firestoreService.currentUserId;
     if (uid == null) {
-      return const Center(child: Text('Not signed in.', style: TextStyle(color: AppColors.bone500)));
+      return Center(child: Text(AppLocalizations.of(context).notSignedIn, style: const TextStyle(color: AppColors.bone500)));
     }
     return StreamBuilder<List<QueryDocumentSnapshot>>(
       stream: FirebaseFirestore.instance
@@ -648,10 +649,10 @@ class _CareScreenState extends State<CareScreen> {
         }
         final docs = snapshot.data ?? [];
         if (docs.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
-              'No completed tasks yet.',
-              style: TextStyle(color: AppColors.bone500, fontSize: 16),
+              AppLocalizations.of(context).noCompletedTasksYet,
+              style: const TextStyle(color: AppColors.bone500, fontSize: 16),
             ),
           );
         }
@@ -712,7 +713,7 @@ class _CareScreenState extends State<CareScreen> {
     final Color bgColor = isToday
         ? AppColors.forest900
         : isSelected
-            ? Color(0x2614301E)
+            ? const Color(0x2614301E)
             : Colors.transparent;
     final Color textColor = isToday ? Colors.white : Colors.black87;
 
@@ -794,7 +795,7 @@ class _CareScreenState extends State<CareScreen> {
   }) {
     Border? customBorder;
     if (priorityScore > 150) {
-      customBorder = Border(left: BorderSide(color: AppColors.terracotta900, width: 2));
+      customBorder = const Border(left: BorderSide(color: AppColors.terracotta900, width: 2));
     } else if (priorityScore > 100) {
       customBorder = Border(left: BorderSide(color: Colors.amber.shade700, width: 2));
     }
@@ -852,11 +853,11 @@ class _CareScreenState extends State<CareScreen> {
                   final result = await showDialog<String>(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      title: Text('Reschedule ${task.plantName}\'s care?'),
-                      content: Text('You completed this ${task.taskType.toLowerCase()} $daysLate days late. Do you want to schedule the next one from today, or keep the original schedule?'),
+                      title: Text(AppLocalizations.of(context).rescheduleCare(task.plantName)),
+                      content: Text(AppLocalizations.of(context).completedDaysLateReschedule(task.taskType.toLowerCase(), daysLate)),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx, 'keep'), child: const Text('Keep schedule')),
-                        TextButton(onPressed: () => Navigator.pop(ctx, 'today'), child: const Text('From today')),
+                        TextButton(onPressed: () => Navigator.pop(ctx, 'keep'), child: Text(AppLocalizations.of(context).keepSchedule)),
+                        TextButton(onPressed: () => Navigator.pop(ctx, 'today'), child: Text(AppLocalizations.of(context).fromToday)),
                       ],
                     ),
                   );
@@ -950,7 +951,7 @@ class _CareScreenState extends State<CareScreen> {
   Future<void> _syncToCalendar() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     scaffoldMessenger.showSnackBar(
-      const SnackBar(content: Text('Syncing tasks to calendar...'), duration: Duration(seconds: 2)),
+      SnackBar(content: Text(AppLocalizations.of(context).syncingTasksToCalendar), duration: const Duration(seconds: 2)),
     );
 
     try {
@@ -985,8 +986,8 @@ class _CareScreenState extends State<CareScreen> {
         scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text(synced > 0
-              ? 'Synced $synced tasks to your calendar 📅'
-              : 'No upcoming tasks to sync or calendar permission denied'),
+              ? AppLocalizations.of(context).syncedTasksToCalendar(synced)
+              : AppLocalizations.of(context).noUpcomingTasksToSync),
             backgroundColor: synced > 0 ? Colors.green : Colors.orange,
           ),
         );
@@ -994,10 +995,9 @@ class _CareScreenState extends State<CareScreen> {
     } catch (e) {
       if (mounted) {
         scaffoldMessenger.showSnackBar(
-          const SnackBar(content: Text('Calendar sync failed. Please try again.')),
+          SnackBar(content: Text(AppLocalizations.of(context).calendarSyncFailed)),
         );
       }
     }
   }
 }
-

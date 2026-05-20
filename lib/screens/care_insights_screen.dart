@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../services/care_intelligence_service.dart';
 import '../services/gemini_service.dart';
@@ -30,12 +31,12 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       final plan = await _intelligenceService.generateWeeklyCarePlan(uid);
-      
+
       // Filter for next 14 days only
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final maxDate = today.add(const Duration(days: 14));
-      
+
       final filteredPlan = plan.where((task) {
         final date = task['recommendedDate'] as DateTime;
         final taskDate = DateTime(date.year, date.month, date.day);
@@ -58,6 +59,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
   }
 
   Future<void> _generatePersonalizedPlan() async {
+    final l = AppLocalizations.of(context);
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
@@ -73,8 +75,8 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
       if (snap.docs.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Add some plants first to get a personalized plan'),
+            SnackBar(
+              content: Text(l.addSomePlantsForPlan),
               backgroundColor: AppColors.forest900,
             ),
           );
@@ -96,6 +98,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           showDragHandle: true,
           builder: (ctx) {
+            final lSheet = AppLocalizations.of(ctx);
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               decoration: BoxDecoration(
@@ -108,9 +111,9 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Your Weekly Care Plan',
-                        style: TextStyle(
+                      Text(
+                        lSheet.yourWeeklyCarePlan,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppColors.forest900,
@@ -146,9 +149,10 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final lErr = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to generate plan. Please try again.'),
+          SnackBar(
+            content: Text(lErr.failedToGeneratePlan),
             backgroundColor: AppColors.terracotta900,
           ),
         );
@@ -196,7 +200,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                       color: AppColors.forest100,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.eco,
                       color: AppColors.forest900,
                       size: 20,
@@ -243,9 +247,10 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     // Group tasks by date
     final groupedTasks = <DateTime, List<Map<String, dynamic>>>{};
     for (var task in _carePlan) {
@@ -256,7 +261,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
       }
       groupedTasks[taskDate]!.add(task);
     }
-    
+
     // List of dates with tasks
     final taskDates = groupedTasks.keys.toSet();
 
@@ -271,7 +276,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
         ),
       ),
       body: SafeArea(
-        child: _isLoading 
+        child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,9 +286,9 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Smart Care Plan',
-                          style: TextStyle(
+                        Text(
+                          l.smartCarePlan,
+                          style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'serif',
@@ -292,8 +297,8 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Flora has personalized your care schedule based on your home conditions',
-                          style: TextStyle(
+                          l.smartCarePlanSubtitle,
+                          style: const TextStyle(
                             fontSize: 14,
                             color: AppColors.bone500,
                           ),
@@ -305,7 +310,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                             onPressed: _isGeneratingPlan ? null : _generatePersonalizedPlan,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.forest900,
-                              disabledBackgroundColor: Color(0x8C14301E),
+                              disabledBackgroundColor: const Color(0x8C14301E),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -316,9 +321,9 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                     width: 20, height: 20,
                                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                   )
-                                : Icon(Icons.auto_awesome, color: Colors.white),
+                                : const Icon(Icons.auto_awesome, color: Colors.white),
                             label: Text(
-                              _isGeneratingPlan ? 'Generating...' : 'Get Personalized Plan',
+                              _isGeneratingPlan ? l.generating : l.getPersonalizedPlan,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -331,7 +336,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // 14-day scrollable strip
                   SizedBox(
                     height: 70,
@@ -345,7 +350,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                         final hasTask = taskDates.contains(date);
                         final dayLetter = DateFormat('E').format(date).substring(0, 1);
                         final dateNumber = DateFormat('d').format(date);
-                        
+
                         Widget dateWidget;
                         if (isToday) {
                           dateWidget = Container(
@@ -358,14 +363,8 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  dayLetter,
-                                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                                ),
-                                Text(
-                                  dateNumber,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                ),
+                                Text(dayLetter, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                                Text(dateNumber, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                               ],
                             ),
                           );
@@ -383,10 +382,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                               children: [
                                 Text(
                                   dayLetter,
-                                  style: TextStyle(
-                                    color: hasTask ? Colors.white : AppColors.bone500,
-                                    fontSize: 12,
-                                  ),
+                                  style: TextStyle(color: hasTask ? Colors.white : AppColors.bone500, fontSize: 12),
                                 ),
                                 Text(
                                   dateNumber,
@@ -405,14 +401,14 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Task list
                   Expanded(
-                    child: groupedTasks.isEmpty 
+                    child: groupedTasks.isEmpty
                         ? Center(
                             child: Text(
-                              'No tasks scheduled for the next 14 days.',
-                              style: TextStyle(color: AppColors.bone500),
+                              l.noTasksNext14Days,
+                              style: const TextStyle(color: AppColors.bone500),
                             ),
                           )
                         : ListView.builder(
@@ -422,12 +418,12 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                               final sortedDates = groupedTasks.keys.toList()..sort();
                               final date = sortedDates[index];
                               final tasks = groupedTasks[date]!;
-                              
+
                               String dateHeader;
                               if (date == today) {
-                                dateHeader = 'Today';
+                                dateHeader = l.today;
                               } else if (date == today.add(const Duration(days: 1))) {
-                                dateHeader = 'Tomorrow';
+                                dateHeader = l.tomorrow;
                               } else {
                                 dateHeader = DateFormat('EEEE, MMM d').format(date);
                               }
@@ -439,7 +435,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                     padding: const EdgeInsets.only(bottom: 12, top: 8),
                                     child: Text(
                                       dateHeader,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.bone500,
@@ -448,12 +444,12 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                   ),
                                   ...tasks.map((task) {
                                     final type = task['taskType'] as String;
-                                    
+
                                     final isDark = Theme.of(context).brightness == Brightness.dark;
                                     Color iconBg = isDark ? AppColors.darkForestSubtle : AppColors.forest100;
                                     Color iconColor = isDark ? AppColors.darkForestPrimary : AppColors.forest500;
                                     IconData iconData = Icons.water_drop;
-                                    
+
                                     if (type.contains('Fertiliz')) {
                                       iconBg = isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100;
                                       iconColor = isDark ? AppColors.errorDark : AppColors.errorLight;
@@ -485,10 +481,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                             children: [
                                               Container(
                                                 padding: const EdgeInsets.all(10),
-                                                decoration: BoxDecoration(
-                                                  color: iconBg,
-                                                  shape: BoxShape.circle,
-                                                ),
+                                                decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
                                                 child: Icon(iconData, color: iconColor, size: 20),
                                               ),
                                               const SizedBox(width: 16),
@@ -498,17 +491,11 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                                   children: [
                                                     Text(
                                                       task['plantName'],
-                                                      style: const TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 16,
-                                                      ),
+                                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                                     ),
                                                     Text(
                                                       type,
-                                                      style: TextStyle(
-                                                        color: AppColors.bone500,
-                                                        fontSize: 13,
-                                                      ),
+                                                      style: const TextStyle(color: AppColors.bone500, fontSize: 13),
                                                     ),
                                                   ],
                                                 ),
@@ -524,7 +511,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                                             task['reasoning'],
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 12,
                                               color: AppColors.bone500,
                                               fontStyle: FontStyle.italic,

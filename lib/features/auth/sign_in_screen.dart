@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/app_theme.dart';
 
@@ -45,15 +46,16 @@ class _SignInScreenState extends State<SignInScreen> {
 
   // ── Sign In ─────────────────────────────────────────────────────────────────
   Future<void> _signIn() async {
+    final l10n  = AppLocalizations.of(context);
     final email = _emailCtrl.text.trim();
     final pass  = _passCtrl.text;
 
     if (email.isEmpty || !email.contains('@')) {
-      _showError('Please enter a valid email address.');
+      _showError(l10n.pleaseEnterValidEmail);
       return;
     }
     if (pass.isEmpty) {
-      _showError('Please enter your password.');
+      _showError(l10n.pleaseEnterYourPassword);
       return;
     }
 
@@ -68,11 +70,11 @@ class _SignInScreenState extends State<SignInScreen> {
       if (mounted) context.go('/home');
     } on FirebaseAuthException catch (e) {
       debugPrint('[Flora] Sign-in error: ${e.code} - ${e.message}');
-      _showError(_friendlyError(e));
+      _showError(_friendlyError(e, l10n));
     } catch (e) {
       debugPrint('[Flora] Sign-in error: $e');
       if (e.toString().contains('TimeoutException')) {
-        _showError('Connection timed out. Check your internet and make sure Email/Password is enabled in Firebase Console.');
+        _showError(l10n.connectionTimedOut);
       } else {
         _showError('Something went wrong: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e}');
       }
@@ -83,25 +85,26 @@ class _SignInScreenState extends State<SignInScreen> {
 
   // ── Sign Up ─────────────────────────────────────────────────────────────────
   Future<void> _signUp() async {
+    final l10n    = AppLocalizations.of(context);
     final name    = _nameCtrl.text.trim();
     final email   = _emailCtrl.text.trim();
     final pass    = _passCtrl.text;
     final confirm = _confirmPassCtrl.text;
 
     if (name.isEmpty) {
-      _showError('Please enter your name.');
+      _showError(l10n.pleaseEnterYourName);
       return;
     }
     if (email.isEmpty || !email.contains('@')) {
-      _showError('Please enter a valid email address.');
+      _showError(l10n.pleaseEnterValidEmail);
       return;
     }
     if (pass.length < 6) {
-      _showError('Password must be at least 6 characters.');
+      _showError(l10n.passwordMinSixChars);
       return;
     }
     if (pass != confirm) {
-      _showError('Passwords do not match.');
+      _showError(l10n.passwordsDoNotMatch);
       return;
     }
 
@@ -125,7 +128,7 @@ class _SignInScreenState extends State<SignInScreen> {
       // 3. Navigate
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('🌱 Welcome to Flora! Your garden awaits.'),
+          content: Text(l10n.welcomeToFloraSnackbar),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ));
@@ -136,11 +139,11 @@ class _SignInScreenState extends State<SignInScreen> {
       _saveProfileInBackground(FirebaseAuth.instance.currentUser, name, email);
     } on FirebaseAuthException catch (e) {
       debugPrint('[Flora] Sign-up auth error: ${e.code} - ${e.message}');
-      _showError(_friendlyError(e));
+      _showError(_friendlyError(e, l10n));
     } catch (e) {
       debugPrint('[Flora] Sign-up error: $e');
       if (e.toString().contains('TimeoutException')) {
-        _showError('Connection timed out. Check your internet and make sure Email/Password is enabled in Firebase Console.');
+        _showError(l10n.connectionTimedOut);
       } else {
         _showError('Something went wrong: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e}');
       }
@@ -149,23 +152,23 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
-  String _friendlyError(FirebaseAuthException e) {
+  String _friendlyError(FirebaseAuthException e, AppLocalizations l10n) {
     switch (e.code) {
       case 'network-request-failed':
-        return 'No internet connection. Please check your network.';
+        return l10n.noInternetCheckNetwork;
       case 'invalid-email':
-        return 'That email address looks invalid.';
+        return l10n.emailLooksInvalid;
       case 'user-not-found':
-        return 'No account found with this email. Try creating one!';
+        return l10n.noAccountFoundTryCreating;
       case 'wrong-password':
       case 'invalid-credential':
-        return 'Incorrect email or password. Please try again.';
+        return l10n.incorrectEmailOrPassword;
       case 'email-already-in-use':
-        return 'An account already exists with this email. Try signing in!';
+        return l10n.accountExistsWithEmail;
       case 'weak-password':
-        return 'Password is too weak. Use at least 6 characters.';
+        return l10n.passwordTooWeakSixChars;
       default:
-        return e.message ?? 'An error occurred. Please try again.';
+        return e.message ?? l10n.anErrorOccurredTryAgain;
     }
   }
 
@@ -210,6 +213,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tt = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -248,8 +252,8 @@ class _SignInScreenState extends State<SignInScreen> {
               // ── Heading ─────────────────────────────────────────────────
               Text(
                 _view == _AuthView.signUp
-                    ? 'Create Account'
-                    : 'Welcome to Flora',
+                    ? l10n.createAccount
+                    : l10n.welcomeToFlora,
                 style: TextStyle(
                   fontFamily: 'NotoSerif',
                   fontSize: 30,
@@ -261,10 +265,10 @@ class _SignInScreenState extends State<SignInScreen> {
               const SizedBox(height: 8),
               Text(
                 _view == _AuthView.signUp
-                    ? 'Join Flora and start your plant journey.'
+                    ? l10n.joinFloraStartJourney
                     : _view == _AuthView.signIn
-                        ? 'Sign in to your plant collection.'
-                        : 'Your personal plant companion.',
+                        ? l10n.signInToYourCollection
+                        : l10n.yourPersonalPlantCompanion,
                 style: tt.bodyMedium?.copyWith(color: AppColors.moss),
                 textAlign: TextAlign.center,
               ),
@@ -273,7 +277,7 @@ class _SignInScreenState extends State<SignInScreen> {
               // ── Landing view ────────────────────────────────────────────
               if (_view == _AuthView.landing) ...[
                 _ActionButton(
-                  label: 'Sign In',
+                  label: l10n.signIn,
                   icon: Icons.login,
                   backgroundColor: AppColors.forestGreen,
                   foregroundColor: Colors.white,
@@ -281,7 +285,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
                 const SizedBox(height: 14),
                 _ActionButton(
-                  label: 'Create Account',
+                  label: l10n.createAccount,
                   icon: Icons.person_add_outlined,
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.forestGreen,
@@ -294,14 +298,14 @@ class _SignInScreenState extends State<SignInScreen> {
               if (_view == _AuthView.signIn) ...[
                 _InputField(
                   controller: _emailCtrl,
-                  label: 'Email address',
+                  label: l10n.emailAddress,
                   icon: Icons.mail_outline,
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 12),
                 _InputField(
                   controller: _passCtrl,
-                  label: 'Password',
+                  label: l10n.password,
                   icon: Icons.lock_outline,
                   obscure: _obscurePass,
                   onToggleObscure: () =>
@@ -309,7 +313,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
                 const SizedBox(height: 20),
                 _ActionButton(
-                  label: 'Sign In',
+                  label: l10n.signIn,
                   icon: Icons.login,
                   backgroundColor: AppColors.forestGreen,
                   foregroundColor: Colors.white,
@@ -324,7 +328,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       _clearFields();
                     }),
                     child: Text(
-                      "Don't have an account? Sign Up",
+                      l10n.dontHaveAccountSignUp,
                       style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.moss),
                     ),
                   ),
@@ -339,21 +343,21 @@ class _SignInScreenState extends State<SignInScreen> {
               if (_view == _AuthView.signUp) ...[
                 _InputField(
                   controller: _nameCtrl,
-                  label: 'Full name',
+                  label: l10n.fullNameLabel,
                   icon: Icons.person_outline,
                   textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 12),
                 _InputField(
                   controller: _emailCtrl,
-                  label: 'Email address',
+                  label: l10n.emailAddress,
                   icon: Icons.mail_outline,
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 12),
                 _InputField(
                   controller: _passCtrl,
-                  label: 'Password',
+                  label: l10n.password,
                   icon: Icons.lock_outline,
                   obscure: _obscurePass,
                   onToggleObscure: () =>
@@ -362,7 +366,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 const SizedBox(height: 12),
                 _InputField(
                   controller: _confirmPassCtrl,
-                  label: 'Confirm password',
+                  label: l10n.confirmPassword,
                   icon: Icons.lock_outline,
                   obscure: _obscureConfirm,
                   onToggleObscure: () =>
@@ -370,7 +374,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
                 const SizedBox(height: 20),
                 _ActionButton(
-                  label: 'Create Account',
+                  label: l10n.createAccount,
                   icon: Icons.person_add_outlined,
                   backgroundColor: AppColors.forestGreen,
                   foregroundColor: Colors.white,
@@ -385,7 +389,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       _clearFields();
                     }),
                     child: Text(
-                      'Already have an account? Sign In',
+                      l10n.alreadyHaveAccountSignIn,
                       style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.moss),
                     ),
                   ),
@@ -398,7 +402,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
               const SizedBox(height: 32),
               Text(
-                'By continuing you agree to our Terms & Privacy Policy.',
+                l10n.byAgreeingTermsPrivacy,
                 style: tt.bodySmall?.copyWith(color: AppColors.moss),
                 textAlign: TextAlign.center,
               ),
@@ -528,9 +532,8 @@ class _BackButton extends StatelessWidget {
     return Center(
       child: TextButton(
         onPressed: onPressed,
-        child: Text('← Back', style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.moss)),
+        child: Text(AppLocalizations.of(context).backArrow, style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.moss)),
       ),
     );
   }
 }
-

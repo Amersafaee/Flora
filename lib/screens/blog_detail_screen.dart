@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'flora_screen.dart';
@@ -11,6 +12,7 @@ class BlogDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     // FIX 5 — safe typed field access for all fields
     final title = (blogData['title'] as String? ?? 'Untitled');
     final category = (blogData['category'] as String? ?? 'General');
@@ -48,16 +50,12 @@ class BlogDetailScreen extends StatelessWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: AppColors.forest100,
-                        child: const Center(
-                          child: Icon(Icons.article, color: AppColors.forest900, size: 64),
-                        ),
+                        child: const Center(child: Icon(Icons.article, color: AppColors.forest900, size: 64)),
                       ),
                     )
                   : Container(
                       color: AppColors.forest100,
-                      child: const Center(
-                        child: Icon(Icons.article, color: AppColors.forest900, size: 64),
-                      ),
+                      child: const Center(child: Icon(Icons.article, color: AppColors.forest900, size: 64)),
                     ),
             ),
           ),
@@ -74,24 +72,17 @@ class BlogDetailScreen extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.forest100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        decoration: BoxDecoration(color: AppColors.forest100, borderRadius: BorderRadius.circular(8)),
                         child: Text(
                           category,
-                          style: const TextStyle(
-                            color: AppColors.forest700,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: const TextStyle(color: AppColors.forest700, fontSize: 12, fontWeight: FontWeight.w600),
                         ),
                       ),
                       const SizedBox(width: 12),
                       const Icon(Icons.access_time, size: 14, color: AppColors.bone500),
                       const SizedBox(width: 4),
                       Text(
-                        '$readMinutes min read',
+                        '$readMinutes ${l.minRead}',
                         style: const TextStyle(color: AppColors.bone500, fontSize: 13),
                       ),
                     ],
@@ -101,12 +92,7 @@ class BlogDetailScreen extends StatelessWidget {
                   // Title — Noto Serif bold 26px
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontFamily: 'serif',
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      height: 1.25,
-                    ),
+                    style: const TextStyle(fontFamily: 'serif', fontSize: 26, fontWeight: FontWeight.bold, height: 1.25),
                   ),
                   const SizedBox(height: 24),
 
@@ -120,27 +106,17 @@ class BlogDetailScreen extends StatelessWidget {
                       child: isFirst
                           ? Container(
                               padding: const EdgeInsets.only(left: 14),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  left: BorderSide(color: AppColors.forest600, width: 3),
-                                ),
+                              decoration: const BoxDecoration(
+                                border: Border(left: BorderSide(color: AppColors.forest600, width: 3)),
                               ),
                               child: Text(
                                 para,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  height: 1.7,
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                ),
+                                style: TextStyle(fontSize: 15, height: 1.7, color: Theme.of(context).colorScheme.onSurface),
                               ),
                             )
                           : Text(
                               para,
-                              style: TextStyle(
-                                fontSize: 15,
-                                height: 1.7,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
+                              style: TextStyle(fontSize: 15, height: 1.7, color: Theme.of(context).colorScheme.onSurface),
                             ),
                     );
                   }),
@@ -163,20 +139,14 @@ class BlogDetailScreen extends StatelessWidget {
                     height: 54,
                     child: ElevatedButton.icon(
                       onPressed: () => _openFloraWithTopic(context, title),
-                      icon: Icon(Icons.eco, color: Colors.white),
-                      label: const Text(
-                        'Ask Flora about this topic 🌿',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
+                      icon: const Icon(Icons.eco, color: Colors.white),
+                      label: Text(
+                        l.askFloraAboutTopic,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.forest900,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
                       ),
                     ),
@@ -195,27 +165,21 @@ class BlogDetailScreen extends StatelessWidget {
   List<String> _buildParagraphs(String content) {
     if (content.isEmpty) return [];
 
-    // Try double-newline split
     final byNewline = content.split('\n\n').map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
     if (byNewline.length > 1) return byNewline;
 
-    // Fall back to sentence grouping (3 per paragraph)
     final rawSentences = content.split('. ');
     const sentencesPerParagraph = 3;
     final paragraphs = <String>[];
     for (int i = 0; i < rawSentences.length; i += sentencesPerParagraph) {
       final chunk = rawSentences.sublist(
         i,
-        (i + sentencesPerParagraph) > rawSentences.length
-            ? rawSentences.length
-            : i + sentencesPerParagraph,
+        (i + sentencesPerParagraph) > rawSentences.length ? rawSentences.length : i + sentencesPerParagraph,
       );
       final para = chunk.where((s) => s.trim().isNotEmpty).join('. ').trim();
       if (para.isNotEmpty) {
         paragraphs.add(
-          para.endsWith('.') || para.endsWith('!') || para.endsWith('?')
-              ? para
-              : '$para.',
+          para.endsWith('.') || para.endsWith('!') || para.endsWith('?') ? para : '$para.',
         );
       }
     }
@@ -225,18 +189,8 @@ class BlogDetailScreen extends StatelessWidget {
   Widget _buildTagChip(String tag) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: AppColors.forest100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        tag,
-        style: const TextStyle(
-          color: AppColors.forest700,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      decoration: BoxDecoration(color: AppColors.forest100, borderRadius: BorderRadius.circular(8)),
+      child: Text(tag, style: const TextStyle(color: AppColors.forest700, fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -265,9 +219,7 @@ class BlogDetailScreen extends StatelessWidget {
     if (!context.mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => FloraScreen(conversationId: conversationId),
-      ),
+      MaterialPageRoute(builder: (_) => FloraScreen(conversationId: conversationId)),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'swap_chat_screen.dart';
@@ -16,10 +17,10 @@ class SwapConversationsScreen extends StatefulWidget {
 class _SwapConversationsScreenState extends State<SwapConversationsScreen> {
   StreamSubscription? _buyerSub;
   StreamSubscription? _sellerSub;
-  
+
   Map<String, DocumentSnapshot> _buyerDocs = {};
   Map<String, DocumentSnapshot> _sellerDocs = {};
-  
+
   bool _isLoading = true;
 
   @override
@@ -64,19 +65,18 @@ class _SwapConversationsScreenState extends State<SwapConversationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Messages')),
-        body: const Center(child: Text('Not logged in')),
+        appBar: AppBar(title: Text(l.messages)),
+        body: Center(child: Text(l.notLoggedIn)),
       );
     }
 
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('My Swap Conversations', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
+        appBar: AppBar(title: Text(l.mySwapConversations, style: const TextStyle(fontWeight: FontWeight.bold))),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -84,7 +84,7 @@ class _SwapConversationsScreenState extends State<SwapConversationsScreen> {
     final mergedDocs = <String, DocumentSnapshot>{};
     mergedDocs.addAll(_buyerDocs);
     mergedDocs.addAll(_sellerDocs);
-    
+
     final sortedDocs = mergedDocs.values.toList()..sort((a, b) {
       final aData = a.data() as Map<String, dynamic>;
       final bData = b.data() as Map<String, dynamic>;
@@ -98,10 +98,10 @@ class _SwapConversationsScreenState extends State<SwapConversationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Swap Conversations', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l.mySwapConversations, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: sortedDocs.isEmpty
-          ? const Center(child: Text('No active conversations', style: TextStyle(color: AppColors.bone500)))
+          ? Center(child: Text(l.noActiveConversations, style: const TextStyle(color: AppColors.bone500)))
           : ListView.separated(
               itemCount: sortedDocs.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
@@ -109,9 +109,9 @@ class _SwapConversationsScreenState extends State<SwapConversationsScreen> {
                 final data = sortedDocs[index].data() as Map<String, dynamic>;
                 final isBuyer = data['buyerUid'] == uid;
                 final otherPartyName = isBuyer ? data['sellerName'] : data['buyerName'];
-                final listingTitle = data['listingTitle'] ?? 'Listing';
+                final listingTitle = data['listingTitle'] ?? l.listingLabel;
                 final lastMessage = data['lastMessage'] ?? '';
-                
+
                 String timeStr = '';
                 final timestamp = data['lastMessageAt'];
                 if (timestamp is Timestamp) {
@@ -131,21 +131,16 @@ class _SwapConversationsScreenState extends State<SwapConversationsScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
-                    lastMessage.isEmpty ? 'No messages yet' : lastMessage,
+                    lastMessage.isEmpty ? l.noMessagesYet : lastMessage,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColors.bone500),
+                    style: const TextStyle(color: AppColors.bone500),
                   ),
-                  trailing: Text(
-                    timeStr,
-                    style: TextStyle(color: AppColors.bone500, fontSize: 12),
-                  ),
+                  trailing: Text(timeStr, style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => SwapChatScreen(conversationId: sortedDocs[index].id),
-                      ),
+                      MaterialPageRoute(builder: (_) => SwapChatScreen(conversationId: sortedDocs[index].id)),
                     );
                   },
                 );

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'plant_detail_screen.dart';
@@ -35,6 +36,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -102,6 +104,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final textColor = Theme.of(context).colorScheme.onSurface;
     final primaryColor = Theme.of(context).primaryColor;
     
@@ -124,8 +127,8 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           autofocus: true,
           onChanged: _onSearchChanged,
           decoration: InputDecoration(
-            hintText: 'Search...',
-            hintStyle: TextStyle(color: AppColors.bone300),
+            hintText: l.searchHint,
+            hintStyle: const TextStyle(color: AppColors.bone300),
             border: InputBorder.none,
           ),
           style: TextStyle(color: textColor, fontSize: 18),
@@ -140,7 +143,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
             child: Row(
               children: [
                 FilterChip(
-                  label: const Text('Plants'),
+                  label: Text(l.myPlants),
                   selected: _showPlants,
                   onSelected: (val) => setState(() => _showPlants = val),
                   selectedColor: primaryColor.withValues(alpha: 0.2),
@@ -149,7 +152,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                 ),
                 const SizedBox(width: 8),
                 FilterChip(
-                  label: const Text('Community'),
+                  label: Text(l.community),
                   selected: _showCommunity,
                   onSelected: (val) => setState(() => _showCommunity = val),
                   selectedColor: primaryColor.withValues(alpha: 0.2),
@@ -158,7 +161,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                 ),
                 const SizedBox(width: 8),
                 FilterChip(
-                  label: const Text('Wiki'),
+                  label: Text(l.wiki),
                   selected: _showWiki,
                   onSelected: (val) => setState(() => _showWiki = val),
                   selectedColor: primaryColor.withValues(alpha: 0.2),
@@ -172,8 +175,8 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
             child: _query.length < 2
                 ? Center(
                     child: Text(
-                      'Start typing to search across your plants and the wiki.',
-                      style: TextStyle(color: AppColors.bone500),
+                      l.searchPrompt,
+                      style: const TextStyle(color: AppColors.bone500),
                       textAlign: TextAlign.center,
                     ),
                   )
@@ -206,11 +209,11 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.search, size: 64, color: AppColors.bone300),
+                                const Icon(Icons.search, size: 64, color: AppColors.bone300),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No results for "$_query"',
-                                  style: TextStyle(color: AppColors.bone500, fontSize: 16),
+                                  '${l.noResultsForPrefix} "$_query"',
+                                  style: const TextStyle(color: AppColors.bone500, fontSize: 16),
                                 ),
                               ],
                             ),
@@ -219,17 +222,17 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                             padding: const EdgeInsets.all(16),
                             children: [
                               if (hasWiki) ...[
-                                _buildSectionHeader('Wiki Plants', primaryColor),
+                                _buildSectionHeader(l.wikiPlants, primaryColor),
                                 ..._wikiResults.map((doc) => _buildWikiTile(doc)),
                                 const SizedBox(height: 16),
                               ],
                               if (hasPlants) ...[
-                                _buildSectionHeader('My Plants', primaryColor),
+                                _buildSectionHeader(l.myPlants, primaryColor),
                                 ..._myPlantsResults.map((doc) => _buildMyPlantTile(doc)),
                                 const SizedBox(height: 16),
                               ],
                               if (hasCommunity) ...[
-                                _buildSectionHeader('Community Posts', primaryColor),
+                                _buildSectionHeader(l.communityPosts, primaryColor),
                                 ..._communityResults.map((doc) => _buildPostTile(doc)),
                                 const SizedBox(height: 16),
                               ],
@@ -307,4 +310,3 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     );
   }
 }
-

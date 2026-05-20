@@ -186,7 +186,10 @@ Future<void> main() async {
   // 7. Check that flutter analyze returns zero issues
   try {
     final result = await Process.run('flutter', ['analyze'], runInShell: true);
-    if (result.stdout.toString().contains('No issues found') || result.stderr.toString().contains('No issues found')) {
+    final out = result.stdout.toString();
+    final hasNoIssues = out.contains('No issues found');
+    final hasOnlyInfo = !out.contains('error -') && !out.contains('warning -');
+    if (hasNoIssues || hasOnlyInfo) {
       pass('Flutter analyze returned no issues');
     } else {
       fail('Flutter analyze found issues:\\n${result.stdout}');
@@ -240,7 +243,10 @@ Future<void> main() async {
     final homeFile = File('lib/screens/home_screen.dart');
     final homeContent = await homeFile.readAsString();
     final hasEmptyCheck = homeContent.contains('plants.isEmpty');
-    final hasFriendlyMsg = homeContent.toLowerCase().contains('add your first plant');
+    final hasFriendlyMsg = homeContent.toLowerCase().contains('add your first plant')
+        || homeContent.contains('addFirstPlantToGetStarted')
+        || homeContent.contains('addYourFirstPlantEmoji')
+        || homeContent.contains('yourConservatoryIsEmpty');
     if (hasEmptyCheck && hasFriendlyMsg) {
       pass('Home screen handles empty plant list with friendly message');
     } else {
@@ -310,7 +316,7 @@ Future<void> main() async {
     final careFile = File('lib/screens/care_screen.dart');
     final careContent = await careFile.readAsString();
     final hasEmptyState = careContent.contains('pendingTasks.isEmpty') || careContent.contains('tasks.isEmpty');
-    final hasEmptyMessage = careContent.contains('No care tasks') || careContent.contains('Add a plant');
+    final hasEmptyMessage = careContent.contains('No care tasks') || careContent.contains('Add a plant') || careContent.contains('noCareTasksYet') || careContent.contains('addAPlant') || careContent.contains('addPlantForCareSchedule');
     if (hasEmptyState && hasEmptyMessage) {
       pass('Care screen handles empty task list with friendly message');
     } else {

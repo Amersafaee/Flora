@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/swap_providers.dart';
@@ -12,6 +13,7 @@ class SwapDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final detailAsync = ref.watch(swapDetailProvider(listingId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -21,13 +23,13 @@ class SwapDetailScreen extends ConsumerWidget {
       error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
       data: (item) {
         if (item == null) {
-          return const Scaffold(body: Center(child: Text('Listing not found.')));
+          return Scaffold(body: Center(child: Text(l10n.listingNotFound)));
         }
 
         final isOwner = item.ownerUid == uid;
-        String typeLabel = "Whole Plant";
-        if (item.type == 'cutting') typeLabel = 'Cutting';
-        if (item.type == 'seeds') typeLabel = 'Seeds';
+        String typeLabel = l10n.wholePlantLabel;
+        if (item.type == 'cutting') typeLabel = l10n.cuttingLabel;
+        if (item.type == 'seeds') typeLabel = l10n.seedsLabel;
 
         return Scaffold(
           appBar: AppBar(
@@ -69,8 +71,8 @@ class SwapDetailScreen extends ConsumerWidget {
                               borderRadius: AppRadius.borderPill,
                             ),
                             child: Text(
-                              item.isFree ? 'FREE' : typeLabel.toUpperCase(),
-                              style: TextStyle(
+                              item.isFree ? l10n.freeLabel : typeLabel.toUpperCase(),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -86,9 +88,9 @@ class SwapDetailScreen extends ConsumerWidget {
                                 color: AppColors.mist,
                                 borderRadius: AppRadius.borderPill,
                               ),
-                              child: const Text(
-                                'COMPLETED',
-                                style: TextStyle(
+                              child: Text(
+                                l10n.completedBadge,
+                                style: const TextStyle(
                                   color: AppColors.bark,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -118,13 +120,13 @@ class SwapDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 24),
 
                       // Description
-                      const Text('Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                      Text(l10n.descriptionHeader, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       Text(item.description, style: const TextStyle(fontSize: 16, height: 1.5)),
                       const SizedBox(height: 32),
 
                       // Owner Block
-                      const Text('Listed By', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                      Text(l10n.listedByHeader, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -159,7 +161,7 @@ class SwapDetailScreen extends ConsumerWidget {
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: AppRadius.borderPill),
                                 ),
-                                child: const Text('Message'),
+                                child: Text(l10n.messageAction),
                               ),
                           ],
                         ),
@@ -176,14 +178,14 @@ class SwapDetailScreen extends ConsumerWidget {
                             child: OutlinedButton(
                               onPressed: () async {
                                 await completeListing(item.id);
-                                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing marked as completed ✅', style: TextStyle(color: Colors.white)), backgroundColor: AppColors.forest700, behavior: SnackBarBehavior.floating));
+                                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).listingMarkedCompleted, style: const TextStyle(color: Colors.white)), backgroundColor: AppColors.forest700, behavior: SnackBarBehavior.floating));
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.forestGreen,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(borderRadius: AppRadius.borderLg),
                               ),
-                              child: const Text('Mark as Completed'),
+                              child: Text(l10n.markAsCompleted),
                             ),
                           ),
                         const SizedBox(height: 12),
@@ -193,7 +195,7 @@ class SwapDetailScreen extends ConsumerWidget {
                             onPressed: () async {
                               await deleteListing(item.id);
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing deleted', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).listingDeleted, style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
                                 context.pop();
                               }
                             },
@@ -203,7 +205,7 @@ class SwapDetailScreen extends ConsumerWidget {
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(borderRadius: AppRadius.borderLg),
                             ),
-                            child: const Text('Delete Listing'),
+                            child: Text(l10n.deleteListingAction),
                           ),
                         ),
                       ]
@@ -218,5 +220,3 @@ class SwapDetailScreen extends ConsumerWidget {
     );
   }
 }
-
-

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
@@ -28,13 +29,13 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _leavesController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _showNotesError = false;
-  
+
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
-  
+
   final FirestoreService _firestoreService = FirestoreService();
   final StorageService _storageService = StorageService();
 
@@ -50,11 +51,11 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
     setState(() {
       _showNotesError = _notesController.text.trim().isEmpty;
     });
-    
+
     if (_showNotesError) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       String imageUrl = '';
 
@@ -66,7 +67,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
         }
         imageUrl = url;
       }
-      
+
       final entry = {
         'height': _heightController.text.trim(),
         'newLeaves': _leavesController.text.trim(),
@@ -74,13 +75,13 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
         'imageUrl': imageUrl,
         'timestamp': FieldValue.serverTimestamp(),
       };
-      
+
       await _firestoreService.addGrowthEntry(widget.plantId, entry);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Journal entry saved'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).journalEntrySaved),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -94,11 +95,12 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
           previousHealthStatus: widget.healthStatus,
         );
         await FirestoreService().saveHealthAssessment(widget.plantId, assessment);
-        
+
         final issuesDetected = (assessment['issuesDetected'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-        
+
         if (issuesDetected.isNotEmpty) {
           if (mounted) {
+            final l2 = AppLocalizations.of(context);
             await showModalBottomSheet(
               context: context,
               isScrollControlled: true,
@@ -110,7 +112,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text('Flora noticed something 🌿', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(l2.floraNoticedSomething, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 16),
                       Wrap(
                         spacing: 8,
@@ -132,7 +134,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('Ask Flora about this', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: Text(l2.askFloraAboutThis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton(
@@ -145,14 +147,14 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                           side: const BorderSide(color: AppColors.forest900, width: 2),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('View Treatment Cases', style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
+                        child: Text(l2.viewTreatmentCases, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
                 ),
               ),
             );
-            return; // We skip the final Navigator.pop(context) below because the buttons handle it
+            return;
           }
         }
       }
@@ -164,7 +166,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+            content: Text(AppLocalizations.of(context).somethingWentWrong),
             backgroundColor: AppColors.bone500,
             behavior: SnackBarBehavior.floating,
           ),
@@ -179,6 +181,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
 
@@ -195,233 +198,156 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-              // Header
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Add Journal Entry',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
+                    // Header
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+                          onPressed: () => Navigator.pop(context),
                         ),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              l.addJournalEntry,
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 48),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Ask Flora Button
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()));
+                      },
+                      icon: const Icon(Icons.psychology, color: AppColors.forest900),
+                      label: Text(l.notSureAskFlora, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: AppColors.forest900, width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 48), // Balance header
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Ask Flora Button
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()));
-                },
-                icon: const Icon(Icons.psychology, color: AppColors.forest900),
-                label: const Text('Not sure what to write? Ask Flora 🌿', style: TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: AppColors.forest900, width: 1.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Image Picker Area
-              GestureDetector(
-                onTap: () async {
-                  final picked = await _picker.pickImage(source: ImageSource.gallery);
-                  if (picked != null) {
-                    setState(() => _imageFile = File(picked.path));
-                  }
-                },
-                child: Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: AppColors.forest100,
-                    borderRadius: BorderRadius.circular(16),
-                    image: _imageFile != null
-                        ? DecorationImage(
-                            image: FileImage(_imageFile!),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                  ),
-                  child: _imageFile == null
-                      ? Center(
-                          child: Icon(
-                            Icons.eco,
-                            size: 48,
-                            color: Color(0x6614301E),
-                          ),
-                        )
-                      : null,
-                ),
-              ),
-              const SizedBox(height: 32),
-              
-              // Plant Name Field (Readonly)
-              Text(
-                'Plant',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.plantName,
-                style: TextStyle(
-                  color: AppColors.bone500,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Height Field
-              Text(
-                'Height in cm',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _heightController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: 'e.g. 64',
-                  hintStyle: TextStyle(color: AppColors.bone300),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              // Leaves Field
-              Text(
-                'New Leaves',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _leavesController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: 'e.g. 2',
-                  hintStyle: TextStyle(color: AppColors.bone300),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              // Notes Field
-              Text(
-                'Notes',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _notesController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Describe how your plant looks today...',
-                  hintStyle: TextStyle(color: AppColors.bone300),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor),
-                  ),
-                ),
-              ),
-              if (_showNotesError)
-                const Padding(
-                  padding: EdgeInsets.only(top: 6, left: 4),
-                  child: Text(
-                    'Please add a note about your plant.',
-                    style: TextStyle(color: Colors.red, fontSize: 12),
-                  ),
-                ),
-              const SizedBox(height: 48),
-              
-              // Save Button
-              SizedBox(
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveEntry,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        )
-                      : const Text(
-                          'Save Entry',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    const SizedBox(height: 24),
+
+                    // Image Picker Area
+                    GestureDetector(
+                      onTap: () async {
+                        final picked = await _picker.pickImage(source: ImageSource.gallery);
+                        if (picked != null) {
+                          setState(() => _imageFile = File(picked.path));
+                        }
+                      },
+                      child: Container(
+                        height: 200,
+                        decoration: BoxDecoration(
+                          color: AppColors.forest100,
+                          borderRadius: BorderRadius.circular(16),
+                          image: _imageFile != null
+                              ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
+                              : null,
                         ),
+                        child: _imageFile == null
+                            ? const Center(child: Icon(Icons.eco, size: 48, color: Color(0x6614301E)))
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Plant Name (readonly)
+                    Text(l.plantLabel, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 8),
+                    Text(widget.plantName, style: const TextStyle(color: AppColors.bone500, fontSize: 16)),
+                    const SizedBox(height: 24),
+
+                    // Height Field
+                    Text(l.heightInCm, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _heightController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: l.heightHint,
+                        hintStyle: const TextStyle(color: AppColors.bone300),
+                        filled: true,
+                        fillColor: AppColors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: primaryColor)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Leaves Field
+                    Text(l.newLeaves, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _leavesController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: l.newLeavesHint,
+                        hintStyle: const TextStyle(color: AppColors.bone300),
+                        filled: true,
+                        fillColor: AppColors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: primaryColor)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Notes Field
+                    Text(l.notesLabel, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _notesController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: l.notesPlantHint,
+                        hintStyle: const TextStyle(color: AppColors.bone300),
+                        filled: true,
+                        fillColor: AppColors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: primaryColor)),
+                      ),
+                    ),
+                    if (_showNotesError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6, left: 4),
+                        child: Text(l.pleaseAddANote, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                      ),
+                    const SizedBox(height: 48),
+
+                    // Save Button
+                    SizedBox(
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveEntry,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : Text(l.saveEntry, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ),
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-
-

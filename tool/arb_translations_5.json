@@ -1,0 +1,50 @@
+{
+  "accountSection": {
+    "es": "Cuenta",
+    "fr": "Compte",
+    "de": "Konto",
+    "pt": "Conta",
+    "ar": "الحساب",
+    "fa": "حساب",
+    "ja": "アカウント",
+    "ko": "계정",
+    "it": "Account",
+    "nl": "Account",
+    "tr": "Hesap",
+    "pl": "Konto",
+    "sv": "Konto",
+    "hi": "खाता"
+  },
+  "backArrow": {
+    "es": "← Atrás",
+    "fr": "← Retour",
+    "de": "← Zurück",
+    "pt": "← Voltar",
+    "ar": "← رجوع",
+    "fa": "← بازگشت",
+    "ja": "← 戻る",
+    "ko": "← 뒤로",
+    "it": "← Indietro",
+    "nl": "← Terug",
+    "tr": "← Geri",
+    "pl": "← Wstecz",
+    "sv": "← Tillbaka",
+    "hi": "← पीछे जाएं"
+  },
+  "errorPrefix": {
+    "es": "Error: ",
+    "fr": "Erreur : ",
+    "de": "Fehler: ",
+    "pt": "Erro: ",
+    "ar": "خطأ: ",
+    "fa": "خطا: ",
+    "ja": "エラー: ",
+    "ko": "오류: ",
+    "it": "Errore: ",
+    "nl": "Fout: ",
+    "tr": "Hata: ",
+    "pl": "Błąd: ",
+    "sv": "Fel: ",
+    "hi": "त्रुटि: "
+  }
+}

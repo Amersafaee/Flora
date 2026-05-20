@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_screen.dart';
 import 'onboarding_screen.dart';
@@ -27,8 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Check onboarding completion after the first frame so the widget tree
-    // is fully mounted before any navigation occurs.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkOnboarding();
     });
@@ -42,9 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => OnboardingScreen(
-            onThemeChanged: widget.onThemeChanged,
-          ),
+          builder: (_) => OnboardingScreen(onThemeChanged: widget.onThemeChanged),
         ),
       );
     }
@@ -57,33 +54,33 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  /// Maps Firebase error codes to human-readable messages.
   String _mapFirebaseError(String? code, String fallback) {
+    final l = AppLocalizations.of(context);
     switch (code) {
       case 'user-not-found':
-        return 'No account found with this email.';
+        return l.noAccountFound;
       case 'wrong-password':
       case 'invalid-credential':
-        return 'Incorrect password. Please try again.';
+        return l.incorrectPassword;
       case 'network-request-failed':
-        return 'No internet connection. Please check your network and try again.';
+        return l.noInternetTryAgain;
       case 'too-many-requests':
-        return 'Too many attempts. Please wait a moment and try again.';
+        return l.tooManyAttempts;
       default:
         return fallback;
     }
   }
 
   void _login() async {
+    final l = AppLocalizations.of(context);
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     if (email.isEmpty || password.isEmpty) return;
-    if (_isLoading) return; // Prevent double-tap
+    if (_isLoading) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // Wrap the sign-in call with a 15-second timeout.
       final result = await _authService
           .signInWithEmailAndPassword(email, password)
           .timeout(
@@ -95,15 +92,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (result != 'Success') {
         final message = result == '__timeout__'
-            ? 'Connection is slow, please check your internet and try again.'
-            : _mapFirebaseError(result, result ?? 'Sign in failed. Please try again.');
-
+            ? l.connectionSlow
+            : _mapFirebaseError(result, result ?? l.signInFailed);
         _showError(message);
       }
-      
+
       if (result == 'Success' && mounted) {
-        // Auth succeeded - StreamBuilder should handle this but add explicit
-        // navigation as fallback to prevent the stuck spinner issue
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => MainTabScreen(
             onThemeChanged: widget.onThemeChanged ?? (_) {},
@@ -113,15 +107,12 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       }
-      // On success the auth StreamBuilder in main.dart will detect the new
-      // user and automatically replace this screen with MainTabScreen —
-      // no manual navigation needed here.
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      _showError(_mapFirebaseError(e.code, e.message ?? 'Sign in failed.'));
+      _showError(_mapFirebaseError(e.code, e.message ?? AppLocalizations.of(context).signInFailed));
     } catch (e) {
       if (!mounted) return;
-      _showError('An unexpected error occurred. Please try again.');
+      _showError(AppLocalizations.of(context).unexpectedError);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -132,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: TextStyle(color: Colors.white)),
+        content: Text(message, style: const TextStyle(color: Colors.white)),
         backgroundColor: AppColors.terracotta900,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
@@ -144,6 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
+    final l = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     setState(() => _isLoading = true);
     try {
@@ -159,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } else if (result != 'cancelled') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: const Text('Google sign in failed. Please try again.'), backgroundColor: colorScheme.error),
+          SnackBar(content: Text(l.googleSignInFailed), backgroundColor: colorScheme.error),
         );
       }
     } finally {
@@ -169,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
 
@@ -196,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Title and Subtitle
               Text(
-                'Digital Conservatory',
+                l.digitalConservatory,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'serif',
@@ -206,24 +199,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Your personal botanical guide',
+              Text(
+                l.yourPersonalBotanicalGuide,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.bone500,
-                  fontSize: 16,
-                ),
+                style: const TextStyle(color: AppColors.bone500, fontSize: 16),
               ),
               const SizedBox(height: 48),
 
-              // Email Input
-              Text(
-                'Email',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+              // Email
+              Text(l.email, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
@@ -233,30 +217,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Password Input
-              Text(
-                'Password',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+              // Password
+              Text(l.password, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               TextField(
                 controller: _passwordController,
@@ -268,26 +237,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      color: AppColors.bone500,
-                    ),
-                    onPressed: _isLoading
-                        ? null
-                        : () => setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppColors.bone500),
+                    onPressed: _isLoading ? null : () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.forest900, width: 2),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
                 ),
               ),
               const SizedBox(height: 40),
@@ -300,27 +255,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
                     disabledBackgroundColor: primaryColor.withValues(alpha: 0.6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : Text(
-                          'Sign In',
-                          style: TextStyle(
-                            color: Theme.of(context).cardColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                      : Text(l.signIn, style: TextStyle(color: Theme.of(context).cardColor, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -330,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Expanded(child: Divider(color: Theme.of(context).colorScheme.outline, thickness: 1)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: const Text('or', style: TextStyle(color: AppColors.bone500)),
+                    child: Text(l.or, style: const TextStyle(color: AppColors.bone500)),
                   ),
                   Expanded(child: Divider(color: Theme.of(context).colorScheme.outline, thickness: 1)),
                 ],
@@ -355,25 +294,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
                       ),
-                      child: const Center(
-                        child: Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
+                      child: const Center(child: Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.bold, fontSize: 16))),
                     ),
                     const SizedBox(width: 12),
-                    Text('Continue with Google', style: Theme.of(context).textTheme.labelLarge),
+                    Text(l.continueWithGoogle, style: Theme.of(context).textTheme.labelLarge),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
-              // New here? Create an account
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    "New here?",
-                    style: TextStyle(color: AppColors.bone500),
-                  ),
+                  Text(l.newHereQ, style: const TextStyle(color: AppColors.bone500)),
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: _isLoading
@@ -389,12 +322,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             );
                           },
-                    child: const Text(
-                      'Create an account',
-                      style: TextStyle(
-                        color: AppColors.terracotta900,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Text(
+                      l.createAnAccount,
+                      style: const TextStyle(color: AppColors.terracotta900, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/app_theme.dart';
 
@@ -30,11 +31,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context);
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please enter your name.'),
+          content: Text(l10n.pleaseEnterYourName),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -63,7 +65,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving profile: $e'),
+            content: Text(AppLocalizations.of(context).errorSavingProfile(e.toString())),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -76,6 +78,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tt = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -95,8 +98,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 24),
 
               Text(
-                "Let's set up your garden",
-                style: TextStyle(
+                l10n.letsSetUpYourGarden,
+                style: const TextStyle(
                   fontFamily: 'NotoSerif',
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
@@ -106,7 +109,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'What should we call you?',
+                l10n.whatShouldWeCallYou,
                 style: tt.bodyMedium?.copyWith(color: AppColors.moss),
                 textAlign: TextAlign.center,
               ),
@@ -117,7 +120,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 controller: _nameCtrl,
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
-                  labelText: 'Your name',
+                  labelText: l10n.yourName,
                   prefixIcon: const Icon(Icons.person_outline),
                   filled: true,
                   fillColor: AppColors.white,
@@ -146,9 +149,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           width: 20, height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
-                      : const Text(
-                          "Let's go",
-                          style: TextStyle(
+                      : Text(
+                          l10n.letsGo,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
@@ -162,4 +165,3 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     );
   }
 }
-

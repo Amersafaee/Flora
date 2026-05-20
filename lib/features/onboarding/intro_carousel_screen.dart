@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
@@ -16,48 +17,15 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
   final _pageCtrl = PageController();
   int _page = 0;
 
-  static const _slides = [
-    _Slide(
-      emoji: '🌿',
-      title: 'Identify any plant',
-      subtitle: 'Point your camera and Flora names it.',
-      bgColor: Color(0xFFF5F0E8),
-      darkBgColor: AppColors.darkCanvas,
-      accentColor: AppColors.forest900,
-      darkAccentColor: AppColors.darkForestPrimary,
-    ),
-    _Slide(
-      emoji: '📅',
-      title: 'Never miss a watering',
-      subtitle: 'Flora reminds you exactly when to care.',
-      bgColor: Color(0xFFE8F4E8),
-      darkBgColor: AppColors.darkCanvas,
-      accentColor: AppColors.forest900,
-      darkAccentColor: AppColors.darkForestPrimary,
-    ),
-    _Slide(
-      emoji: '👥',
-      title: 'Swap with plant lovers',
-      subtitle: 'Trade cuttings and seeds locally.',
-      bgColor: Color(0xFFF0EDE8),
-      darkBgColor: AppColors.darkCanvas,
-      accentColor: Color(0xFF5C4033),
-      darkAccentColor: AppColors.darkTerracotta,
-    ),
-  ];
-
   Future<void> _finish() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('seen_intro', true);
     if (mounted) context.go('/sign-in');
   }
 
-  void _next() {
-    if (_page < _slides.length - 1) {
-      _pageCtrl.nextPage(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeInOut,
-      );
+  void _next(int slidesLength) {
+    if (_page < slidesLength - 1) {
+      _pageCtrl.nextPage(duration: const Duration(milliseconds: 350), curve: Curves.easeInOut);
     } else {
       _finish();
     }
@@ -71,8 +39,41 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final slide = _slides[_page];
-    final isLast = _page == _slides.length - 1;
+    final l = AppLocalizations.of(context);
+
+    // Slides built lazily so titles/subtitles are localized at runtime
+    final slides = [
+      _Slide(
+        emoji: '🌿',
+        title: l.identifyAnyPlant,
+        subtitle: l.cameraFloraNames,
+        bgColor: const Color(0xFFF5F0E8),
+        darkBgColor: AppColors.darkCanvas,
+        accentColor: AppColors.forest900,
+        darkAccentColor: AppColors.darkForestPrimary,
+      ),
+      _Slide(
+        emoji: '📅',
+        title: l.neverMissAWatering,
+        subtitle: l.floraRemindsWhenToCare,
+        bgColor: const Color(0xFFE8F4E8),
+        darkBgColor: AppColors.darkCanvas,
+        accentColor: AppColors.forest900,
+        darkAccentColor: AppColors.darkForestPrimary,
+      ),
+      _Slide(
+        emoji: '👥',
+        title: l.swapWithPlantLovers,
+        subtitle: l.tradeCuttingsLocally,
+        bgColor: const Color(0xFFF0EDE8),
+        darkBgColor: AppColors.darkCanvas,
+        accentColor: const Color(0xFF5C4033),
+        darkAccentColor: AppColors.darkTerracotta,
+      ),
+    ];
+
+    final slide = slides[_page];
+    final isLast = _page == slides.length - 1;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final effectiveBg = isDark ? slide.darkBgColor : slide.bgColor;
@@ -83,25 +84,23 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // ── Main content ─────────────────────────────────────────────
             Column(
               children: [
-                // Page view
                 Expanded(
                   child: PageView.builder(
                     controller: _pageCtrl,
                     onPageChanged: (i) => setState(() => _page = i),
-                    itemCount: _slides.length,
-                    itemBuilder: (_, i) => _SlideView(slide: _slides[i]),
+                    itemCount: slides.length,
+                    itemBuilder: (_, i) => _SlideView(slide: slides[i]),
                   ),
                 ),
 
-                // ── Dots ─────────────────────────────────────────────────
+                // Dots
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_slides.length, (i) {
+                    children: List.generate(slides.length, (i) {
                       final active = i == _page;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
@@ -109,9 +108,7 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
                         width: active ? 24 : 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: active
-                              ? effectiveAccent
-                              : effectiveAccent.withAlpha(60),
+                          color: active ? effectiveAccent : effectiveAccent.withAlpha(60),
                           borderRadius: AppRadius.borderPill,
                         ),
                       );
@@ -119,25 +116,17 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
                   ),
                 ),
 
-                // ── CTA ──────────────────────────────────────────────────
+                // CTA
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
                   child: isLast
-                      ? _PrimaryButton(
-                          label: 'Get Started',
-                          color: effectiveAccent,
-                          onPressed: _finish,
-                        )
-                      : _PrimaryButton(
-                          label: 'Next',
-                          color: effectiveAccent,
-                          onPressed: _next,
-                        ),
+                      ? _PrimaryButton(label: l.getStarted, color: effectiveAccent, onPressed: _finish)
+                      : _PrimaryButton(label: l.nextLabel, color: effectiveAccent, onPressed: () => _next(slides.length)),
                 ),
               ],
             ),
 
-            // ── Skip button (slides 1 & 2 only) ─────────────────────────
+            // Skip button (slides 1 & 2 only)
             if (!isLast)
               Positioned(
                 top: 8,
@@ -145,11 +134,8 @@ class _IntroCarouselScreenState extends State<IntroCarouselScreen> {
                 child: TextButton(
                   onPressed: _finish,
                   child: Text(
-                    'Skip',
-                    style: TextStyle(
-                      color: effectiveAccent.withAlpha(180),
-                      fontWeight: FontWeight.w600,
-                    ),
+                    l.skip,
+                    style: TextStyle(color: effectiveAccent.withAlpha(180), fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -165,10 +151,10 @@ class _Slide {
   final String emoji;
   final String title;
   final String subtitle;
-  final Color  bgColor;
-  final Color  darkBgColor;
-  final Color  accentColor;
-  final Color  darkAccentColor;
+  final Color bgColor;
+  final Color darkBgColor;
+  final Color accentColor;
+  final Color darkAccentColor;
   const _Slide({
     required this.emoji,
     required this.title,
@@ -188,50 +174,33 @@ class _SlideView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = isDark ? slide.darkAccentColor : slide.accentColor;
-
     final tt = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Emoji in a rounded card
           Container(
             width: 140,
             height: 140,
             decoration: BoxDecoration(
               color: accent.withAlpha(20),
               borderRadius: BorderRadius.circular(40),
-              border: Border.all(
-                color: accent.withAlpha(40),
-                width: 1.5,
-              ),
+              border: Border.all(color: accent.withAlpha(40), width: 1.5),
             ),
-            child: Center(
-              child: Text(
-                slide.emoji,
-                style: const TextStyle(fontSize: 72),
-              ),
-            ),
+            child: Center(child: Text(slide.emoji, style: const TextStyle(fontSize: 72))),
           ),
           const SizedBox(height: 40),
           Text(
             slide.title,
-            style: TextStyle(
-              fontFamily: 'NotoSerif',
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: accent,
-            ),
+            style: TextStyle(fontFamily: 'NotoSerif', fontSize: 28, fontWeight: FontWeight.w700, color: accent),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Text(
             slide.subtitle,
-            style: tt.bodyLarge?.copyWith(
-              color: accent.withAlpha(180),
-              height: 1.5,
-            ),
+            style: tt.bodyLarge?.copyWith(color: accent.withAlpha(180), height: 1.5),
             textAlign: TextAlign.center,
           ),
         ],
@@ -243,13 +212,9 @@ class _SlideView extends StatelessWidget {
 // ── Reusable primary button ────────────────────────────────────────────────────
 class _PrimaryButton extends StatelessWidget {
   final String label;
-  final Color  color;
+  final Color color;
   final VoidCallback onPressed;
-  const _PrimaryButton({
-    required this.label,
-    required this.color,
-    required this.onPressed,
-  });
+  const _PrimaryButton({required this.label, required this.color, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -261,18 +226,11 @@ class _PrimaryButton extends StatelessWidget {
           backgroundColor: color,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.borderPill,
-          ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.borderPill),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0.5),
         ),
         child: Text(label),
       ),
     );
   }
 }
-

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -52,7 +53,7 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not detect location: $e', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), ));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).couldNotDetectLocation(e.toString()), style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4, duration: const Duration(seconds: 3), ));
       }
     } finally {
       if (mounted) setState(() => _isLoadingLoc = false);
@@ -60,12 +61,13 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
     final title = _titleCtrl.text.trim();
     final desc = _descCtrl.text.trim();
     final city = _cityCtrl.text.trim();
 
     if (title.isEmpty || desc.isEmpty || city.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill in all required fields.'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fillInAllRequiredFields), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
       return;
     }
 
@@ -75,8 +77,6 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception('Not signed in');
 
-      // Compute geohash from city (roughly). 
-      // For MVP, we will try to geocode the city string to get lat/lng.
       double lat = 0.0;
       double lng = 0.0;
       try {
@@ -86,7 +86,6 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
           lng = locs.first.longitude;
         }
       } catch (e) {
-        // Fallback to current location if city geocoding fails
         final pos = await Geolocator.getLastKnownPosition();
         if (pos != null) {
           lat = pos.latitude;
@@ -95,7 +94,7 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
       }
 
       final geohash = GeoHasher().encode(lng, lat, precision: 5);
-      final name = user.displayName ?? 'Plant Lover';
+      final name = user.displayName ?? l10n.plantLover;
       final initials = name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
 
       await FirebaseFirestore.instance.collection('swap_listings').add({
@@ -114,12 +113,12 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing posted successfully! 🌱', style: TextStyle(color: Colors.white)), backgroundColor: AppColors.forest700, behavior: SnackBarBehavior.floating));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).listingPostedSuccessfully, style: const TextStyle(color: Colors.white)), backgroundColor: AppColors.forest700, behavior: SnackBarBehavior.floating));
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to post listing: $e', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).failedToPostListing(e.toString()), style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
         setState(() => _isSubmitting = false);
       }
     }
@@ -127,29 +126,30 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('List Your Plant', style: TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.bold)),
+        title: Text(l10n.listYourPlant, style: const TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('What are you offering?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+            Text(l10n.whatAreYouOffering, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                _TypeChip(label: 'Cutting', value: 'cutting', groupValue: _selectedType, onChanged: (v) => setState(() => _selectedType = v)),
-                _TypeChip(label: 'Seeds', value: 'seeds', groupValue: _selectedType, onChanged: (v) => setState(() => _selectedType = v)),
-                _TypeChip(label: 'Whole Plant', value: 'whole_plant', groupValue: _selectedType, onChanged: (v) => setState(() => _selectedType = v)),
+                _TypeChip(label: l10n.cuttingChip, value: 'cutting', groupValue: _selectedType, onChanged: (v) => setState(() => _selectedType = v)),
+                _TypeChip(label: l10n.seedsChip, value: 'seeds', groupValue: _selectedType, onChanged: (v) => setState(() => _selectedType = v)),
+                _TypeChip(label: l10n.wholePlantChip, value: 'whole_plant', groupValue: _selectedType, onChanged: (v) => setState(() => _selectedType = v)),
               ],
             ),
             const SizedBox(height: 16),
             CheckboxListTile(
-              title: const Text('This item is free', style: TextStyle(fontWeight: FontWeight.w500)),
+              title: Text(l10n.thisItemIsFree, style: const TextStyle(fontWeight: FontWeight.w500)),
               value: _isFree,
               onChanged: (val) => setState(() => _isFree = val ?? false),
               contentPadding: EdgeInsets.zero,
@@ -160,20 +160,20 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
             const SizedBox(height: 24),
             TextField(
               controller: _titleCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Title',
-                hintText: 'e.g. Variegated Monstera Cutting',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.titleLabel,
+                hintText: l10n.titleHintSwap,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _descCtrl,
               maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                hintText: 'Describe the condition, size, or what you want in exchange...',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.descriptionLabel,
+                hintText: l10n.descriptionHintSwap,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
@@ -182,10 +182,10 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
                 Expanded(
                   child: TextField(
                     controller: _cityCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'City',
-                      hintText: 'e.g. Seattle, WA',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).cityField,
+                      hintText: l10n.cityHintSwap,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -195,7 +195,7 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
                   icon: _isLoadingLoc 
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.my_location, color: AppColors.forestGreen),
-                  tooltip: 'Detect Location',
+                  tooltip: l10n.detectLocationTooltip,
                 ),
               ],
             ),
@@ -213,7 +213,7 @@ class _AddSwapScreenState extends State<AddSwapScreen> {
                 ),
                 child: _isSubmitting 
                     ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Post Listing', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : Text(l10n.postListing, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -246,5 +246,3 @@ class _TypeChip extends StatelessWidget {
     );
   }
 }
-
-

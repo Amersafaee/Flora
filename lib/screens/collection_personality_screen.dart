@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../services/firestore_service.dart';
@@ -14,8 +15,7 @@ class CollectionPersonalityScreen extends StatefulWidget {
 class _CollectionPersonalityScreenState extends State<CollectionPersonalityScreen> {
   final Map<String, int> _categoryCounts = {};
   int _totalPlants = 0;
-  String _personalityTitle = '';
-  String _personalityDescription = '';
+  String _personalityKey = 'buddingPlantParent';
   IconData _personalityIcon = Icons.eco;
   bool _isLoading = true;
 
@@ -34,7 +34,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
 
     final stream = FirestoreService().getPlants();
     final plants = await stream.first;
-    
+
     // Only count active plants for personality
     final activePlants = plants.where((p) => !p.isDeceased).toList();
     _totalPlants = activePlants.length;
@@ -47,8 +47,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
     }
 
     if (_totalPlants < 3) {
-      _personalityTitle = "Budding Plant Parent";
-      _personalityDescription = "Every great conservatory starts somewhere. You are at the beginning of a beautiful journey.";
+      _personalityKey = 'buddingPlantParent';
       _personalityIcon = Icons.eco;
     } else {
       String dominantCategory = '';
@@ -61,29 +60,22 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
       });
 
       if (_totalPlants > 10 && (maxCount.toDouble() / _totalPlants) < 0.5) {
-        // More than 10 plants and no category makes up more than 50%
-        _personalityTitle = "Master Conservatory Keeper";
-        _personalityDescription = "Your diverse collection shows true botanical expertise. You understand that every plant has its own needs and you meet them all.";
+        _personalityKey = 'masterConservatoryKeeper';
         _personalityIcon = Icons.emoji_events;
       } else if (dominantCategory.toLowerCase().contains('tropical') && _totalPlants > 5) {
-        _personalityTitle = "Tropical Rainforest Curator";
-        _personalityDescription = "You have a passion for lush dramatic plants that bring the jungle indoors. Your collection is bold and statement-making.";
+        _personalityKey = 'tropicalRainforestCurator';
         _personalityIcon = Icons.park;
       } else if (dominantCategory.toLowerCase().contains('succulent') || dominantCategory.toLowerCase().contains('cactus')) {
-        _personalityTitle = "Desert Garden Architect";
-        _personalityDescription = "You appreciate resilience and minimalist beauty. Your collection is low-maintenance and timelessly elegant.";
+        _personalityKey = 'desertGardenArchitect';
         _personalityIcon = Icons.wb_sunny;
       } else if (dominantCategory.toLowerCase().contains('fern')) {
-        _personalityTitle = "Shade Garden Specialist";
-        _personalityDescription = "You have mastered the art of thriving in low light. Your collection is soft textured and wonderfully calming.";
+        _personalityKey = 'shadeGardenSpecialist';
         _personalityIcon = Icons.nightlight_round;
       } else if (dominantCategory.toLowerCase().contains('herb')) {
-        _personalityTitle = "Urban Kitchen Gardener";
-        _personalityDescription = "Your plants are both beautiful and practical. You grow with purpose and your kitchen thanks you for it.";
+        _personalityKey = 'urbanKitchenGardener';
         _personalityIcon = Icons.spa;
       } else {
-        _personalityTitle = "Budding Plant Parent";
-        _personalityDescription = "Every great conservatory starts somewhere. You are at the beginning of a beautiful journey.";
+        _personalityKey = 'buddingPlantParent';
         _personalityIcon = Icons.eco;
       }
     }
@@ -93,20 +85,49 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
     });
   }
 
-  Future<void> _sharePersonality() async {
-    final text = "I'm a $_personalityTitle on Digital Conservatory! $_personalityDescription";
+  String _getTitle(AppLocalizations l) {
+    switch (_personalityKey) {
+      case 'masterConservatoryKeeper': return l.masterConservatoryKeeper;
+      case 'tropicalRainforestCurator': return l.tropicalRainforestCurator;
+      case 'desertGardenArchitect': return l.desertGardenArchitect;
+      case 'shadeGardenSpecialist': return l.shadeGardenSpecialist;
+      case 'urbanKitchenGardener': return l.urbanKitchenGardener;
+      default: return l.buddingPlantParent;
+    }
+  }
+
+  String _getDesc(AppLocalizations l) {
+    switch (_personalityKey) {
+      case 'masterConservatoryKeeper': return l.masterConservatoryKeeperDesc;
+      case 'tropicalRainforestCurator': return l.tropicalRainforestCuratorDesc;
+      case 'desertGardenArchitect': return l.desertGardenArchitectDesc;
+      case 'shadeGardenSpecialist': return l.shadeGardenSpecialistDesc;
+      case 'urbanKitchenGardener': return l.urbanKitchenGardenerDesc;
+      default: return l.buddingPlantParentDesc;
+    }
+  }
+
+  Future<void> _sharePersonality(AppLocalizations l) async {
+    final title = _getTitle(l);
+    final desc = _getDesc(l);
+    final text = "I'm a $title on Digital Conservatory! $desc";
     // ignore: deprecated_member_use
     await Share.share(text);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: AppColors.forest900,
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
+
+    final personalityTitle = _getTitle(l);
+    final personalityDescription = _getDesc(l);
 
     // Sort categories for chart
     final sortedCategories = _categoryCounts.entries.toList()
@@ -141,8 +162,8 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                       Icon(_personalityIcon, size: 100, color: Colors.white),
                       const SizedBox(height: 32),
                       Text(
-                        _personalityTitle,
-                        style: TextStyle(
+                        personalityTitle,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -154,7 +175,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: Text(
-                          _personalityDescription,
+                          personalityDescription,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -175,7 +196,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Top Categories',
+                                l.topCategories,
                                 style: TextStyle(
                                   color: Theme.of(context).cardColor,
                                   fontSize: 18,
@@ -237,19 +258,19 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                         const SizedBox(height: 32),
                       ],
                       ElevatedButton(
-                        onPressed: _sharePersonality,
+                        onPressed: () => _sharePersonality(l),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.forest900,
                           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.share, size: 20),
-                            SizedBox(width: 8),
-                            Text('Share My Personality', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            const Icon(Icons.share, size: 20),
+                            const SizedBox(width: 8),
+                            Text(l.shareMyPersonality, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -209,7 +210,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                 children: [
                                   ListTile(
                                       leading: const Icon(Icons.edit),
-                                      title: const Text('Edit Plant'),
+                                      title: Text(AppLocalizations.of(context).editPlant),
                                       onTap: () {
                                         Navigator.pop(context);
                                         Navigator.push(
@@ -222,7 +223,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                   ),
                                   ListTile(
                                     leading: const Icon(Icons.badge_outlined, color: AppColors.forest900),
-                                    title: const Text('View Plant Passport', style: TextStyle(color: AppColors.forest900)),
+                                    title: Text(AppLocalizations.of(context).viewPlantPassport, style: const TextStyle(color: AppColors.forest900)),
                                     onTap: () {
                                       Navigator.pop(context);
                                       final plantMap = Map<String, dynamic>.from(plantData);
@@ -239,7 +240,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                   ),
                                   ListTile(
                                     leading: const Icon(Icons.local_hospital),
-                                    title: const Text('Mark as Unhealthy'),
+                                    title: Text(AppLocalizations.of(context).markAsUnhealthy),
                                     onTap: () async {
                                       Navigator.pop(context);
                                       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -250,13 +251,13 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                         });
                                       }
                                       if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plant marked as unhealthy', style: TextStyle(color: Colors.white)), backgroundColor: AppColors.terracotta900));
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).plantMarkedAsUnhealthy, style: const TextStyle(color: Colors.white)), backgroundColor: AppColors.terracotta900));
                                       }
                                     },
                                   ),
                                   ListTile(
                                     leading: const Icon(Icons.sentiment_dissatisfied, color: AppColors.bone500),
-                                    title: const Text('Mark as Deceased', style: TextStyle(color: AppColors.bone500)),
+                                    title: Text(AppLocalizations.of(context).markAsDeceased, style: const TextStyle(color: AppColors.bone500)),
                                     onTap: () {
                                       Navigator.pop(context);
                                       _showMemorialDialog(context, plantId, plantData['name'] as String? ?? plantName, plantData);
@@ -264,18 +265,18 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                   ),
                                   ListTile(
                                     leading: const Icon(Icons.delete, color: AppColors.terracotta900),
-                                    title: const Text('Delete Plant', style: TextStyle(color: AppColors.terracotta900)),
+                                    title: Text(AppLocalizations.of(context).deletePlant, style: const TextStyle(color: AppColors.terracotta900)),
                                     onTap: () {
                                       Navigator.pop(context);
                                       showDialog(
                                         context: context,
                                         builder: (context) => AlertDialog(
-                                          title: const Text('Delete Plant?'),
-                                          content: const Text('This action cannot be undone.'),
+                                          title: Text(AppLocalizations.of(context).deletePlantConfirm),
+                                          content: Text(AppLocalizations.of(context).thisActionCannotBeUndone),
                                           actions: [
                                             TextButton(
                                               onPressed: () => Navigator.pop(context),
-                                              child: const Text('Cancel'),
+                                              child: Text(AppLocalizations.of(context).cancel),
                                             ),
                                             TextButton(
                                               onPressed: () async {
@@ -289,7 +290,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                                   (route) => false,
                                                 );
                                               },
-                                              child: const Text('Delete', style: TextStyle(color: AppColors.terracotta900)),
+                                              child: Text(AppLocalizations.of(context).delete, style: const TextStyle(color: AppColors.terracotta900)),
                                             ),
                                           ],
                                         ),
@@ -368,7 +369,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Health Score',
+                                              AppLocalizations.of(context).healthScore,
                                               style: TextStyle(
                                                 color: AppColors.bone500,
                                                 fontSize: 12,
@@ -378,7 +379,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                               children: [
                                                 Expanded(
                                                   child: Text(
-                                                    'Analyze with Flora to get health score',
+                                                    AppLocalizations.of(context).analyzeWithFloraToGetHealthScore,
                                                     style: TextStyle(
                                                       color: AppColors.bone500,
                                                       fontSize: 10,
@@ -425,7 +426,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Health Score',
+                                            AppLocalizations.of(context).healthScore,
                                             style: TextStyle(
                                               color: AppColors.bone500,
                                               fontSize: 12,
@@ -440,7 +441,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                             ),
                                           ),
                                           Text(
-                                            'Vitals',
+                                            AppLocalizations.of(context).vitals,
                                             style: TextStyle(
                                               color: AppColors.bone500,
                                               fontSize: 11,
@@ -477,7 +478,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Last Watered',
+                                      AppLocalizations.of(context).lastWatered,
                                       style: TextStyle(
                                         color: AppColors.bone500,
                                         fontSize: 12,
@@ -486,7 +487,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                     Text(
                                       lastWateredDate != null 
                                           ? DateFormat('MMM d').format(lastWateredDate) 
-                                          : 'Never',
+                                          : AppLocalizations.of(context).never,
                                       style: TextStyle(
                                         color: primaryColor,
                                         fontSize: 18,
@@ -494,7 +495,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                       ),
                                     ),
                                     Text(
-                                      lastWateredDate != null ? 'Completed' : 'No history',
+                                      lastWateredDate != null ? AppLocalizations.of(context).completed : AppLocalizations.of(context).noHistory,
                                       style: TextStyle(
                                         color: AppColors.bone500,
                                         fontSize: 11,
@@ -542,7 +543,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Last Light Reading',
+                                AppLocalizations.of(context).lastLightReading,
                                 style: TextStyle(
                                   color: AppColors.bone500,
                                   fontSize: 12,
@@ -628,9 +629,9 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                   color: AppColors.terracotta900, size: 20),
                             ),
                             const SizedBox(width: 16),
-                            const Text(
-                              'Health Cases',
-                              style: TextStyle(
+                            Text(
+                              AppLocalizations.of(context).healthCases,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -688,7 +689,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                         Icon(Icons.account_tree_outlined, color: primaryColor),
                         const SizedBox(width: 8),
                         Text(
-                          'View Family Tree',
+                          AppLocalizations.of(context).viewFamilyTree,
                           style: TextStyle(
                             color: primaryColor,
                             fontSize: 15,
@@ -721,12 +722,12 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.movie_creation_outlined, color: Colors.white), // film icon
-                        SizedBox(width: 12),
+                      children: [
+                        const Icon(Icons.movie_creation_outlined, color: Colors.white),
+                        const SizedBox(width: 12),
                         Text(
-                          'Create Time-lapse',
-                          style: TextStyle(
+                          AppLocalizations.of(context).createTimeLapse,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -773,7 +774,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                         Icon(Icons.swap_horiz, color: primaryColor),
                         const SizedBox(width: 8),
                         Text(
-                          'List for Swap 🔄',
+                          AppLocalizations.of(context).listForSwapEmoji,
                           style: TextStyle(
                             color: primaryColor,
                             fontSize: 15,
@@ -788,10 +789,10 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               const SizedBox(height: 8),
               
               // Generate text
-              const Center(
+              Center(
                 child: Text(
-                  'Watch your plant grow over time',
-                  style: TextStyle(
+                  AppLocalizations.of(context).watchPlantGrowOverTime,
+                  style: const TextStyle(
                     color: AppColors.bone500,
                     fontSize: 12,
                   ),
@@ -803,7 +804,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
-                  'Upcoming Tasks',
+                  AppLocalizations.of(context).upcomingTasks,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -823,9 +824,9 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     final tasks = snapshot.data ?? [];
                     final incompleteTasks = tasks.where((t) => !t.isCompleted).toList();
                     if (incompleteTasks.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Center(child: Text('No upcoming tasks.', style: TextStyle(color: AppColors.bone500))),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Center(child: Text(AppLocalizations.of(context).noUpcomingTasks, style: const TextStyle(color: AppColors.bone500))),
                       );
                     }
                     return Column(
@@ -897,7 +898,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Care Guide from Wiki',
+                         AppLocalizations.of(context).careGuideFromWiki,
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -963,7 +964,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Community Discussions',
+                      AppLocalizations.of(context).communityDiscussions,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -1019,7 +1020,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                 onPressed: () {
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()));
                                 },
-                                child: Text('See all discussions', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+                                child: Text(AppLocalizations.of(context).seeAllDiscussions, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
                               ),
                             ),
                           ],
@@ -1035,7 +1036,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
-                  'Growth History',
+                  AppLocalizations.of(context).growthHistory,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -1055,22 +1056,22 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
-                      return const Center(
+                      return Center(
                         child: Text(
-                          'Something went wrong',
-                          style: TextStyle(color: AppColors.bone500, fontSize: 12),
+                          AppLocalizations.of(context).somethingWentWrong,
+                          style: const TextStyle(color: AppColors.bone500, fontSize: 12),
                         ),
                       );
                     }
                     
                     final entries = snapshot.data ?? [];
                     if (entries.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
+                          padding: const EdgeInsets.symmetric(vertical: 20),
                           child: Text(
-                            'No growth history yet.',
-                            style: TextStyle(color: AppColors.bone500),
+                            AppLocalizations.of(context).noGrowthHistoryYet,
+                            style: const TextStyle(color: AppColors.bone500),
                           ),
                         ),
                       );
@@ -1081,7 +1082,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                         final timestamp = entry['timestamp'] as Timestamp?;
                         final dateStr = timestamp != null
                             ? DateFormat('MMMM d, yyyy').format(timestamp.toDate())
-                            : 'Just now';
+                            : AppLocalizations.of(context).justNow;
                             
                         final height = entry['height'] as String? ?? '';
                         final hasHeight = height.isNotEmpty;
@@ -1090,9 +1091,9 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           padding: const EdgeInsets.only(bottom: 20),
                           child: _buildGrowthEntryCard(
                             context: context,
-                            label: 'JOURNAL ENTRY',
+                            label: AppLocalizations.of(context).journalEntry,
                             date: dateStr,
-                            chipText: hasHeight ? '$height cm' : 'Entry',
+                            chipText: hasHeight ? '$height cm' : AppLocalizations.of(context).addJournalEntry,
                             isChipGreen: hasHeight,
                             body: entry['notes'] as String? ?? '',
                             imageUrl: entry['imageUrl'] as String?,
@@ -1308,7 +1309,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       color: AppColors.forest900, size: 18),
                   const SizedBox(width: 8),
                   Text(
-                    'New growth detected! 🌱',
+                    AppLocalizations.of(context).newGrowthDetected,
                     style: TextStyle(
                       color: AppColors.forest900,
                       fontWeight: FontWeight.w600,
@@ -1341,7 +1342,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'LAST HEALTH ASSESSMENT',
+                      AppLocalizations.of(context).lastHealthAssessment,
                       style: TextStyle(
                         color: AppColors.bone500,
                         fontSize: 10,
@@ -1387,7 +1388,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           ),
                         ),
                         Text(
-                          'out of 100',
+                          AppLocalizations.of(context).outOf100,
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.bone500,
@@ -1474,40 +1475,27 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 Future<void> _showMemorialDialog(BuildContext context, String plantId, String plantName, Map<String, dynamic> plantData) async {
   final noteController = TextEditingController();
   final bool? confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text('Mark $plantName as Deceased'),
+      title: Text('${AppLocalizations.of(context).markAsDeceased} $plantName'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Would you like to leave a note about $plantName?'),
+          Text(AppLocalizations.of(context).leaveNoteAboutPlant(plantName)),
           const SizedBox(height: 16),
           TextField(
             controller: noteController,
             maxLines: 3,
-            decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Memorial note...'),
+            decoration: InputDecoration(border: const OutlineInputBorder(), hintText: AppLocalizations.of(context).memorialNoteHint),
           ),
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirm')),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context).cancel)),
+        TextButton(onPressed: () => Navigator.pop(context, true), child: Text(AppLocalizations.of(context).confirm)),
       ],
     ),
   );
@@ -1633,8 +1621,8 @@ Future<void> _showTimeLapse(BuildContext context, String plantId) async {
 
     if (photos.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Add more growth photos to create a time lapse — you need at least 2', style: TextStyle(color: Colors.white)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).addGrowthPhotosForTimelapse, style: const TextStyle(color: Colors.white)),
           backgroundColor: AppColors.forest900,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1656,12 +1644,12 @@ Future<void> _showTimeLapse(BuildContext context, String plantId) async {
                   icon: const Icon(Icons.close, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),
-                title: const Text('Growth Time-lapse', style: TextStyle(color: Colors.white)),
+                title: Text(AppLocalizations.of(context).growthTimelapse, style: const TextStyle(color: Colors.white)),
               ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Tap photos to view your plant\'s journey (${photos.length} photos)',
+                  '${AppLocalizations.of(context).tapPhotosToViewJourney} (${photos.length} photos)',
                   style: const TextStyle(color: Colors.white70, fontSize: 16),
                 ),
               ),
@@ -1771,7 +1759,7 @@ class _MemorialSlideshowDialogState extends State<_MemorialSlideshowDialog> {
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Text(
-                'A farewell to ${widget.plantName} 🕊️',
+                AppLocalizations.of(context).farewellToPlant(widget.plantName),
                 style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'serif'),
                 textAlign: TextAlign.center,
               ),
@@ -1842,7 +1830,7 @@ class _MemorialSlideshowDialogState extends State<_MemorialSlideshowDialog> {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  Text('Thank you for $daysCaredFor days of care', style: const TextStyle(color: Colors.white70, fontSize: 16, fontStyle: FontStyle.italic)),
+                  Text(AppLocalizations.of(context).thankYouForDaysOfCare(daysCaredFor), style: const TextStyle(color: Colors.white70, fontSize: 16, fontStyle: FontStyle.italic)),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -1856,7 +1844,7 @@ class _MemorialSlideshowDialogState extends State<_MemorialSlideshowDialog> {
                       ),
                       child: _isSaving 
                         ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: AppColors.darkCanvas, strokeWidth: 2))
-                        : const Text('Move to Memorial Garden', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        : Text(AppLocalizations.of(context).moveToMemorialGarden, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
                 ],

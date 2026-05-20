@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -102,13 +103,13 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => const OnboardingOverlayScreen(
-          title: 'Meet Flora AI',
-          description: 'Your personal plant care consultant.',
+        builder: (ctx) => OnboardingOverlayScreen(
+          title: AppLocalizations.of(ctx).aiPlantConsultant,
+          description: AppLocalizations.of(ctx).yourPersonalPlantCareAssistant,
           tips: [
-            'Ask questions about any plant issue',
-            'Flora knows your plant collection context',
-            'Upload photos for AI diagnosis',
+            AppLocalizations.of(ctx).askFloraAnything,
+            AppLocalizations.of(ctx).basedOnYourGarden,
+            AppLocalizations.of(ctx).analyzeWithFlora,
           ],
           featureKey: 'flora_screen',
         ),
@@ -296,14 +297,14 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
             const SizedBox(height: 8),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: AppColors.forest900),
-              title: const Text('Take Photo',
-                  style: TextStyle(fontWeight: FontWeight.w500)),
+              title: Text(AppLocalizations.of(context).takePhoto,
+                  style: const TextStyle(fontWeight: FontWeight.w500)),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library, color: AppColors.forest900),
-              title: const Text('Choose from Gallery',
-                  style: TextStyle(fontWeight: FontWeight.w500)),
+              title: Text(AppLocalizations.of(context).chooseFromGallery,
+                  style: const TextStyle(fontWeight: FontWeight.w500)),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
@@ -427,8 +428,8 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                     maxLines: 3,
                     minLines: 1,
                     decoration: InputDecoration(
-                      hintText: 'Add a caption or question... (optional)',
-                      hintStyle: TextStyle(color: AppColors.bone500, fontSize: 14),
+                      hintText: AppLocalizations.of(context).addCaptionOrQuestion,
+                      hintStyle: const TextStyle(color: AppColors.bone500, fontSize: 14),
                       filled: true,
                       fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
@@ -448,9 +449,9 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                         Navigator.pop(ctx);
                       },
                       icon: const Icon(Icons.send, color: Colors.white, size: 18),
-                      label: const Text(
-                        'Send',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      label: Text(
+                        AppLocalizations.of(context).send,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.forest900,
@@ -464,8 +465,8 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                   TextButton(
                     onPressed: () => Navigator.pop(ctx),
                     child: Text(
-                      'Cancel',
-                      style: TextStyle(color: AppColors.bone500, fontSize: 15),
+                      AppLocalizations.of(context).cancel,
+                      style: const TextStyle(color: AppColors.bone500, fontSize: 15),
                     ),
                   ),
                 ],
@@ -550,8 +551,8 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                               ),
                             ),
                             Text(
-                              'AI Plant Consultant',
-                              style: TextStyle(
+                              AppLocalizations.of(context).aiPlantConsultant,
+                              style: const TextStyle(
                                 color: AppColors.bone500,
                                 fontSize: 12,
                               ),
@@ -573,7 +574,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                               children: [
                                 ListTile(
                                   leading: const Icon(Icons.delete_outline, color: AppColors.terracotta900),
-                                  title: const Text('Clear Chat History', style: TextStyle(color: AppColors.terracotta900)),
+                                  title: Text(AppLocalizations.of(context).clearChatHistory, style: const TextStyle(color: AppColors.terracotta900)),
                                   onTap: () {
                                     Navigator.pop(context);
                                     _clearChatHistory();
@@ -581,7 +582,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                                 ),
                                 ListTile(
                                   leading: const Icon(Icons.info_outline),
-                                  title: const Text('About Flora'),
+                                  title: Text(AppLocalizations.of(context).aboutFlora),
                                   onTap: () {
                                     Navigator.pop(context);
                                     showModalBottomSheet(
@@ -600,15 +601,15 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                                                 const SizedBox(height: 16),
                                                 const Text('Flora', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.forest900)),
                                                 const SizedBox(height: 4),
-                                                const Text('Your AI Plant Care Consultant', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.bone500)),
+                                                Text(AppLocalizations.of(context).yourPersonalPlantCareAssistant, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.bone500)),
                                                 const SizedBox(height: 24),
-                                                const Text(
-                                                  'Flora knows your entire plant collection and uses that knowledge to give you personalised care advice. She learns from your journal entries, tracks your plant health over time, and is always here when your plants need attention.',
+                                                Text(
+                                                  AppLocalizations.of(context).floraKnowsPlantsDesc,
                                                   textAlign: TextAlign.center,
-                                                  style: TextStyle(fontSize: 14, height: 1.5),
+                                                  style: const TextStyle(fontSize: 14, height: 1.5),
                                                 ),
                                                 const SizedBox(height: 32),
-                                                const Text('Version 1.0.0', style: TextStyle(fontSize: 12, color: AppColors.bone500)),
+                                                Text(AppLocalizations.of(context).version100, style: const TextStyle(fontSize: 12, color: AppColors.bone500)),
                                                 const SizedBox(height: 24),
                                                 SizedBox(
                                                   width: double.infinity,
@@ -619,7 +620,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                                                       padding: const EdgeInsets.symmetric(vertical: 16),
                                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                                     ),
-                                                    child: const Text('Close', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                                    child: Text(AppLocalizations.of(context).close, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                                   ),
                                                 ),
                                               ],
@@ -663,8 +664,8 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Flora is reviewing your plants…',
-                      style: TextStyle(
+                      AppLocalizations.of(context).floraIsReviewingYourPlants,
+                      style: const TextStyle(
                         color: AppColors.bone500,
                         fontSize: 12,
                       ),
@@ -691,8 +692,8 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  'Today, ${DateFormat('h:mm a').format(DateTime.now())}',
-                                  style: TextStyle(
+                                  AppLocalizations.of(context).todayTimestamp(DateFormat('h:mm a').format(DateTime.now())),
+                                  style: const TextStyle(
                                     color: AppColors.bone500,
                                     fontSize: 12,
                                   ),
@@ -790,8 +791,8 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                           if (_hasText) _sendMessage();
                         },
                         decoration: InputDecoration(
-                          hintText: 'Ask Flora anything about plants',
-                          hintStyle: TextStyle(color: AppColors.bone500, fontSize: 14),
+                          hintText: AppLocalizations.of(context).askFloraAnythingAboutPlants,
+                          hintStyle: const TextStyle(color: AppColors.bone500, fontSize: 14),
                           border: InputBorder.none,
                         ),
                       ),
@@ -837,17 +838,17 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                 child: Icon(Icons.eco, color: primaryColor, size: 48),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Hi I am Flora',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).hiIAmFlora,
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Your personal plant care assistant',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).yourPersonalPlantCareAssistant,
+                style: const TextStyle(
                   fontSize: 16,
                   color: AppColors.bone500,
                 ),
@@ -858,10 +859,10 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                 runSpacing: 12,
                 alignment: WrapAlignment.center,
                 children: [
-                  _buildSuggestionChip('How often should I water my Monstera'),
-                  _buildSuggestionChip('Why are my plant leaves turning yellow'),
-                  _buildSuggestionChip('What plants are good for low light'),
-                  _buildSuggestionChip('How do I repot a plant'),
+                  _buildSuggestionChip(AppLocalizations.of(context).howOftenWaterMonstera),
+                  _buildSuggestionChip(AppLocalizations.of(context).whyLeavesYellow),
+                  _buildSuggestionChip(AppLocalizations.of(context).plantsGoodForLowLight),
+                  _buildSuggestionChip(AppLocalizations.of(context).howToRepotPlant),
                 ],
               ),
             ],

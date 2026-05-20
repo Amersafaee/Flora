@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/plant.dart';
 import '../../data/plant_repository.dart';
@@ -76,7 +77,7 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'),
+          SnackBar(content: Text('${AppLocalizations.of(context).errorPrefix}$e'),
               backgroundColor: AppColors.error),
         );
       }
@@ -87,13 +88,15 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_plant == null) {
       return Scaffold(
-        appBar: AppBar(title: Text('Edit Plant')),
-        body: const Center(child: Text('Plant not found.')),
+        appBar: AppBar(title: Text(l10n.editPlant)),
+        body: Center(child: Text(l10n.plantNotFound)),
       );
     }
 
@@ -102,14 +105,14 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Plant'),
+        title: Text(l10n.editPlant),
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const SizedBox(width: 18, height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Save', style: TextStyle(
+                : Text(l10n.saveAction, style: const TextStyle(
                     color: AppColors.forestGreen,
                     fontWeight: FontWeight.w700)),
           ),
@@ -120,7 +123,7 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            Text('Pick an icon', style: tt.labelLarge),
+            Text(l10n.pickAnIcon, style: tt.labelLarge),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8, runSpacing: 8,
@@ -134,8 +137,7 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
                     decoration: BoxDecoration(
                       color: sel ? AppColors.dew : cs.surfaceContainerHighest,
                       borderRadius: AppRadius.borderSm,
-                      border: sel ? Border.all(
-                          color: AppColors.forestGreen, width: 2) : null,
+                      border: sel ? Border.all(color: AppColors.forestGreen, width: 2) : null,
                     ),
                     child: Text(e, style: const TextStyle(fontSize: 26)),
                   ),
@@ -143,22 +145,21 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
               }).toList(),
             ),
             const SizedBox(height: 20),
-            _field(_nameCtrl,    'Plant name *',   required: true),
-            _field(_speciesCtrl, 'Species / variety'),
-            _field(_locationCtrl,'Location'),
-            _field(_freqCtrl,    'Watering frequency'),
-            _field(_notesCtrl,   'Notes', maxLines: 3),
+            _field(context, _nameCtrl,    l10n.plantNameAsterisk, required: true),
+            _field(context, _speciesCtrl, l10n.speciesVariety),
+            _field(context, _locationCtrl, l10n.locationField),
+            _field(context, _freqCtrl,    l10n.wateringFrequencyField),
+            _field(context, _notesCtrl,   l10n.notesLabel, maxLines: 3),
             const SizedBox(height: 32),
             FilledButton.icon(
               onPressed: _saving ? null : _save,
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.forestGreen,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: AppRadius.borderMd),
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.borderMd),
               ),
               icon: const Icon(Icons.check),
-              label: const Text('Save changes'),
+              label: Text(l10n.saveChangesButton),
             ),
           ],
         ),
@@ -166,8 +167,9 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
     );
   }
 
-  Widget _field(TextEditingController ctrl, String label,
+  Widget _field(BuildContext context, TextEditingController ctrl, String label,
       {bool required = false, int maxLines = 1}) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
@@ -176,10 +178,9 @@ class _EditPlantScreenState extends State<EditPlantScreen> {
         textCapitalization: TextCapitalization.sentences,
         decoration: InputDecoration(labelText: label),
         validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            ? (v) => (v == null || v.trim().isEmpty) ? l10n.requiredValidator : null
             : null,
       ),
     );
   }
 }
-

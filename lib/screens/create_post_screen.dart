@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
+
 class CreatePostScreen extends StatefulWidget {
   final String initialCategory;
   final String? initialTitle;
@@ -19,7 +21,7 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
-  
+
   late String _selectedCategory;
   File? _image;
   bool _isSaving = false;
@@ -33,28 +35,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void initState() {
     super.initState();
     _selectedCategory = widget.initialCategory;
-    if (widget.initialTitle != null) {
-      _titleController.text = widget.initialTitle!;
-    }
-    if (widget.initialBody != null) {
-      _bodyController.text = widget.initialBody!;
-    }
+    if (widget.initialTitle != null) _titleController.text = widget.initialTitle!;
+    if (widget.initialBody != null) _bodyController.text = widget.initialBody!;
   }
 
   Future<void> _pickImage() async {
     final picked = await _picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() => _image = File(picked.path));
-    }
+    if (picked != null) setState(() => _image = File(picked.path));
   }
 
   Future<void> _savePost() async {
+    final l = AppLocalizations.of(context);
     final title = _titleController.text.trim();
     final body = _bodyController.text.trim();
 
     if (title.isEmpty || body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title and body are required.'), backgroundColor: Colors.red),
+        SnackBar(content: Text(l.titleBodyRequired), backgroundColor: Colors.red),
       );
       return;
     }
@@ -77,12 +74,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           }
         }
       } catch (_) {}
-      if (resolvedAuthorName.isEmpty) {
-        resolvedAuthorName = (user.displayName ?? '').trim();
-      }
-      if (resolvedAuthorName.isEmpty) {
-        resolvedAuthorName = user.email?.split('@').first ?? 'Plant Lover';
-      }
+      if (resolvedAuthorName.isEmpty) resolvedAuthorName = (user.displayName ?? '').trim();
+      if (resolvedAuthorName.isEmpty) resolvedAuthorName = user.email?.split('@').first ?? 'Plant Lover';
 
       final postDoc = await _firestore.collection('posts').add({
         'authorUid': user.uid,
@@ -110,12 +103,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post shared successfully'), backgroundColor: Colors.green),
+        SnackBar(content: Text(AppLocalizations.of(context).postSharedSuccessfully), backgroundColor: Colors.green),
       );
       Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share post: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('${AppLocalizations.of(context).failedToSharePostPrefix}$e'), backgroundColor: Colors.red),
       );
       setState(() => _isSaving = false);
     }
@@ -130,6 +124,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    // Category labels — internal values kept stable so Firestore data doesn't change
+    final categories = ['General', 'Question', 'Tips', 'Showcase', 'Experience'];
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -140,11 +138,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'New Post',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
+          l.newPost,
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         actions: [
@@ -153,12 +148,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               : TextButton(
                   onPressed: _savePost,
                   child: Text(
-                    'Save',
-                    style: TextStyle(
-                      color: Theme.of(context).primaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    l.save,
+                    style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
         ],
@@ -170,10 +161,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           children: [
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                hintText: 'Give your post a title',
+              decoration: InputDecoration(
+                hintText: l.postTitleHint,
                 border: InputBorder.none,
-                hintStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.bone500),
+                hintStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.bone500),
               ),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -181,15 +172,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             TextField(
               controller: _bodyController,
               maxLines: 8,
-              decoration: const InputDecoration(
-                hintText: 'Share your plant story or question...',
+              decoration: InputDecoration(
+                hintText: l.postBodyHint,
                 border: InputBorder.none,
               ),
             ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8.0,
-              children: ['General', 'Question', 'Tips', 'Showcase', 'Experience'].map((category) {
+              children: categories.map((category) {
                 final isSelected = _selectedCategory == category;
                 return ChoiceChip(
                   label: Text(category),
@@ -224,7 +215,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               ElevatedButton.icon(
                 onPressed: _pickImage,
                 icon: const Icon(Icons.camera_alt_outlined),
-                label: const Text('Add Photo'),
+                label: Text(l.addPhoto),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -236,7 +227,3 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 }
-
-
-
-

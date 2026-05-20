@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -37,18 +38,21 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
   }
 
   Future<void> _shareCard() async {
+    final l = AppLocalizations.of(context);
     final image = await _screenshotController.capture();
     if (image != null) {
       final directory = await getApplicationDocumentsDirectory();
       final imagePath = await File('${directory.path}/share.png').create();
       await imagePath.writeAsBytes(image);
       // ignore: deprecated_member_use
-      await Share.shareXFiles([XFile(imagePath.path)], text: 'Check out my plant on Digital Conservatory!');
+      await Share.shareXFiles([XFile(imagePath.path)], text: l.checkOutMyPlant);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     if (_cardData == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -82,7 +86,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
-                    borderRadius: BorderRadius.all(Radius.circular(20)), // For visually rounded corners, though Instagram post is often square, instructions say "centered on screen with a dark green gradient background".
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -94,7 +98,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                           color: Theme.of(context).cardColor,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.eco, color: AppColors.forest900, size: 24),
+                        child: const Icon(Icons.eco, color: AppColors.forest900, size: 24),
                       ),
                       const SizedBox(height: 24),
                       Container(
@@ -112,7 +116,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                               : null,
                         ),
                         child: data['imageUrl'] == null || data['imageUrl'].toString().isEmpty
-                            ? Icon(Icons.eco, size: 64, color: AppColors.forest900)
+                            ? const Icon(Icons.eco, size: 64, color: AppColors.forest900)
                             : null,
                       ),
                       const SizedBox(height: 24),
@@ -138,11 +142,11 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildStatBox(data['healthScore'].toString(), 'Health'),
+                          _buildStatBox(data['healthScore'].toString(), l.healthLabel),
                           const SizedBox(width: 16),
-                          _buildStatBox(data['daysSinceAdded'].toString(), 'Days Together'),
+                          _buildStatBox(data['daysSinceAdded'].toString(), l.daysTogether),
                           const SizedBox(width: 16),
-                          _buildStatBox(data['totalGrowthEntries'].toString(), 'Check-ins'),
+                          _buildStatBox(data['totalGrowthEntries'].toString(), l.checkIns),
                         ],
                       ),
                       const SizedBox(height: 32),
@@ -162,11 +166,11 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                         textAlign: TextAlign.center,
                       ),
                       const Spacer(),
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 16.0),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
                         child: Text(
-                          'Grown with Digital Conservatory',
-                          style: TextStyle(
+                          l.grownWithDigitalConservatory,
+                          style: const TextStyle(
                             color: Colors.white54,
                             fontSize: 10,
                           ),
@@ -189,7 +193,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Close'),
+                    child: Text(l.close),
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton(
@@ -200,7 +204,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Share Card'),
+                    child: Text(l.shareCard),
                   ),
                 ],
               ),
@@ -222,7 +226,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
         children: [
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 18,

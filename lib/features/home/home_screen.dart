@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/plant_providers.dart';
@@ -10,16 +11,17 @@ import '../../theme/app_theme.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  String _greeting() {
+  String _greeting(AppLocalizations l10n) {
     final user = FirebaseAuth.instance.currentUser;
     final name = user?.displayName?.split(' ').first ?? '';
     final h = DateTime.now().hour;
-    final greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    final greeting = h < 12 ? l10n.goodMorning : h < 17 ? l10n.goodAfternoon : l10n.goodEvening;
     return name.isNotEmpty ? '$greeting, $name.' : '$greeting.';
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final plantsAsync = ref.watch(userPlantsProvider);
     final todayTasks  = ref.watch(todayTasksProvider).valueOrNull ?? [];
     final tt = Theme.of(context).textTheme;
@@ -31,8 +33,8 @@ class HomeScreen extends ConsumerWidget {
       data: (plants) {
         final pendingCount = todayTasks.length;
         final subtitle = pendingCount == 0
-            ? 'Your conservatory is thriving.'
-            : '$pendingCount plant${pendingCount == 1 ? '' : 's'} need${pendingCount == 1 ? 's' : ''} attention.';
+            ? l10n.conservatoryIsThriving
+            : l10n.plantsNeedAttention(pendingCount);
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -44,200 +46,198 @@ class HomeScreen extends ConsumerWidget {
           body: CustomScrollView(
             slivers: [
               // ── Greeting Header ──────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_greeting(), style: TextStyle(
-                      fontFamily: 'NotoSerif',
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : AppColors.forestGreen,
-                    )),
-                    const SizedBox(height: 4),
-                    Text(subtitle, style: tt.bodyMedium?.copyWith(color: AppColors.moss)),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Identify Card ────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: GestureDetector(
-                onTap: () {
-                  context.go('/identify');
-                },
-                child: Container(
-                  margin: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.forestGreen,
-                    borderRadius: AppRadius.borderLg,
-                    boxShadow: [BoxShadow(
-                      color: AppColors.forestGreen.withAlpha(60),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    )],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Identify a Plant', style: TextStyle(
-                              fontFamily: 'NotoSerif',
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).cardColor,
-                            )),
-                            const SizedBox(height: 6),
-                            Text('Point your camera at any plant',
-                              style: TextStyle(color: Colors.white70, fontSize: 14)),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor.withAlpha(25),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 28),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // ── Stats Chip ───────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.dew,
-                    borderRadius: AppRadius.borderPill,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.eco, color: AppColors.leafGreen, size: 16),
-                      const SizedBox(width: 6),
-                      Text('${plants.length} Plant${plants.length == 1 ? '' : 's'}',
-                        style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.forestGreen, fontSize: 13)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // ── Section Header "My Plants" ───────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                child: Row(
-                  children: [
-                    Text('My Plants', style: TextStyle(
-                      fontFamily: 'NotoSerif',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : AppColors.forestGreen,
-                    )),
-                    const Spacer(),
-                    if (plants.isNotEmpty)
-                      GestureDetector(
-                        onTap: () => context.go('/care'),
-                        child: const Text('VIEW ALL', style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.leafGreen,
-                          letterSpacing: 0.5,
-                        )),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Plant List (horizontal or empty) ─────────────────────────
-            if (plants.isEmpty)
               SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                  padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : Colors.white,
-                    borderRadius: AppRadius.borderLg,
-                    boxShadow: AppShadows.cardShadow,
-                  ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('🌿', style: TextStyle(fontSize: 56)),
-                      const SizedBox(height: 16),
-                      Text('Add your first plant', style: TextStyle(
+                      Text(_greeting(l10n), style: TextStyle(
+                        fontFamily: 'NotoSerif',
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : AppColors.forestGreen,
+                      )),
+                      const SizedBox(height: 4),
+                      Text(subtitle, style: tt.bodyMedium?.copyWith(color: AppColors.moss)),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Identify Card ────────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: GestureDetector(
+                  onTap: () => context.go('/identify'),
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.forestGreen,
+                      borderRadius: AppRadius.borderLg,
+                      boxShadow: [BoxShadow(
+                        color: AppColors.forestGreen.withAlpha(60),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      )],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(l10n.identifyAPlant, style: TextStyle(
+                                fontFamily: 'NotoSerif',
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: Theme.of(context).cardColor,
+                              )),
+                              const SizedBox(height: 6),
+                              Text(l10n.pointCameraAtAnyPlant,
+                                style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor.withAlpha(25),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 28),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Stats Chip ───────────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.dew,
+                      borderRadius: AppRadius.borderPill,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.eco, color: AppColors.leafGreen, size: 16),
+                        const SizedBox(width: 6),
+                        Text(l10n.plantsCountLabel(plants.length),
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.forestGreen, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Section Header "My Plants" ───────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                  child: Row(
+                    children: [
+                      Text(l10n.myPlants, style: TextStyle(
                         fontFamily: 'NotoSerif',
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: isDark ? Colors.white : AppColors.forestGreen,
                       )),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: FilledButton(
-                          onPressed: () => context.go('/identify'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.forestGreen,
-                            shape: RoundedRectangleBorder(borderRadius: AppRadius.borderPill),
-                          ),
-                          child: const Text('Identify a plant'),
+                      const Spacer(),
+                      if (plants.isNotEmpty)
+                        GestureDetector(
+                          onTap: () => context.go('/care'),
+                          child: Text(l10n.viewAll, style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.leafGreen,
+                            letterSpacing: 0.5,
+                          )),
                         ),
-                      ),
                     ],
-                  ),
-                ),
-              )
-            else
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 220,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: plants.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 14),
-                    itemBuilder: (_, i) => _PlantCard(plant: plants[i]),
                   ),
                 ),
               ),
 
-            // ── Full plant list below the horizontal scroll ──────────────
-            if (plants.isNotEmpty) ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                  child: Text('All Plants', style: TextStyle(
-                    fontFamily: 'NotoSerif',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : AppColors.forestGreen,
-                  )),
+              // ── Plant List (horizontal or empty) ─────────────────────────
+              if (plants.isEmpty)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkSurface : Colors.white,
+                      borderRadius: AppRadius.borderLg,
+                      boxShadow: AppShadows.cardShadow,
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('🌿', style: TextStyle(fontSize: 56)),
+                        const SizedBox(height: 16),
+                        Text(l10n.addYourFirstPlant, style: TextStyle(
+                          fontFamily: 'NotoSerif',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : AppColors.forestGreen,
+                        )),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: FilledButton(
+                            onPressed: () => context.go('/identify'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.forestGreen,
+                              shape: RoundedRectangleBorder(borderRadius: AppRadius.borderPill),
+                            ),
+                            child: Text(l10n.identifyAPlant),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 220,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: plants.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 14),
+                      itemBuilder: (_, i) => _PlantCard(plant: plants[i]),
+                    ),
+                  ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                sliver: SliverList.separated(
-                  itemCount: plants.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) => _PlantListTile(plant: plants[i]),
+
+              // ── Full plant list below the horizontal scroll ──────────────
+              if (plants.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                    child: Text(l10n.allPlants, style: TextStyle(
+                      fontFamily: 'NotoSerif',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : AppColors.forestGreen,
+                    )),
+                  ),
                 ),
-              ),
-            ],
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                  sliver: SliverList.separated(
+                    itemCount: plants.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) => _PlantListTile(plant: plants[i]),
+                  ),
+                ),
+              ],
             ],
           ),
         );
@@ -253,6 +253,7 @@ class _PlantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isHealthy = plant.healthStatus == 'healthy';
 
     return GestureDetector(
@@ -262,7 +263,6 @@ class _PlantCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Photo
             ClipRRect(
               borderRadius: AppRadius.borderMd,
               child: Container(
@@ -270,28 +270,18 @@ class _PlantCard extends StatelessWidget {
                 height: 140,
                 color: AppColors.dew,
                 child: plant.photoBase64.isNotEmpty
-                    ? Image.memory(
-                        base64Decode(plant.photoBase64),
-                        fit: BoxFit.cover,
-                        gaplessPlayback: true,
-                      )
+                    ? Image.memory(base64Decode(plant.photoBase64), fit: BoxFit.cover, gaplessPlayback: true)
                     : const Center(child: Text('🪴', style: TextStyle(fontSize: 48))),
               ),
             ),
             const SizedBox(height: 8),
-            // Nickname
             Text(
               plant.nickname.isNotEmpty ? plant.nickname : plant.commonName,
-              style: const TextStyle(
-                fontFamily: 'NotoSerif',
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontFamily: 'NotoSerif', fontSize: 14, fontWeight: FontWeight.w600),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
-            // Health pill
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
@@ -299,7 +289,7 @@ class _PlantCard extends StatelessWidget {
                 borderRadius: AppRadius.borderPill,
               ),
               child: Text(
-                isHealthy ? 'Healthy' : 'Needs care',
+                isHealthy ? l10n.healthyStatus : l10n.needsCareStatus,
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -364,5 +354,3 @@ class _PlantListTile extends StatelessWidget {
     );
   }
 }
-
-
