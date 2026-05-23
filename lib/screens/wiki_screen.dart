@@ -3,14 +3,16 @@ import 'global_search_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'profile_screen.dart';
 import 'wiki_plant_detail_screen.dart';
 import 'blog_detail_screen.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class WikiScreen extends StatefulWidget {
-  const WikiScreen({super.key});
+  final ValueChanged<bool>? onThemeChanged;
+  final ValueChanged<Locale>? onLocaleChanged;
+  const WikiScreen({super.key, this.onThemeChanged, this.onLocaleChanged});
 
   @override
   State<WikiScreen> createState() => _WikiScreenState();
@@ -20,6 +22,7 @@ class _WikiScreenState extends State<WikiScreen> {
   // Internal English key used for Firestore tag matching — must NOT be localized
   String _selectedFilter = 'All Plants';
   String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -29,9 +32,16 @@ class _WikiScreenState extends State<WikiScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Map from internal English key → localized display label
     final filterLabels = {
@@ -49,25 +59,12 @@ class _WikiScreenState extends State<WikiScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Header (FIX 1: Removed avatar)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                        );
-                      },
-                      child: const CircleAvatar(
-                        backgroundColor: AppColors.bone500,
-                        radius: 18,
-                        child: Icon(Icons.person, color: Colors.white, size: 20),
-                      ),
-                    ),
                     Text(
                       l.digitalConservatory,
                       style: const TextStyle(
@@ -95,11 +92,10 @@ class _WikiScreenState extends State<WikiScreen> {
                   children: [
                     Text(
                       l.plantWiki,
-                      style: TextStyle(
-                        fontFamily: 'serif',
-                        fontSize: 36,
+                      style: GoogleFonts.notoSerif(
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -132,6 +128,7 @@ class _WikiScreenState extends State<WikiScreen> {
                     ],
                   ),
                   child: TextField(
+                    controller: _searchController,
                     onChanged: (val) {
                       setState(() {
                         _searchQuery = val;
@@ -241,16 +238,15 @@ class _WikiScreenState extends State<WikiScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Blog Section Title
+              // Blog Section Title (FIX 5)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
                   l.latestFromBlog,
-                  style: TextStyle(
-                    fontFamily: 'serif',
-                    fontSize: 24,
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                   ),
                 ),
               ),
@@ -326,6 +322,34 @@ class _WikiScreenState extends State<WikiScreen> {
     required String displayLabel,
     required bool isSelected,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    Color? backgroundColor;
+    Border? border;
+    Color textColor;
+    
+    if (isDark) {
+      if (isSelected) {
+        backgroundColor = AppColors.forest700;
+        textColor = Colors.white;
+        border = Border.all(color: Colors.transparent);
+      } else {
+        backgroundColor = AppColors.darkSurface;
+        textColor = AppColors.darkTextSecondary;
+        border = Border.all(color: AppColors.darkBorderDefault, width: 1);
+      }
+    } else {
+      if (isSelected) {
+        backgroundColor = AppColors.forest700;
+        textColor = Colors.white;
+        border = Border.all(color: Colors.transparent);
+      } else {
+        backgroundColor = Colors.transparent;
+        textColor = AppColors.bone500;
+        border = Border.all(color: AppColors.bone200, width: 1);
+      }
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4.0),
       child: GestureDetector(
@@ -334,20 +358,29 @@ class _WikiScreenState extends State<WikiScreen> {
             _selectedFilter = internalKey;
           });
         },
-        child: Chip(
-          avatar: isSelected ? const Icon(Icons.check, color: Colors.white, size: 16) : null,
-          label: Text(
-            displayLabel,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-          backgroundColor: isSelected ? AppColors.forest900 : Colors.transparent,
-          side: isSelected ? BorderSide.none : const BorderSide(color: AppColors.bone300),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          shape: RoundedRectangleBorder(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            border: border,
             borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSelected) ...[
+                const Icon(Icons.check, color: Colors.white, size: 14),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                displayLabel,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -363,6 +396,7 @@ class _WikiScreenState extends State<WikiScreen> {
     required String imageUrl,
     required Map<String, dynamic> plantData,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => WikiPlantDetailScreen(plantData: plantData)));
@@ -383,24 +417,42 @@ class _WikiScreenState extends State<WikiScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
-            Container(
-              height: 200,
-              width: double.infinity,
-              color: AppColors.forest100,
-              child: imageUrl.isNotEmpty
-                  ? Image.network(
+            // Image (FIX 3)
+            imageUrl.isNotEmpty
+                ? Container(
+                    height: 200,
+                    width: double.infinity,
+                    color: AppColors.forest100,
+                    child: Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Center(child: Icon(Icons.eco, color: Color(0x6614301E), size: 48)),
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 180,
+                        color: isDark ? AppColors.darkForestSubtle : AppColors.forest50,
+                        child: const Center(
+                          child: Icon(Icons.local_florist, size: 48, color: AppColors.forest300),
+                        ),
+                      ),
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
-                        return const Center(child: Icon(Icons.eco, color: Color(0x6614301E), size: 48));
+                        return Container(
+                          height: 180,
+                          color: isDark ? AppColors.darkForestSubtle : AppColors.forest50,
+                          child: const Center(
+                            child: Icon(Icons.local_florist, size: 48, color: AppColors.forest300),
+                          ),
+                        );
                       },
-                    )
-                  : const Center(child: Icon(Icons.eco, color: Color(0x6614301E), size: 48)),
-            ),
+                    ),
+                  )
+                : Container(
+                    height: 180,
+                    width: double.infinity,
+                    color: isDark ? AppColors.darkForestSubtle : AppColors.forest50,
+                    child: const Center(
+                      child: Icon(Icons.local_florist, size: 48, color: AppColors.forest300),
+                    ),
+                  ),
 
             // Content
             Padding(
@@ -460,21 +512,20 @@ class _WikiScreenState extends State<WikiScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    name,
-                    style: TextStyle(
-                      fontFamily: 'serif',
-                      fontSize: 24,
+                    commonName,
+                    style: GoogleFonts.notoSerif(
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    commonName,
-                    style: const TextStyle(
-                      color: AppColors.bone500,
-                      fontSize: 14,
+                    name,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
                       fontStyle: FontStyle.italic,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.bone500,
                     ),
                   ),
                   const SizedBox(height: 16),

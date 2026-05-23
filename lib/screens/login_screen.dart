@@ -1,12 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_screen.dart';
-import 'onboarding_screen.dart';
 import '../services/auth_service.dart';
 import '../main.dart';
 import '../theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LoginScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -25,27 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkOnboarding();
-    });
-  }
 
-  Future<void> _checkOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    final complete = prefs.getBool('onboarding_complete') ?? false;
-    if (!complete) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OnboardingScreen(onThemeChanged: widget.onThemeChanged),
-        ),
-      );
-    }
-  }
 
   @override
   void dispose() {
@@ -164,6 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -173,16 +153,20 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo
-              Center(
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    shape: BoxShape.circle,
+              // Logo (FIX 5)
+              Padding(
+                padding: const EdgeInsets.only(top: 40.0),
+                child: Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.eco,
+                      color: AppColors.forest700,
+                      size: 64,
+                    ),
                   ),
-                  child: const Icon(Icons.eco, color: Colors.white, size: 40),
                 ),
               ),
               const SizedBox(height: 24),
@@ -200,9 +184,12 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                l.yourPersonalBotanicalGuide,
+                'Welcome back to your sanctuary.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.bone500, fontSize: 16),
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.bone500,
+                  fontSize: 15,
+                ),
               ),
               const SizedBox(height: 48),
 
@@ -214,12 +201,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 enabled: !_isLoading,
+                style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Theme.of(context).cardColor,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -233,33 +221,35 @@ class _LoginScreenState extends State<LoginScreen> {
                 textInputAction: TextInputAction.done,
                 enabled: !_isLoading,
                 onSubmitted: (_) => _login(),
+                style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Theme.of(context).cardColor,
+                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
                   suffixIcon: IconButton(
                     icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppColors.bone500),
                     onPressed: _isLoading ? null : () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 40),
 
-              // Sign In Button
+              // Sign In Button (FIX 5)
               SizedBox(
-                height: 50,
+                height: 54,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    disabledBackgroundColor: primaryColor.withValues(alpha: 0.6),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: AppColors.forest700,
+                    disabledBackgroundColor: AppColors.forest700.withValues(alpha: 0.6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                    elevation: 0,
                   ),
                   child: _isLoading
                       ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : Text(l.signIn, style: TextStyle(color: Theme.of(context).cardColor, fontSize: 16, fontWeight: FontWeight.bold)),
+                      : Text(l.signIn, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -276,29 +266,39 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
 
-              OutlinedButton(
-                onPressed: _isLoading ? null : _signInWithGoogle,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  side: BorderSide(color: Theme.of(context).colorScheme.outline),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+              // Google Button (FIX 5)
+              SizedBox(
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: _isLoading ? null : _signInWithGoogle,
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.bone200, width: 1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.bone200),
+                        ),
+                        child: const Center(child: Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.bold, fontSize: 16))),
                       ),
-                      child: const Center(child: Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.bold, fontSize: 16))),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(l.continueWithGoogle, style: Theme.of(context).textTheme.labelLarge),
-                  ],
+                      const SizedBox(width: 12),
+                      Text(
+                        l.continueWithGoogle,
+                        style: const TextStyle(
+                          color: AppColors.bone700,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

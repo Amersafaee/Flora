@@ -32,6 +32,7 @@ class AppColors {
   static const bone50  = Color(0xFFF4F1EA);
   static const bone25  = Color(0xFFFAF8F4);
   static const white   = Color(0xFFFFFFFF);
+  static const parchment = Color(0xFFEDEAE0); // warm cream baseline
 
   // Dark mode surfaces
   static const darkCanvas          = Color(0xFF0E1411);
@@ -169,7 +170,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       primaryColor: AppColors.forest700,
-      scaffoldBackgroundColor: AppColors.bone25,
+      scaffoldBackgroundColor: AppColors.bone50,
       cardColor: AppColors.white,
       textTheme: textTheme,
       colorScheme: ColorScheme.light(

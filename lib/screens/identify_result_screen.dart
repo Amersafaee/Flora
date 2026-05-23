@@ -7,6 +7,7 @@ import 'add_plant_screen.dart';
 import 'flora_screen.dart';
 import 'wiki_plant_detail_screen.dart';
 import '../theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class IdentifyResultScreen extends StatefulWidget {
   final File imageFile;
@@ -274,31 +275,45 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (healthScore != null) ...[
-                              Row(
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Text(
+                                        '$healthScore',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 48,
+                                          fontWeight: FontWeight.bold,
+                                          color: _scoreColor(healthScore, context),
+                                        ),
+                                      ),
+                                      Text(
+                                        '/100',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.normal,
+                                          color: _scoreColor(healthScore, context).withValues(alpha: 0.7),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: _scoreColor(healthScore, context).withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(40),
+                                      borderRadius: BorderRadius.circular(20),
                                     ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          '$healthScore',
-                                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _scoreColor(healthScore, context), height: 1),
-                                        ),
-                                        Text(
-                                          '/100',
-                                          style: TextStyle(fontSize: 14, color: _scoreColor(healthScore, context).withValues(alpha: 0.7), fontWeight: FontWeight.w600),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          _scoreLabel(healthScore, l),
-                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _scoreColor(healthScore, context)),
-                                        ),
-                                      ],
+                                    child: Text(
+                                      _scoreLabel(healthScore, l),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: _scoreColor(healthScore, context),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -377,10 +392,36 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Add to My Collection
+                    // PRIMARY: Continue with Flora (FIX 4)
                     SizedBox(
-                      height: 52,
-                      child: ElevatedButton.icon(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: _isOpeningFlora ? null : _openFloraWithPlantContext,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.forest700,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                          elevation: 0,
+                        ),
+                        child: _isOpeningFlora
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                              )
+                            : const Text(
+                                'Continue with Flora',
+                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // SECONDARY: Add to my garden (FIX 4)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: OutlinedButton(
                         onPressed: () {
                           final plantName = _extractPlantName();
                           final commonName = _extractCommonName();
@@ -402,58 +443,29 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                             ),
                           );
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.forest900,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
-                        icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 20),
-                        label: Text(
-                          l.addToMyCollection,
-                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Analyze Another
-                    SizedBox(
-                      height: 52,
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.forest900, width: 1.5),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          side: const BorderSide(color: AppColors.forest700, width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                         ),
-                        icon: const Icon(Icons.refresh, color: AppColors.forest900, size: 20),
-                        label: Text(
-                          l.analyzeAnother,
-                          style: const TextStyle(color: AppColors.forest900, fontSize: 15, fontWeight: FontWeight.bold),
+                        child: const Text(
+                          'Add to my garden',
+                          style: TextStyle(color: AppColors.forest700, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
 
-                    // Continue with Flora
-                    SizedBox(
-                      height: 52,
-                      child: ElevatedButton.icon(
-                        onPressed: _isOpeningFlora ? null : _openFloraWithPlantContext,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.forest600,
-                          disabledBackgroundColor: const Color(0x8C2E7D32),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
-                        icon: _isOpeningFlora
-                            ? const SizedBox(
-                                width: 18, height: 18,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                              )
-                            : const Icon(Icons.eco, color: Colors.white, size: 20),
-                        label: Text(
-                          _isOpeningFlora ? l.openingFlora : l.continueWithFlora,
-                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                    // TERTIARY: Analyse another plant (FIX 4)
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          'Analyse another plant',
+                          style: TextStyle(
+                            color: AppColors.forest600,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),

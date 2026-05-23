@@ -166,10 +166,10 @@ class _MainTabScreenState extends State<MainTabScreen> {
 
   Widget _buildScreen(int index) {
     switch (index) {
-      case 0: return HomeScreen(onThemeChanged: widget.onThemeChanged);
+      case 0: return HomeScreen(onThemeChanged: widget.onThemeChanged, onLocaleChanged: widget.onLocaleChanged);
       case 1: return const AllPlantsScreen();
       case 2: return const FloraChatsListScreen();
-      case 3: return const WikiScreen();
+      case 3: return WikiScreen(onThemeChanged: widget.onThemeChanged, onLocaleChanged: widget.onLocaleChanged);
       case 4: return ProfileScreen(
         onThemeChanged: widget.onThemeChanged,
         onLocaleChanged: widget.onLocaleChanged,

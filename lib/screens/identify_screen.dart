@@ -17,7 +17,6 @@ class IdentifyScreen extends StatefulWidget {
 
 class _IdentifyScreenState extends State<IdentifyScreen> {
   static const Color _darkGreen = AppColors.forest900;
-  static const Color _softGreen = AppColors.forest100;
 
   File? _selectedImage;
   bool _isAnalyzing = false;
@@ -132,21 +131,49 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Column(
+      body: Stack(
         children: [
-          // ── Top 60%: image area ───────────────────────────────────────
-          Expanded(
-            flex: 6,
-            child: _selectedImage == null
-                ? _buildEmptyImageArea()
-                : _buildSelectedImageArea(),
-          ),
+          Column(
+            children: [
+              // ── Top 60%: image area ───────────────────────────────────────
+              Expanded(
+                flex: 6,
+                child: _selectedImage == null
+                    ? _buildEmptyImageArea()
+                    : _buildSelectedImageArea(),
+              ),
 
-          // ── Bottom 40%: control panel ─────────────────────────────────
-          Expanded(
-            flex: 4,
-            child: _buildControlPanel(),
+              // ── Bottom 40%: control panel ─────────────────────────────────
+              Expanded(
+                flex: 4,
+                child: _buildControlPanel(),
+              ),
+            ],
           ),
+          
+          // × Close button – top left (FIX 3)
+          if (_selectedImage == null)
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -159,89 +186,81 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
     final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
-      color: _softGreen,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         bottom: false,
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.camera_alt_outlined,
-                size: 64,
-                color: _darkGreen,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l.analyzeYourPlant,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.camera_alt_outlined,
+                  size: 64,
                   color: _darkGreen,
                 ),
-              ),
-              const SizedBox(height: 28),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildPickerButton(
-                    icon: Icons.camera_alt,
-                    label: l.takePhoto,
-                    onTap: () => _pickImage(ImageSource.camera),
-                    filled: false,
+                const SizedBox(height: 16),
+                Text(
+                  l.analyzeYourPlant,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: _darkGreen,
                   ),
-                  const SizedBox(width: 16),
-                  _buildPickerButton(
-                    icon: Icons.photo_library_outlined,
-                    label: l.fromGallery,
-                    onTap: () => _pickImage(ImageSource.gallery),
-                    filled: true,
+                ),
+                const SizedBox(height: 32),
+                
+                // Primary CTA (Take a photo)
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: () => _pickImage(ImageSource.camera),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.forest700,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Take a photo',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 12),
+                
+                // Secondary CTA (Choose from your photos)
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: OutlinedButton(
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.forest700, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                    ),
+                    child: const Text(
+                      'Choose from your photos',
+                      style: TextStyle(
+                        color: AppColors.forest700,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPickerButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required bool filled,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: filled ? _darkGreen : Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _darkGreen, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: filled ? Colors.white : _darkGreen, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: filled ? Colors.white : _darkGreen,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-          ],
         ),
       ),
     );

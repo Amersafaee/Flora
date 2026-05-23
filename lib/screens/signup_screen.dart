@@ -1,15 +1,13 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
 import '../services/onboarding_service.dart';
 import 'login_screen.dart';
 import '../main.dart';
 import '../theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SignupScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -28,7 +26,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final AuthService _authService = AuthService();
   bool _obscurePassword = true;
   bool _isLoading = false;
-  File? _profileImage;
 
   @override
   void dispose() {
@@ -36,14 +33,6 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickProfileImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 512, maxHeight: 512);
-    if (picked != null && mounted) {
-      setState(() => _profileImage = File(picked.path));
-    }
   }
 
   void _signup() async {
@@ -112,16 +101,6 @@ class _SignupScreenState extends State<SignupScreen> {
             'createdAt': FieldValue.serverTimestamp(),
           };
 
-          if (_profileImage != null) {
-            try {
-              final storageRef = FirebaseStorage.instance.ref().child('users/$uid/profile/profile.jpg');
-              await storageRef.putFile(_profileImage!, SettableMetadata(contentType: 'image/jpeg'));
-              final downloadUrl = await storageRef.getDownloadURL();
-              userData['profilePhotoUrl'] = downloadUrl;
-            } catch (e) {
-              debugPrint('Profile photo upload failed during signup: $e');
-            }
-          }
 
           await FirebaseFirestore.instance.collection('users').doc(uid).set(userData, SetOptions(merge: true));
           if (name.isNotEmpty) {
@@ -206,6 +185,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -215,41 +195,34 @@ class _SignupScreenState extends State<SignupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Profile Photo Picker
-              Center(
-                child: GestureDetector(
-                  onTap: _isLoading ? null : _pickProfileImage,
-                  child: Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      CircleAvatar(
-                        radius: 48,
-                        backgroundColor: primaryColor.withValues(alpha: 0.15),
-                        backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
-                        child: _profileImage == null ? Icon(Icons.person, color: primaryColor, size: 44) : null,
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: primaryColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Theme.of(context).cardColor, width: 2),
-                        ),
-                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
-                      ),
-                    ],
+              // Botanical Logo (FIX 1)
+              Padding(
+                padding: const EdgeInsets.only(top: 40.0),
+                child: Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.eco,
+                      color: AppColors.forest700,
+                      size: 64,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(l.addPhotoOptional, style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
               ),
               const SizedBox(height: 20),
 
               Text(l.createAccount, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'serif', fontSize: 28, fontWeight: FontWeight.bold, color: primaryColor)),
               const SizedBox(height: 8),
-              Text(l.startYourPlantJourney, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.bone500, fontSize: 16)),
+              Text(
+                'Your plants, your assistant, your sanctuary.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.bone500,
+                  fontSize: 15,
+                ),
+              ),
               const SizedBox(height: 32),
 
               // Full Name
@@ -259,12 +232,13 @@ class _SignupScreenState extends State<SignupScreen> {
                 controller: _nameController,
                 textInputAction: TextInputAction.next,
                 enabled: !_isLoading,
+                style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Theme.of(context).cardColor,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -277,12 +251,13 @@ class _SignupScreenState extends State<SignupScreen> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 enabled: !_isLoading,
+                style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Theme.of(context).cardColor,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -296,29 +271,31 @@ class _SignupScreenState extends State<SignupScreen> {
                 textInputAction: TextInputAction.done,
                 enabled: !_isLoading,
                 onSubmitted: (_) => _signup(),
+                style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Theme.of(context).cardColor,
+                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
                   suffixIcon: IconButton(
                     icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppColors.bone500),
                     onPressed: _isLoading ? null : () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 40),
 
-              // Create Account Button
+              // Create Account Button (FIX 3)
               SizedBox(
-                height: 50,
+                height: 54,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _signup,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    disabledBackgroundColor: primaryColor.withValues(alpha: 0.6),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: AppColors.forest700,
+                    disabledBackgroundColor: AppColors.forest700.withValues(alpha: 0.6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                    elevation: 0,
                   ),
                   child: _isLoading
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
@@ -339,29 +316,39 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               const SizedBox(height: 24),
 
-              OutlinedButton(
-                onPressed: _isLoading ? null : _signInWithGoogle,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  side: BorderSide(color: Theme.of(context).colorScheme.outline),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+              // Google Button (FIX 3)
+              SizedBox(
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: _isLoading ? null : _signInWithGoogle,
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.bone200, width: 1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.bone200),
+                        ),
+                        child: const Center(child: Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.bold, fontSize: 16))),
                       ),
-                      child: const Center(child: Text('G', style: TextStyle(color: Color(0xFF4285F4), fontWeight: FontWeight.bold, fontSize: 16))),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(l.continueWithGoogle, style: Theme.of(context).textTheme.labelLarge),
-                  ],
+                      const SizedBox(width: 12),
+                      Text(
+                        l.continueWithGoogle,
+                        style: const TextStyle(
+                          color: AppColors.bone700,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

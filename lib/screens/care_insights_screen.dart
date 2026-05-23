@@ -19,6 +19,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
   final GeminiService _geminiService = GeminiService();
   bool _isLoading = true;
   bool _isGeneratingPlan = false;
+  String? _errorMessage;
   List<Map<String, dynamic>> _carePlan = [];
 
   @override
@@ -28,31 +29,41 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
   }
 
   Future<void> _loadCarePlan() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      final plan = await _intelligenceService.generateWeeklyCarePlan(uid);
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final plan = await _intelligenceService.generateWeeklyCarePlan(uid);
 
-      // Filter for next 14 days only
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final maxDate = today.add(const Duration(days: 14));
+        // Filter for next 14 days only
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final maxDate = today.add(const Duration(days: 14));
 
-      final filteredPlan = plan.where((task) {
-        final date = task['recommendedDate'] as DateTime;
-        final taskDate = DateTime(date.year, date.month, date.day);
-        return !taskDate.isBefore(today) && taskDate.isBefore(maxDate);
-      }).toList();
+        final filteredPlan = plan.where((task) {
+          final date = task['recommendedDate'] as DateTime;
+          final taskDate = DateTime(date.year, date.month, date.day);
+          return !taskDate.isBefore(today) && taskDate.isBefore(maxDate);
+        }).toList();
 
-      if (mounted) {
-        setState(() {
-          _carePlan = filteredPlan;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _carePlan = filteredPlan;
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
-    } else {
+    } catch (e) {
+      debugPrint('CareInsightsScreen: error loading care plan: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _errorMessage = 'Could not load your care plan. Please try again.';
         });
       }
     }
@@ -278,7 +289,40 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Column(
+            : _errorMessage != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.cloud_off_outlined, size: 48, color: AppColors.bone300),
+                          const SizedBox(height: 16),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: AppColors.bone500, fontSize: 15),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _isLoading = true;
+                                _errorMessage = null;
+                              });
+                              _loadCarePlan();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.forest900,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Try Again', style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(

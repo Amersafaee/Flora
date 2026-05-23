@@ -1,6 +1,4 @@
 import '../services/badges_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../services/calendar_service.dart';
 import 'add_task_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -155,7 +153,16 @@ class _CareScreenState extends State<CareScreen> {
       List.generate(7, (i) => currentWeekStart.add(Duration(days: i)));
 
   List<Color> _getDotsForDate(DateTime date) {
-    return _taskDots['${date.year}-${date.month}-${date.day}'] ?? [];
+    final list = _taskDots['${date.year}-${date.month}-${date.day}'] ?? [];
+    if (list.isEmpty) return [];
+    final today = DateTime.now();
+    final compareDate = DateTime(date.year, date.month, date.day);
+    final compareToday = DateTime(today.year, today.month, today.day);
+    if (compareDate.isBefore(compareToday)) {
+      return const [AppColors.terracotta500];
+    } else {
+      return const [AppColors.forest500];
+    }
   }
 
 
@@ -176,6 +183,7 @@ class _CareScreenState extends State<CareScreen> {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final today = DateTime.now();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -218,11 +226,6 @@ class _CareScreenState extends State<CareScreen> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.calendar_month_outlined),
-                        tooltip: AppLocalizations.of(context).syncToCalendar,
-                        onPressed: _syncToCalendar,
-                      ),
-                      IconButton(
                         icon: Icon(Icons.search, color: primaryColor),
                         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GlobalSearchScreen())),
                       ),
@@ -254,10 +257,10 @@ class _CareScreenState extends State<CareScreen> {
                   children: [
                     Text(
                       _monthYearTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.bone900,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                       ),
                     ),
                     Row(
@@ -316,9 +319,14 @@ class _CareScreenState extends State<CareScreen> {
                   final label = isToday
                       ? AppLocalizations.of(context).todaysTasks
                       : DateFormat('EEEE\'s Tasks').format(selectedDay);
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
                   return Text(
                     label,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.bone900),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                    ),
                   );
                 }),
               ),
@@ -459,35 +467,58 @@ class _CareScreenState extends State<CareScreen> {
                                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BatchCareScreen(tasks: pendingTasks))),
                                           child: Container(
                                             margin: const EdgeInsets.only(bottom: 16),
-                                          padding: const EdgeInsets.all(16),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.forest900,
-                                            borderRadius: BorderRadius.circular(16),
-                                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4))],
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(12),
-                                                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                                                child: const Icon(Icons.flash_on, color: Colors.white),
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: isDark ? AppColors.darkForestSubtle : AppColors.forest50,
+                                              borderRadius: BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: isDark ? AppColors.darkBorderDefault : AppColors.bone200,
+                                                width: 1.5,
                                               ),
-                                              const SizedBox(width: 16),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    const Text('Quick Care Mode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                                    const SizedBox(height: 4),
-                                                    Text(AppLocalizations.of(context).swipeThroughTasksFast, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                                                  ],
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(10),
+                                                  decoration: BoxDecoration(
+                                                    color: isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: const Icon(Icons.flash_on, color: AppColors.terracotta500, size: 24),
                                                 ),
-                                              ),
-                                              const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
-                                            ],
+                                                const SizedBox(width: 16),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        'Quick Care Mode',
+                                                        style: TextStyle(
+                                                          color: isDark ? AppColors.darkForestPrimary : AppColors.forest700,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        AppLocalizations.of(context).swipeThroughTasksFast,
+                                                        style: const TextStyle(
+                                                          color: AppColors.bone500,
+                                                          fontSize: 13,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  Icons.arrow_forward_ios,
+                                                  color: isDark ? AppColors.darkForestPrimary : AppColors.forest700,
+                                                  size: 16,
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
                                     ...scoredTasks.map((entry) {
                                       final task = entry.key;
                                       final score = entry.value;
@@ -531,26 +562,43 @@ class _CareScreenState extends State<CareScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
+                              color: isDark ? AppColors.darkForestSubtle : AppColors.forest50,
                               borderRadius: BorderRadius.circular(16),
-                              border: const Border(left: BorderSide(color: AppColors.forest900, width: 4)),
+                              border: const Border(left: BorderSide(color: AppColors.forest200, width: 4)),
                               boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
                             ),
                             child: Row(
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(10),
-                                  decoration: const BoxDecoration(color: AppColors.forest100, shape: BoxShape.circle),
-                                  child: const Icon(Icons.psychology, color: AppColors.forest900, size: 24),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AppColors.darkForestSubtle : AppColors.forest100,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.psychology,
+                                    color: isDark ? AppColors.darkForestPrimary : AppColors.forest900,
+                                    size: 24,
+                                  ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Smart Care Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.forest900)),
+                                      Text(
+                                        'Smart Care Plan',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: isDark ? AppColors.darkForestPrimary : AppColors.forest900,
+                                        ),
+                                      ),
                                       const SizedBox(height: 4),
-                                      Text(AppLocalizations.of(context).personalizedScheduleBasedOnHome, style: const TextStyle(color: AppColors.bone500, fontSize: 13)),
+                                      Text(
+                                        AppLocalizations.of(context).personalizedScheduleBasedOnHome,
+                                        style: const TextStyle(color: AppColors.bone500, fontSize: 13),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -800,10 +848,11 @@ class _CareScreenState extends State<CareScreen> {
       customBorder = Border(left: BorderSide(color: Colors.amber.shade700, width: 2));
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: isDark ? AppColors.darkSurface : AppColors.white,
         borderRadius: BorderRadius.circular(20),
         border: customBorder,
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
@@ -820,17 +869,31 @@ class _CareScreenState extends State<CareScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isOverdue ? Colors.red : AppColors.bone900)),
+                Text(
+                  task.taskType,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(color: isOverdue ? Colors.red.shade300 : AppColors.bone500, fontSize: 13)),
-                if (task.climateAdjusted) ...[
+                Text(
+                  '${task.plantName}${isOverdue ? ' • Overdue' : ''}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.bone500,
+                  ),
+                ),
+                if (task.climateNote.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(task.climateNote.toLowerCase().contains('dry') ? Icons.wb_sunny : Icons.water_drop, size: 14, color: Colors.blueGrey),
-                      const SizedBox(width: 4),
-                      Expanded(child: Text(task.climateNote, style: const TextStyle(color: Colors.blueGrey, fontSize: 12, fontStyle: FontStyle.italic))),
-                    ],
+                  Text(
+                    task.climateNote,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.bone500,
+                    ),
                   ),
                 ],
               ],
@@ -948,56 +1011,4 @@ class _CareScreenState extends State<CareScreen> {
     );
   }
 
-  Future<void> _syncToCalendar() async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    scaffoldMessenger.showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context).syncingTasksToCalendar), duration: const Duration(seconds: 2)),
-    );
-
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return;
-
-      final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('tasks')
-          .where('isCompleted', isEqualTo: false)
-          .get();
-
-      final tasks = snapshot.docs.map((doc) {
-        final data = doc.data();
-        final dueDateRaw = data['dueDate'];
-        DateTime? dueDate;
-        if (dueDateRaw != null) {
-          dueDate = (dueDateRaw as dynamic).toDate() as DateTime;
-        }
-        return {
-          'plantName': data['plantName'] as String? ?? 'Plant',
-          'taskType': data['taskType'] as String? ?? 'Care',
-          'dueDate': dueDate,
-          'notes': data['notes'] as String?,
-        };
-      }).where((t) => t['dueDate'] != null).toList();
-
-      final synced = await CalendarService().syncAllTasks(tasks: tasks);
-
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(synced > 0
-              ? AppLocalizations.of(context).syncedTasksToCalendar(synced)
-              : AppLocalizations.of(context).noUpcomingTasksToSync),
-            backgroundColor: synced > 0 ? Colors.green : Colors.orange,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).calendarSyncFailed)),
-        );
-      }
-    }
-  }
 }

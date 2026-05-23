@@ -15,13 +15,12 @@ import '../models/plant_model.dart';
 import '../models/treatment_case_model.dart';
 import '../models/task_model.dart';
 import 'wiki_plant_detail_screen.dart';
-import 'post_comments_screen.dart';
-import 'community_screen.dart';
 import 'create_listing_screen.dart' as import_create_listing;
 import '../services/onboarding_service.dart';
 import 'onboarding_overlay_screen.dart';
 import 'home_screen.dart';
 import '../theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // ignore_for_file: avoid_dynamic_calls
 
@@ -77,6 +76,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final uid = FirebaseAuth.instance.currentUser?.uid;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: uid != null
@@ -135,14 +135,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          plantData['name'] as String? ?? plantName,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
+                        const SizedBox.shrink(),
                         StreamBuilder<QuerySnapshot>(
                           stream: FirebaseFirestore.instance.collection('lineage').where(Filter.or(Filter('childPlantId', isEqualTo: plantId), Filter('parentPlantId', isEqualTo: plantId))).snapshots(),
                           builder: (context, snapshot) {
@@ -312,12 +305,14 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(uid)
-                      .collection('tasks')
-                      .where('plantId', isEqualTo: plantId)
-                      .snapshots(),
+                  stream: uid != null
+                      ? FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(uid)
+                          .collection('tasks')
+                          .where('plantId', isEqualTo: plantId)
+                          .snapshots()
+                      : const Stream.empty(),
                   builder: (context, taskSnap) {
                     DateTime? lastWateredDate;
                     if (taskSnap.hasData) {
@@ -375,36 +370,39 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                                 fontSize: 12,
                                               ),
                                             ),
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    AppLocalizations.of(context).analyzeWithFloraToGetHealthScore,
-                                                    style: TextStyle(
-                                                      color: AppColors.bone500,
-                                                      fontSize: 10,
-                                                      fontStyle: FontStyle.italic,
+                                            const SizedBox(height: 4),
+                                            GestureDetector(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => AddGrowthEntryScreen(
+                                                      plantName: plantData['name'] as String? ?? plantName,
+                                                      plantId: plantId,
+                                                      healthStatus: currentHealthStatus,
                                                     ),
                                                   ),
-                                                ),
-                                                IconButton(
-                                                  icon: Icon(Icons.camera_alt, size: 16, color: primaryColor),
-                                                  padding: EdgeInsets.zero,
-                                                  constraints: const BoxConstraints(),
-                                                  onPressed: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) => AddGrowthEntryScreen(
-                                                          plantName: plantData['name'] as String? ?? plantName,
-                                                          plantId: plantId,
-                                                          healthStatus: currentHealthStatus,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                              ],
+                                                );
+                                              },
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    AppLocalizations.of(context).analyzeWithFlora,
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: isDark ? AppColors.darkForestPrimary : AppColors.forest600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Icon(
+                                                    Icons.arrow_forward,
+                                                    size: 14,
+                                                    color: isDark ? AppColors.darkForestPrimary : AppColors.forest600,
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -657,147 +655,6 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Family Tree Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => FamilyTreeScreen(
-                            plantId: plantId,
-                            plantName: plantData['name'] as String? ?? plantName,
-                          ),
-                        ),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Theme.of(context).cardColor,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5), width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.account_tree_outlined, color: primaryColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppLocalizations.of(context).viewFamilyTree,
-                          style: TextStyle(
-                            color: primaryColor,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Time-lapse Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _showTimeLapse(context, plantId);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.movie_creation_outlined, color: Colors.white),
-                        const SizedBox(width: 12),
-                        Text(
-                          AppLocalizations.of(context).createTimeLapse,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Swap Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => import_create_listing.CreateListingScreen(
-                            initialPlantName: plantData['name'] as String? ?? plantName,
-                            initialDescription: "Healthy ${plantData['category'] ?? 'plant'} from my personal collection. Health score: ${plantData['healthScore'] ?? 'Unknown'}.",
-                            initialType: "Whole Plant",
-                            initialHealthScore: plantData['healthScore'] as int?,
-                            initialPlantId: plantId,
-                          ),
-                        ),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Theme.of(context).cardColor,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5), width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.swap_horiz, color: primaryColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppLocalizations.of(context).listForSwapEmoji,
-                          style: TextStyle(
-                            color: primaryColor,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              
-              // Generate text
-              Center(
-                child: Text(
-                  AppLocalizations.of(context).watchPlantGrowOverTime,
-                  style: const TextStyle(
-                    color: AppColors.bone500,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
               const SizedBox(height: 32),
               
               // Upcoming Tasks
@@ -805,10 +662,10 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
                   AppLocalizations.of(context).upcomingTasks,
-                  style: TextStyle(
-                    fontSize: 22,
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                   ),
                 ),
               ),
@@ -899,10 +756,10 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       children: [
                         Text(
                          AppLocalizations.of(context).careGuideFromWiki,
-                          style: TextStyle(
-                            fontSize: 22,
+                          style: GoogleFonts.notoSerif(
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -957,90 +814,15 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                 },
               ),
 
-              // ── Community Discussions ────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context).communityDiscussions,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FutureBuilder<QuerySnapshot>(
-                      future: FirebaseFirestore.instance.collection('posts').orderBy('timestamp', descending: true).limit(3).get(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) return const SizedBox.shrink();
-                        final docs = snapshot.data!.docs;
-                        if (docs.isEmpty) return const SizedBox.shrink();
-                        
-                        return Column(
-                          children: [
-                            ...docs.map((doc) {
-                              final data = doc.data() as Map<String, dynamic>;
-                              final title = data['title'] as String? ?? 'Discussion';
-                              final author = data['authorName'] as String? ?? 'A';
-                              final authorInitial = author.isNotEmpty ? author[0].toUpperCase() : 'A';
-                              final truncatedTitle = title.length > 50 ? '${title.substring(0, 47)}...' : title;
-                              
-                              final ts = data['timestamp'] as Timestamp?;
-                              String timeAgo = '';
-                              if (ts != null) {
-                                final diff = DateTime.now().difference(ts.toDate());
-                                if (diff.inHours < 24) {
-                                  timeAgo = '${diff.inHours}h ago';
-                                } else if (diff.inDays < 7) {
-                                  timeAgo = '${diff.inDays}d ago';
-                                } else {
-                                  timeAgo = DateFormat.yMMMd().format(ts.toDate());
-                                }
-                              }
-                              
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: CircleAvatar(
-                                  backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-                                  child: Text(authorInitial, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
-                                ),
-                                title: Text(truncatedTitle, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                                trailing: Text(timeAgo, style: TextStyle(color: AppColors.bone500, fontSize: 12)),
-                                onTap: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => PostCommentsScreen(postId: doc.id, postTitle: title)));
-                                },
-                              );
-                            }),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextButton(
-                                onPressed: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()));
-                                },
-                                child: Text(AppLocalizations.of(context).seeAllDiscussions, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              
               // Growth History Title
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
                   AppLocalizations.of(context).growthHistory,
-                  style: TextStyle(
-                    fontSize: 22,
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                   ),
                 ),
               ),
@@ -1105,6 +887,129 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   }
                 ),
               ),
+              const SizedBox(height: 24),
+              // More card (demoted advanced features)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkForestSubtle : AppColors.forest50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    children: [
+                      // View Family Tree Row
+                      InkWell(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => FamilyTreeScreen(
+                                plantId: plantId,
+                                plantName: plantData['name'] as String? ?? plantName,
+                              ),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+                          child: Row(
+                            children: [
+                              Icon(Icons.account_tree_outlined, size: 20, color: AppColors.forest600),
+                              const SizedBox(width: 12),
+                              Text(
+                                AppLocalizations.of(context).viewFamilyTree,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(Icons.chevron_right, size: 16, color: AppColors.bone300),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: isDark ? AppColors.darkBorderSubtle : AppColors.bone100,
+                      ),
+                      // Create Time-lapse Row
+                      InkWell(
+                        onTap: () {
+                          _showTimeLapse(context, plantId);
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+                          child: Row(
+                            children: [
+                              Icon(Icons.movie_creation_outlined, size: 20, color: AppColors.forest600),
+                              const SizedBox(width: 12),
+                              Text(
+                                AppLocalizations.of(context).createTimeLapse,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(Icons.chevron_right, size: 16, color: AppColors.bone300),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: isDark ? AppColors.darkBorderSubtle : AppColors.bone100,
+                      ),
+                      // List for Swap Row
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => import_create_listing.CreateListingScreen(
+                                initialPlantName: plantData['name'] as String? ?? plantName,
+                                initialDescription: "Healthy ${plantData['category'] ?? 'plant'} from my personal collection. Health score: ${plantData['healthScore'] ?? 'Unknown'}.",
+                                initialType: "Whole Plant",
+                                initialHealthScore: plantData['healthScore'] as int?,
+                                initialPlantId: plantId,
+                              ),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+                          child: Row(
+                            children: [
+                              Icon(Icons.swap_horiz, size: 20, color: AppColors.forest600),
+                              const SizedBox(width: 12),
+                              Text(
+                                AppLocalizations.of(context).listForSwapEmoji,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(Icons.chevron_right, size: 16, color: AppColors.bone300),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
             ],
           ),
         ),

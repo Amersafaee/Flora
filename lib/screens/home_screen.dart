@@ -3,15 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'care_screen.dart';
-import 'community_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import 'global_search_screen.dart';
 import 'profile_screen.dart';
 import 'add_plant_screen.dart';
 import 'identify_screen.dart';
 import 'plant_detail_screen.dart';
-import 'post_comments_screen.dart';
-import 'wiki_screen.dart';
 import '../services/firestore_service.dart';
 import '../models/plant_model.dart';
 import '../models/task_model.dart';
@@ -26,7 +23,8 @@ import '../services/weather_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
-  const HomeScreen({super.key, this.onThemeChanged});
+  final ValueChanged<Locale>? onLocaleChanged;
+  const HomeScreen({super.key, this.onThemeChanged, this.onLocaleChanged});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -155,65 +153,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCompactStatCard(BuildContext context, String title, String value, IconData icon, Color iconColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: iconColor, size: 28),
-          if (value.isNotEmpty) const SizedBox(height: 8),
-          if (value.isNotEmpty)
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: AppColors.bone500, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickAction(BuildContext context, IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: Theme.of(context).primaryColor, size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-    const Color softGreen = AppColors.forest100;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     final firestoreService = FirestoreService();
     
@@ -243,27 +187,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: [
               // Top bar with Avatar
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => ProfileScreen(onThemeChanged: widget.onThemeChanged)),
+                        MaterialPageRoute(builder: (context) => ProfileScreen(
+                          onThemeChanged: widget.onThemeChanged,
+                          onLocaleChanged: widget.onLocaleChanged,
+                        )),
                       );
                     },
                     child: buildUserAvatar(radius: 18),
-                    ),
-                    Text(
-                      AppLocalizations.of(context).digitalConservatory,
-                      style: TextStyle(
-                        color: AppColors.forest900,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'serif',
-                        fontSize: 18,
-                      ),
-                    ),
-                  IconButton(icon: Icon(Icons.search, color: Theme.of(context).primaryColor), onPressed: () { Navigator.push(context, MaterialPageRoute(builder: (_) => GlobalSearchScreen())); }),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -297,10 +233,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     children: [
                       Text(
                         greeting,
-                        style: TextStyle(
-                          color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.onSurface : primaryColor,
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -525,7 +461,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            '$careStreak ${AppLocalizations.of(context).dayCareStreak}',
+                                            careStreak == 0
+                                              ? 'Start your streak today'
+                                              : '$careStreak ${AppLocalizations.of(context).dayCareStreak}',
                                             style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.terracotta900, fontWeight: FontWeight.bold, fontSize: 18),
                                           ),
                                           const SizedBox(height: 4),
@@ -560,10 +498,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 children: [
                   Text(
                     AppLocalizations.of(context).dailyCare,
-                    style: TextStyle(
-                      fontSize: 20,
+                    style: GoogleFonts.notoSerif(
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: primaryColor,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                     ),
                   ),
                   Text(
@@ -737,82 +675,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 24),
 
-              // This Week Summary Row
-              Row(
-                children: [
-                  Expanded(
-                    child: FutureBuilder<QuerySnapshot>(
-                      future: FirebaseFirestore.instance.collection('users').doc(userId).collection('tasks')
-                        .where('isCompleted', isEqualTo: true)
-                        .where('dueDate', isGreaterThanOrEqualTo: DateTime.now().subtract(const Duration(days: 7)))
-                        .get(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const ShimmerBox(width: double.infinity, height: 60, borderRadius: 12);
-                        }
-                        final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                        return _buildCompactStatCard(context, AppLocalizations.of(context).tasksCompleted, '$count', Icons.check_circle_outline, Colors.green);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: StreamBuilder<List<Map<String, dynamic>>>(
-                      stream: firestoreService.getLightweightPlants(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const ShimmerBox(width: double.infinity, height: 60, borderRadius: 12);
-                        }
-                        final plants = snapshot.data?.where((p) => p['isDeceased'] != true).toList() ?? [];
-                        final count = plants.length;
-                        return _buildCompactStatCard(context, AppLocalizations.of(context).plantsLabel, '$count', Icons.energy_savings_leaf, primaryColor);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: StreamBuilder<List<Map<String, dynamic>>>(
-                      stream: firestoreService.getLightweightPlants(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const ShimmerBox(width: double.infinity, height: 60, borderRadius: 12);
-                        }
-                        final plantsData = snapshot.data ?? [];
-                        final assessed = plantsData.where((p) => p['isDeceased'] != true && p.containsKey('lastAssessmentDate')).toList();
-                        if (assessed.isEmpty) {
-                          return GestureDetector(
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen())),
-                            child: _buildCompactStatCard(context, AppLocalizations.of(context).assessAPlant, '', Icons.camera_alt, AppColors.bone500),
-                          );
-                        }
-                        int sum = 0;
-                        for (var p in assessed) { sum += (p['healthScore'] as num?)?.toInt() ?? 100; }
-                        final avgHealth = assessed.isNotEmpty ? (sum / assessed.length).round() : 0;
-                        return _buildCompactStatCard(context, AppLocalizations.of(context).avgHealth, '$avgHealth', Icons.favorite, Colors.red);
-                      },
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 24),
-              // Quick Actions Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildQuickAction(context, Icons.camera_alt_outlined, AppLocalizations.of(context).identifyEmoji, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()))),
-                  _buildQuickAction(context, Icons.calendar_today_outlined, AppLocalizations.of(context).careEmoji, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareScreen()))),
-                  _buildQuickAction(context, Icons.people_outline, AppLocalizations.of(context).communityEmoji, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()))),
-                ],
-              ),
-              const SizedBox(height: 16),
               
               // My Plants Section
               Text(
                 AppLocalizations.of(context).myPlants,
-                style: TextStyle(
-                  fontSize: 20,
+                style: GoogleFonts.notoSerif(
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: primaryColor,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1026,239 +897,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 }
               ),
 
-              const SizedBox(height: 16),
-
-              // ── From the Community ──────────────────────────────────────
-              Text(
-                AppLocalizations.of(context).fromTheCommunity,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
-                ),
-              ),
-              const SizedBox(height: 12),
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('posts')
-                    .orderBy('timestamp', descending: true)
-                    .limit(2)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final docs = snapshot.data?.docs ?? [];
-                  if (docs.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text(AppLocalizations.of(context).noCommunityPostsYet,
-                          style: TextStyle(color: AppColors.bone500)),
-                    );
-                  }
-                  return Column(
-                    children: docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final title = (data['title'] ?? '').toString();
-                      final author = (data['authorName'] ?? 'Anonymous').toString();
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => PostCommentsScreen(postId: doc.id, postTitle: title)),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: softGreen,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(Icons.people_outline, color: primaryColor, size: 18),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        title,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color: Theme.of(context).colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        'by $author',
-                                        style: TextStyle(
-                                          color: AppColors.bone500,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.bone300),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-              ),
-              const SizedBox(height: 24),
-
-              // ── Learn Something New ─────────────────────────────────────
-              Text(
-                AppLocalizations.of(context).learnSomethingNew,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
-                ),
-              ),
-              const SizedBox(height: 12),
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('blogs')
-                    .orderBy('createdAt', descending: true)
-                    .limit(2)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final docs = snapshot.data?.docs ?? [];
-                  if (docs.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text(AppLocalizations.of(context).plantGuidesLoading,
-                          style: TextStyle(color: AppColors.bone500)),
-                    );
-                  }
-                  return Column(
-                    children: docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final title = (data['title'] ?? '').toString();
-                      final summary = (data['summary'] ?? '').toString();
-                      final readMinutes = (data['readMinutes'] as num?)?.toInt() ?? 5;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const WikiScreen()),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: softGreen,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(Icons.article_outlined, color: primaryColor, size: 18),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        title,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color: Theme.of(context).colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      if (summary.isNotEmpty) ...[
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          summary,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: AppColors.bone500,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: Color(0x1F2E7D32),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.access_time, size: 10, color: AppColors.forest600),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        '$readMinutes min',
-                                        style: const TextStyle(
-                                          color: AppColors.forest600,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-              ),
               const SizedBox(height: 32),
             ],
           ),

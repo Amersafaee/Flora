@@ -51,21 +51,29 @@ class Plant {
 
   factory Plant.fromMap(Map<String, dynamic> map) {
     return Plant(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      commonName: map['commonName'] ?? '',
-      category: map['category'] ?? '',
-      zone: map['zone'] ?? '',
-      imageUrl: map['imageUrl'] ?? '',
-      healthStatus: map['healthStatus'] ?? '',
-      healthScore: map['healthScore'] ?? 100,
-      isDeceased: map['isDeceased'] ?? false,
-      deceasedDate: map['deceasedDate'] is Timestamp ? (map['deceasedDate'] as Timestamp).toDate() : (map['deceasedDate'] is DateTime ? map['deceasedDate'] as DateTime : null),
-      memorialNote: map['memorialNote'],
-      eulogy: map['eulogy'],
-      dateAdded: map['dateAdded'] is Timestamp 
-          ? (map['dateAdded'] as Timestamp).toDate() 
-          : (map['dateAdded'] is DateTime ? map['dateAdded'] as DateTime : DateTime.now()),
+      id: (map['id'] as String?) ?? '',
+      name: (map['name'] as String?) ?? '',
+      commonName: (map['commonName'] as String?) ?? '',
+      category: (map['category'] as String?) ?? '',
+      zone: (map['zone'] as String?) ?? '',
+      imageUrl: (map['imageUrl'] as String?) ?? '',
+      healthStatus: (map['healthStatus'] as String?) ?? '',
+      // Firestore can return numeric fields as double; use num? to handle both
+      healthScore: (map['healthScore'] as num?)?.toInt() ?? 100,
+      // Use == true pattern so int/null stored as bool doesn't throw TypeError
+      isDeceased: map['isDeceased'] == true,
+      deceasedDate: map['deceasedDate'] is Timestamp
+          ? (map['deceasedDate'] as Timestamp).toDate()
+          : (map['deceasedDate'] is DateTime
+              ? map['deceasedDate'] as DateTime
+              : null),
+      memorialNote: (map['memorialNote'] as String?),
+      eulogy: (map['eulogy'] as String?),
+      dateAdded: map['dateAdded'] is Timestamp
+          ? (map['dateAdded'] as Timestamp).toDate()
+          : (map['dateAdded'] is DateTime
+              ? map['dateAdded'] as DateTime
+              : DateTime.now()),
     );
   }
 }

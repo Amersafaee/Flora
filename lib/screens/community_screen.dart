@@ -154,6 +154,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     const Color softGreen = AppColors.forest100;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -221,73 +222,68 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
               ),
 
-              // Feed Mode Toggle
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
+              // Consolidated Filter Pills (FIX 1 & FIX 3)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: Row(
                   children: [
-                    ChoiceChip(
-                      label: Text(AppLocalizations.of(context).forMyGarden),
-                      selected: _feedMode == 'mine',
-                      onSelected: (selected) {
-                        if (selected) setState(() => _feedMode = 'mine');
+                    _buildFilterChip(
+                      label: 'All',
+                      isSelected: _feedMode == 'all' && _selectedCategoryFilter == 'All',
+                      onTap: () {
+                        setState(() {
+                          _feedMode = 'all';
+                          _selectedCategoryFilter = 'All';
+                        });
                       },
-                      selectedColor: primaryColor,
-                      labelStyle: TextStyle(
-                        color: _feedMode == 'mine' ? Colors.white : Theme.of(context).colorScheme.onSurface,
-                        fontWeight: _feedMode == 'mine' ? FontWeight.bold : FontWeight.normal,
-                      ),
-                      backgroundColor: Theme.of(context).cardColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
-                    const SizedBox(width: 8),
-                    ChoiceChip(
-                      label: Text(AppLocalizations.of(context).allPosts),
-                      selected: _feedMode == 'all',
-                      onSelected: (selected) {
-                        if (selected) setState(() => _feedMode = 'all');
+                    _buildFilterChip(
+                      label: 'Questions',
+                      isSelected: _feedMode == 'all' && _selectedCategoryFilter == 'Questions',
+                      onTap: () {
+                        setState(() {
+                          _feedMode = 'all';
+                          _selectedCategoryFilter = 'Questions';
+                        });
                       },
-                      selectedColor: primaryColor,
-                      labelStyle: TextStyle(
-                        color: _feedMode == 'all' ? Colors.white : Theme.of(context).colorScheme.onSurface,
-                        fontWeight: _feedMode == 'all' ? FontWeight.bold : FontWeight.normal,
-                      ),
-                      backgroundColor: Theme.of(context).cardColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    _buildFilterChip(
+                      label: 'Tips',
+                      isSelected: _feedMode == 'all' && _selectedCategoryFilter == 'Tips',
+                      onTap: () {
+                        setState(() {
+                          _feedMode = 'all';
+                          _selectedCategoryFilter = 'Tips';
+                        });
+                      },
+                    ),
+                    _buildFilterChip(
+                      label: 'Showcase',
+                      isSelected: _feedMode == 'all' && _selectedCategoryFilter == 'Showcase',
+                      onTap: () {
+                        setState(() {
+                          _feedMode = 'all';
+                          _selectedCategoryFilter = 'Showcase';
+                        });
+                      },
+                    ),
+                    _buildFilterChip(
+                      label: AppLocalizations.of(context).forMyGarden,
+                      isSelected: _feedMode == 'mine',
+                      onTap: () {
+                        setState(() {
+                          _feedMode = 'mine';
+                          _selectedCategoryFilter = 'All';
+                        });
+                      },
                     ),
                   ],
                 ),
               ),
-
-              // Category Filters
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  children: ['All', 'Questions', 'Tips', 'Showcase', 'General'].map((category) {
-                    final isSelected = _selectedCategoryFilter == category;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: ChoiceChip(
-                        label: Text(category),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected) setState(() => _selectedCategoryFilter = category);
-                        },
-                        selectedColor: primaryColor,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        backgroundColor: Theme.of(context).cardColor,
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
               const SizedBox(height: 10),
 
-              // Challenge Banner
+              // Challenge Banner (FIX 2 & FIX 5)
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance.collection('challenges').where('isActive', isEqualTo: true).limit(1).snapshots(),
                 builder: (context, snapshot) {
@@ -296,21 +292,27 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   final title = challengeData['title'] ?? '';
                   final description = challengeData['description'] ?? '';
                   final endDate = (challengeData['endDate'] as Timestamp?)?.toDate() ?? DateTime.now();
-                  final daysLeft = endDate.difference(DateTime.now()).inDays;
+                  final rawDaysLeft = endDate.difference(DateTime.now()).inDays;
+                  final daysLeft = rawDaysLeft < 0 ? 0 : rawDaysLeft;
                   
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.forest900, AppColors.forest700],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                      decoration: isDark
+                          ? BoxDecoration(
+                              color: AppColors.darkSurfaceElevated,
+                              borderRadius: BorderRadius.circular(20),
+                            )
+                          : BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [AppColors.forest900, AppColors.forest700],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -321,19 +323,29 @@ class _CommunityScreenState extends State<CommunityScreen> {
                               Expanded(
                                 child: Text(
                                   title,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: TextStyle(
+                                    color: isDark ? AppColors.darkTextPrimary : Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                               Text(
                                 AppLocalizations.of(context).daysLeft(daysLeft),
-                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                                style: TextStyle(
+                                  color: isDark ? AppColors.darkTextSecondary : Colors.white,
+                                  fontSize: 12,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           Text(
                             description,
-                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                            style: TextStyle(
+                              color: isDark ? AppColors.darkTextPrimary : Colors.white70,
+                              fontSize: 13,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           SizedBox(
@@ -343,9 +355,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => CreatePostScreen(initialCategory: 'Showcase', initialTitle: title)));
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: AppColors.forest900,
+                                backgroundColor: isDark ? AppColors.forest700 : Colors.white,
+                                foregroundColor: isDark ? Colors.white : AppColors.forest900,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 0,
                               ),
                               child: Text(AppLocalizations.of(context).joinChallenge, style: const TextStyle(fontWeight: FontWeight.bold)),
                             ),
@@ -825,7 +838,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ),
           const SizedBox(height: 12),
           
-          if (imageUrl.isNotEmpty)
+          // Only render image zone when a real image URL exists (FIX 4)
+          if (imageUrl.isNotEmpty && imageUrl != 'null' && imageUrl != 'none' && imageUrl.startsWith('http'))
             Padding(
               padding: const EdgeInsets.only(bottom: 12.0),
               child: ClipRRect(
@@ -945,6 +959,63 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ],
       ),
     ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    Color backgroundColor;
+    Border border;
+    Color textColor;
+    
+    if (isDark) {
+      if (isSelected) {
+        backgroundColor = AppColors.forest700;
+        textColor = Colors.white;
+        border = Border.all(color: Colors.transparent);
+      } else {
+        backgroundColor = AppColors.darkSurface;
+        textColor = AppColors.darkTextSecondary;
+        border = Border.all(color: AppColors.darkBorderDefault, width: 1);
+      }
+    } else {
+      if (isSelected) {
+        backgroundColor = AppColors.forest700;
+        textColor = Colors.white;
+        border = Border.all(color: Colors.transparent);
+      } else {
+        backgroundColor = Colors.transparent;
+        textColor = AppColors.bone500;
+        border = Border.all(color: AppColors.bone200, width: 1);
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            border: border,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -393,68 +393,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 32),
               
-              // Stats Box
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    FutureBuilder<int>(
+              // Stats Box (FIX 1)
+              Row(
+                children: [
+                  Expanded(
+                    child: FutureBuilder<int>(
                       future: _firestoreService.getTotalPlantsCount(),
                       builder: (context, snapshot) {
-                        return _buildStatColumn(
+                        return _buildStatCard(
+                          icon: Icons.local_florist,
                           count: snapshot.hasData ? snapshot.data.toString() : '...',
                           label: AppLocalizations.of(context).plants,
-                          primaryColor: primaryColor,
+                          backgroundColor: AppColors.forest100,
+                          iconColor: AppColors.forest600,
                         );
                       },
                     ),
-                    Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                    FutureBuilder<int>(
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FutureBuilder<int>(
                       future: _firestoreService.getCompletedTasksCount(),
                       builder: (context, snapshot) {
-                        return _buildStatColumn(
+                        return _buildStatCard(
+                          icon: Icons.check_circle_outline,
                           count: snapshot.hasData ? snapshot.data.toString() : '...',
                           label: AppLocalizations.of(context).tasksDone,
-                          primaryColor: primaryColor,
+                          backgroundColor: AppColors.terracotta100,
+                          iconColor: AppColors.terracotta700,
                         );
                       },
                     ),
-                    Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                    FutureBuilder<int>(
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FutureBuilder<int>(
                       future: _firestoreService.getTotalJournalEntriesCount(),
                       builder: (context, snapshot) {
-                        return _buildStatColumn(
+                        return _buildStatCard(
+                          icon: Icons.book_outlined,
                           count: snapshot.hasData ? snapshot.data.toString() : '...',
                           label: AppLocalizations.of(context).journalEntries,
-                          primaryColor: primaryColor,
+                          backgroundColor: const Color(0xFFE8F0F8),
+                          iconColor: const Color(0xFF4A6FA5),
                         );
                       },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               
-              // Settings Title
+              // Settings Title (FIX 4)
               Text(
-                AppLocalizations.of(context).settingsHeader,
+                AppLocalizations.of(context).settingsHeader.toUpperCase(),
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: AppColors.bone500,
-                  letterSpacing: 1.2,
+                  letterSpacing: 1.5,
                 ),
               ),
               const SizedBox(height: 16),
@@ -507,6 +504,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onToggle: (val) async {
                   setState(() => _isDarkMode = val);
                   await ThemeService().saveThemeMode(val);
+                  if (!mounted) return;
                   if (widget.onThemeChanged != null) {
                     widget.onThemeChanged!(val);
                   }
@@ -580,7 +578,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(16),
@@ -594,14 +592,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: softGreen,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.location_city, color: primaryColor, size: 20),
-                          ),
+                          const Icon(Icons.location_city, color: AppColors.forest600, size: 24),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
@@ -633,37 +624,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.history, color: AppColors.forest900),
-                title: Text(AppLocalizations.of(context).plantHistory),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              const SizedBox(height: 12),
+              _buildSettingsRow(
+                icon: Icons.history,
+                title: AppLocalizations.of(context).plantHistory,
+                softGreen: softGreen,
+                primaryColor: primaryColor,
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const MemorialGardenScreen()),
                   );
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.psychology, color: AppColors.forest900),
-                title: Text(AppLocalizations.of(context).myCollectionPersonality),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              const SizedBox(height: 12),
+              _buildSettingsRow(
+                icon: Icons.psychology,
+                title: AppLocalizations.of(context).myCollectionPersonality,
+                softGreen: softGreen,
+                primaryColor: primaryColor,
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const CollectionPersonalityScreen()),
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               
-              // About Title
+              // About Title (FIX 4)
               Text(
-                AppLocalizations.of(context).aboutHeader,
+                AppLocalizations.of(context).aboutHeader.toUpperCase(),
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: AppColors.bone500,
-                  letterSpacing: 1.2,
+                  letterSpacing: 1.5,
                 ),
               ),
               const SizedBox(height: 16),
@@ -703,24 +697,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 40),
               
-              // Sign Out Button
-              SizedBox(
-                height: 56,
-                child: OutlinedButton(
+              // Sign Out Button (FIX 3)
+              Center(
+                child: TextButton(
                   onPressed: _handleSignOut,
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Theme.of(context).cardColor,
-                    side: const BorderSide(color: Colors.red, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    foregroundColor: AppColors.bone500,
                   ),
                   child: Text(
                     AppLocalizations.of(context).signOut,
                     style: const TextStyle(
-                      color: Colors.red,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      color: AppColors.bone500,
+                      fontSize: 15,
                     ),
                   ),
                 ),
@@ -741,7 +730,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return GestureDetector(
       onTap: () => _showLanguagePicker(softGreen: softGreen, primaryColor: primaryColor),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
@@ -755,14 +744,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: softGreen,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.language, color: primaryColor, size: 20),
-            ),
+            const Icon(Icons.language, color: AppColors.forest600, size: 24),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -893,30 +875,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatColumn({
+  Widget _buildStatCard({
+    required IconData icon,
     required String count,
     required String label,
-    required Color primaryColor,
+    required Color backgroundColor,
+    required Color iconColor,
   }) {
-    return Column(
-      children: [
-        Text(
-          count,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: primaryColor,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: iconColor, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            count,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.bone900,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.bone500,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.bone500,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -934,7 +929,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
@@ -946,37 +941,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: softGreen,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: primaryColor, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.forest600, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
-          ),
-          if (isToggle)
-            Switch(
-              value: toggleValue,
-              onChanged: onToggle,
-              activeColor: primaryColor,
-            )
-          else if (!isInfo)
-            const Icon(Icons.chevron_right, color: AppColors.bone500),
-        ],
-      ),
+            if (isToggle)
+              Switch(
+                value: toggleValue,
+                onChanged: onToggle,
+                activeColor: primaryColor,
+              )
+            else if (!isInfo)
+              const Icon(Icons.chevron_right, color: AppColors.bone500),
+          ],
+        ),
       ),
     );
   }
