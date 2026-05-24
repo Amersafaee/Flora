@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -148,8 +148,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               : TextButton(
                   onPressed: _savePost,
                   child: Text(
-                    l.save,
-                    style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 16),
+                    AppLocalizations.of(context).postAction,
+                    style: const TextStyle(color: AppColors.forest700, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
         ],

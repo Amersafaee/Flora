@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'listing_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'create_listing_screen.dart';
 import 'swap_conversations_screen.dart';
 import '../theme/app_theme.dart';
@@ -54,7 +55,13 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       child: Text(
                         l.swapMarket,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.notoSerif(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.bone900,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -247,22 +254,31 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
 
   Widget _buildFilterChip(String label, String filterKey) {
     final isSelected = _selectedFilter == filterKey;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4.0),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
       child: GestureDetector(
         onTap: () => setState(() => _selectedFilter = filterKey),
-        child: Chip(
-          label: Text(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.forest700 : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            border: isSelected
+                ? null
+                : Border.all(
+                    color: isDark ? AppColors.darkBorderDefault : AppColors.bone200,
+                  ),
+          ),
+          child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
+              color: isSelected ? Colors.white : (isDark ? AppColors.darkTextPrimary : AppColors.bone900),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 14,
             ),
           ),
-          backgroundColor: isSelected ? AppColors.forest900 : Colors.transparent,
-          side: isSelected ? BorderSide.none : const BorderSide(color: AppColors.bone300),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
       ),
     );
@@ -313,18 +329,27 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 180,
-              width: double.infinity,
-              color: AppColors.forest100,
-              child: imageUrl.isNotEmpty
-                  ? Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Center(child: Icon(Icons.eco, color: Color(0x6614301E), size: 48)),
-                    )
-                  : const Center(child: Icon(Icons.eco, color: Color(0x6614301E), size: 48)),
+            Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final placeholderBg = isDark ? AppColors.darkForestSubtle : AppColors.forest50;
+                return Container(
+                  height: 180,
+                  width: double.infinity,
+                  color: imageUrl.isNotEmpty ? Colors.transparent : placeholderBg,
+                  child: imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Center(
+                            child: Icon(Icons.local_florist, size: 48, color: AppColors.forest300),
+                          ),
+                        )
+                      : const Center(
+                          child: Icon(Icons.local_florist, size: 48, color: AppColors.forest300),
+                        ),
+                );
+              }
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),

@@ -4,6 +4,8 @@ import 'package:digital_conservatory/models/task_model.dart';
 
 void main() {
   group('Task Model Tests', () {
+    // ── Existing tests (unchanged) ─────────────────────────────────────────
+
     test('Normal valid data parses correctly', () {
       final now = DateTime.now();
       final map = {
@@ -202,11 +204,104 @@ void main() {
       expect(outMap['plantId'], 'p2');
       expect(outMap['plantName'], 'Pothos');
       expect(outMap['taskType'], 'Water');
-      expect(outMap['dueDate'], date); 
+      expect(outMap['dueDate'], date);
       expect(outMap['isCompleted'], true);
       expect(outMap['notes'], 'done');
       expect(outMap['repeatType'], 'weekly');
       expect(outMap['repeatDays'], 7);
+    });
+
+    // ── New tests ──────────────────────────────────────────────────────────
+
+    test('repeatDays stored as List<dynamic> (malformed data) throws TypeError', () {
+      // In sound Dart, (map['repeatDays'] as num?) throws TypeError when the
+      // value is a List — this documents the known behavior so future refactors
+      // can choose to add a try/catch guard if resilience is needed.
+      final map = {
+        'id': 'task1',
+        'plantName': 'Monstera',
+        'taskType': 'Watering',
+        'dueDate': Timestamp.fromDate(DateTime.now()),
+        'isCompleted': false,
+        'notes': '',
+        'repeatDays': [7, 'weekly'], // malformed list value
+      };
+      // Sound Dart cannot cast List to num? — documents the throw behavior
+      expect(() => Task.fromMap(map), throwsA(isA<TypeError>()));
+    });
+
+
+    test('dueDate stored as DateTime object (not Timestamp) parses correctly', () {
+      final target = DateTime(2025, 8, 20, 10, 30);
+      final map = {
+        'id': 'task1',
+        'plantName': 'Cactus',
+        'taskType': 'Misting',
+        'dueDate': target, // already a DateTime, not Timestamp
+        'isCompleted': false,
+        'notes': '',
+      };
+      final task = Task.fromMap(map);
+      expect(task.dueDate, target);
+    });
+
+    test('toMap() includes all required Firestore fields', () {
+      final due = DateTime(2025, 5, 1);
+      final task = Task(
+        id: 'task-abc',
+        plantId: 'plant-xyz',
+        plantName: 'Peace Lily',
+        taskType: 'Inspection',
+        dueDate: due,
+        isCompleted: false,
+        notes: 'Check for pests',
+        repeatType: 'weekly',
+        repeatDays: 7,
+        climateAdjusted: true,
+        climateNote: 'High humidity today',
+      );
+
+      final map = task.toMap();
+
+      expect(map['id'], 'task-abc');
+      expect(map['plantId'], 'plant-xyz');
+      expect(map['plantName'], 'Peace Lily');
+      expect(map['taskType'], 'Inspection');
+      expect(map['dueDate'], due);
+      expect(map['isCompleted'], false);
+      expect(map['notes'], 'Check for pests');
+      expect(map['repeatType'], 'weekly');
+      expect(map['repeatDays'], 7);
+      expect(map['climateAdjusted'], true);
+      expect(map['climateNote'], 'High humidity today');
+    });
+
+    test('climateAdjusted and climateNote default correctly when missing', () {
+      final map = {
+        'id': 't3',
+        'plantName': 'Orchid',
+        'taskType': 'Watering',
+        'dueDate': Timestamp.fromDate(DateTime.now()),
+        'isCompleted': false,
+        'notes': '',
+      };
+      final task = Task.fromMap(map);
+      expect(task.climateAdjusted, false);
+      expect(task.climateNote, '');
+    });
+
+    test('Missing dueDate does not throw and returns a valid DateTime', () {
+      final map = {
+        'id': 't4',
+        'plantName': 'Basil',
+        'taskType': 'Watering',
+        'isCompleted': false,
+        'notes': '',
+        // dueDate deliberately omitted
+      };
+      expect(() => Task.fromMap(map), returnsNormally);
+      final task = Task.fromMap(map);
+      expect(task.dueDate, isA<DateTime>());
     });
   });
 }

@@ -6,12 +6,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'profile_screen.dart';
 import 'create_post_screen.dart';
 import 'post_comments_screen.dart';
 import 'swap_market_screen.dart';
 import 'all_plants_screen.dart';
+import 'wiki_screen.dart';
 import '../services/firestore_service.dart';
 import '../utils/user_utils.dart';
 import '../services/onboarding_service.dart';
@@ -418,6 +419,69 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                   color: AppColors.bone500,
                                   fontSize: 13,
                                 ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios, color: AppColors.bone300, size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Plant Wiki Banner
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const WikiScreen()),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: softGreen, width: 2),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: softGreen,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.auto_stories_outlined, color: primaryColor, size: 28),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context).plantWiki,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                AppLocalizations.of(context).wikiSubtitle,
+                                style: const TextStyle(
+                                  color: AppColors.bone500,
+                                  fontSize: 13,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),

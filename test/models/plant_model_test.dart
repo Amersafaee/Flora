@@ -4,6 +4,8 @@ import 'package:digital_conservatory/models/plant_model.dart';
 
 void main() {
   group('Plant Model Tests', () {
+    // ── Existing tests (unchanged) ─────────────────────────────────────────
+
     test('Normal valid data parses correctly', () {
       final now = DateTime.now();
       final map = {
@@ -100,6 +102,144 @@ void main() {
       expect(copy.deceasedDate, original.deceasedDate);
       expect(copy.memorialNote, original.memorialNote);
       expect(copy.eulogy, original.eulogy);
+    });
+
+    // ── New tests ──────────────────────────────────────────────────────────
+
+    test('healthScore stored as double (e.g. 82.0) converts to int', () {
+      final map = {
+        'id': 'p1',
+        'healthScore': 82.0, // Firestore can return double for numeric fields
+      };
+      final plant = Plant.fromMap(map);
+      expect(plant.healthScore, isA<int>());
+      expect(plant.healthScore, 82);
+    });
+
+    test('isDeceased stored as int 1 is treated as false (not == true)', () {
+      // Only the Dart literal `true` should be accepted — int 1 must not pass
+      final map = {
+        'id': 'p1',
+        'isDeceased': 1, // integer, not bool true
+      };
+      final plant = Plant.fromMap(map);
+      expect(plant.isDeceased, false);
+    });
+
+    test('isDeceased stored as bool true is treated as true', () {
+      final map = {
+        'id': 'p1',
+        'isDeceased': true,
+      };
+      final plant = Plant.fromMap(map);
+      expect(plant.isDeceased, true);
+    });
+
+    test('All string fields null in map default to empty string', () {
+      final map = <String, dynamic>{
+        'id': null,
+        'name': null,
+        'commonName': null,
+        'category': null,
+        'zone': null,
+        'imageUrl': null,
+        'healthStatus': null,
+      };
+      final plant = Plant.fromMap(map);
+      expect(plant.id, '');
+      expect(plant.name, '');
+      expect(plant.commonName, '');
+      expect(plant.category, '');
+      expect(plant.zone, '');
+      expect(plant.imageUrl, '');
+      expect(plant.healthStatus, '');
+    });
+
+    test('toMap() produces all required keys', () {
+      final date = DateTime(2024, 6, 15);
+      final plant = Plant(
+        id: 'p99',
+        name: 'Snake Plant',
+        commonName: 'Sansevieria',
+        category: 'Succulent',
+        zone: 'Bedroom',
+        imageUrl: 'https://example.com/snake.jpg',
+        healthStatus: 'Healthy',
+        dateAdded: date,
+        healthScore: 90,
+        isDeceased: false,
+      );
+
+      final map = plant.toMap();
+
+      expect(map.containsKey('id'), isTrue);
+      expect(map.containsKey('name'), isTrue);
+      expect(map.containsKey('commonName'), isTrue);
+      expect(map.containsKey('category'), isTrue);
+      expect(map.containsKey('zone'), isTrue);
+      expect(map.containsKey('imageUrl'), isTrue);
+      expect(map.containsKey('healthStatus'), isTrue);
+      expect(map.containsKey('dateAdded'), isTrue);
+      expect(map.containsKey('healthScore'), isTrue);
+      expect(map.containsKey('isDeceased'), isTrue);
+
+      expect(map['id'], 'p99');
+      expect(map['name'], 'Snake Plant');
+      expect(map['healthScore'], 90);
+      expect(map['isDeceased'], false);
+    });
+
+    test('toMap() omits location key when location is null', () {
+      final plant = Plant(
+        id: 'p1',
+        name: 'Cactus',
+        commonName: 'Cactaceae',
+        category: 'Cactus',
+        zone: '',
+        imageUrl: '',
+        healthStatus: 'Healthy',
+        dateAdded: DateTime.now(),
+        location: null,
+      );
+      final map = plant.toMap();
+      expect(map.containsKey('location'), isFalse);
+    });
+
+    test('toMap() includes location key when location is non-empty', () {
+      final plant = Plant(
+        id: 'p1',
+        name: 'Fern',
+        commonName: 'Pteridophyte',
+        category: 'Fern',
+        zone: '',
+        imageUrl: '',
+        healthStatus: 'Healthy',
+        dateAdded: DateTime.now(),
+        location: 'Living Room',
+      );
+      final map = plant.toMap();
+      expect(map.containsKey('location'), isTrue);
+      expect(map['location'], 'Living Room');
+    });
+
+    test('deceasedDate stored as Timestamp parses correctly', () {
+      final date = DateTime(2025, 3, 10);
+      final map = {
+        'id': 'p1',
+        'isDeceased': true,
+        'deceasedDate': Timestamp.fromDate(date),
+      };
+      final plant = Plant.fromMap(map);
+      expect(plant.deceasedDate, date);
+    });
+
+    test('deceasedDate stored as null remains null', () {
+      final map = {
+        'id': 'p1',
+        'deceasedDate': null,
+      };
+      final plant = Plant.fromMap(map);
+      expect(plant.deceasedDate, isNull);
     });
   });
 }

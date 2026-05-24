@@ -6,6 +6,9 @@
 // - test/services/task_recurrence_test.dart: Task recurrence calculation logic isolated from Firestore.
 // - test/services/gemini_service_test.dart: GeminiService instantiation, API key validation, and smoke integration testing.
 // - test/services/flora_context_test.dart: FloraContextService string generation and logic testing.
+// - test/services/weekly_report_test.dart: Pure unit tests for shouldShowWeeklyReport gates (weekday, account age, date guard).
+// - test/services/notification_test.dart: Pure logic tests for NotificationService skip guard and ID computation.
+// - test/navigation_test.dart: MainTabScreen tab-to-screen mapping and label expectations.
 // - test/widget/flora_screen_smoke_test.dart: UI interactions in FloraScreen (send button states, default chips).
 //
 // What must be tested manually and why:
@@ -19,6 +22,9 @@ import 'models/plant_model_test.dart' as plant_model_test;
 import 'services/task_recurrence_test.dart' as task_recurrence_test;
 import 'services/gemini_service_test.dart' as gemini_service_test;
 import 'services/flora_context_test.dart' as flora_context_test;
+import 'services/weekly_report_test.dart' as weekly_report_test;
+import 'services/notification_test.dart' as notification_test;
+import 'navigation_test.dart' as navigation_test;
 import 'widget/flora_screen_smoke_test.dart' as flora_screen_smoke_test;
 
 void main() {
@@ -28,6 +34,9 @@ void main() {
     task_recurrence_test.main();
     gemini_service_test.main();
     flora_context_test.main();
+    weekly_report_test.main();
+    notification_test.main();
+    navigation_test.main();
     flora_screen_smoke_test.main();
   });
 }

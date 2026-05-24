@@ -8,7 +8,7 @@ import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
 import '../services/locale_service.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'login_screen.dart';
 import 'badges_screen.dart';
 import 'vacation_mode_screen.dart';
@@ -38,6 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isDarkMode = false;
   bool _isUploadingPhoto = false;
   String? _profilePhotoUrl;
+  File? _pickedImageFile;
   String _currentLocaleCode = 'en';
 
   // Language display names in their own language
@@ -146,9 +147,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (picked == null) return;
 
-    setState(() => _isUploadingPhoto = true);
+    // Immediately preview the picked image
+    final file = File(picked.path);
+    setState(() {
+      _pickedImageFile = file;
+      _isUploadingPhoto = true;
+    });
     try {
-      final file = File(picked.path);
       final storageRef = FirebaseStorage.instance
           .ref()
           .child('users/$uid/profile/profile.jpg');
@@ -167,7 +172,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .set({'profilePhotoUrl': downloadUrl}, SetOptions(merge: true));
 
       if (mounted) {
-        setState(() => _profilePhotoUrl = downloadUrl);
+        setState(() {
+          _profilePhotoUrl = downloadUrl;
+          _pickedImageFile = null; // clear local preview — network URL takes over
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context).profilePhotoUpdated),
@@ -309,11 +317,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 48,
-                                backgroundColor: (_profilePhotoUrl == null && user?.photoURL == null) ? AppColors.bone500 : primaryColor,
-                                backgroundImage: _profilePhotoUrl != null
-                                    ? NetworkImage(_profilePhotoUrl!)
-                                    : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
-                                child: (_profilePhotoUrl == null && user?.photoURL == null)
+                                backgroundColor: (_pickedImageFile == null && _profilePhotoUrl == null && user?.photoURL == null) ? AppColors.bone500 : primaryColor,
+                                backgroundImage: _pickedImageFile != null
+                                    ? FileImage(_pickedImageFile!) as ImageProvider
+                                    : _profilePhotoUrl != null
+                                        ? NetworkImage(_profilePhotoUrl!)
+                                        : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
+                                child: (_pickedImageFile == null && _profilePhotoUrl == null && user?.photoURL == null)
                                     ? Text(
                                         resolvedInitials,
                                         style: TextStyle(
@@ -363,14 +373,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          email,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.bone500,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -517,68 +519,225 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 primaryColor: primaryColor,
               ),
               const SizedBox(height: 12),
-              FutureBuilder<(String?, WeatherData?)>(
+              FutureBuilder<(String?, WeatherData?, bool)>(
                 future: () async {
                   final ws = WeatherService();
                   final city = await ws.getSavedCity();
                   final weather = await ws.getCurrentWeather();
-                  return (city, weather);
+                  final useAuto = await ws.getUseAutoLocation();
+                  return (city, weather, useAuto);
                 }(),
                 builder: (context, snapshot) {
                   final city = snapshot.data?.$1;
                   final weather = snapshot.data?.$2;
-                  String subtitle = AppLocalizations.of(context).tapToSetYourCity;
-                  if (city != null && city.isNotEmpty) {
+                  final useAuto = snapshot.data?.$3 ?? false;
+
+                  String subtitle;
+                  if (useAuto) {
                     if (weather != null) {
-                      subtitle = '$city · ${weather.temperatureCelsius.toStringAsFixed(1)}°C · ${weather.humidity.toStringAsFixed(0)}% humidity';
+                      subtitle =
+                          'Auto · ${weather.cityName} · ${weather.temperatureCelsius.toStringAsFixed(1)}°C · ${weather.humidity.toStringAsFixed(0)}% humidity';
+                    } else {
+                      subtitle = AppLocalizations.of(context).detectAutomatically;
+                    }
+                  } else if (city != null && city.isNotEmpty) {
+                    if (weather != null) {
+                      subtitle =
+                          '$city · ${weather.temperatureCelsius.toStringAsFixed(1)}°C · ${weather.humidity.toStringAsFixed(0)}% humidity';
                     } else {
                       subtitle = city;
                     }
+                  } else {
+                    subtitle = AppLocalizations.of(context).tapToSetYourCity;
                   }
+
                   return GestureDetector(
                     onTap: () async {
-                      final cityController = TextEditingController(text: city ?? '');
+                      final cityController =
+                          TextEditingController(text: city ?? '');
+                      bool dialogUseAuto = useAuto;
+
                       await showDialog(
                         context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: Text(AppLocalizations.of(context).myCity),
-                          content: TextField(
-                            controller: cityController,
-                            decoration: const InputDecoration(
-                              hintText: 'e.g. London, Tokyo, New York',
-                              prefixIcon: Icon(Icons.location_city),
+                        builder: (ctx) => StatefulBuilder(
+                          builder: (ctx, setDialogState) => AlertDialog(
+                            title:
+                                Text(AppLocalizations.of(context).myCity),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.stretch,
+                              children: [
+                                // Detect automatically option
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () {
+                                    setDialogState(() =>
+                                        dialogUseAuto = !dialogUseAuto);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: dialogUseAuto
+                                          ? AppColors.forest100
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .surfaceContainerHighest
+                                              .withValues(alpha: 0.4),
+                                      borderRadius:
+                                          BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: dialogUseAuto
+                                            ? AppColors.forest700
+                                            : Colors.transparent,
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.my_location,
+                                          color: dialogUseAuto
+                                              ? AppColors.forest700
+                                              : AppColors.bone500,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                AppLocalizations.of(context).detectAutomatically,
+                                                style: TextStyle(
+                                                  fontWeight:
+                                                      FontWeight.bold,
+                                                  fontSize: 14,
+                                                  color: dialogUseAuto
+                                                      ? AppColors.forest700
+                                                      : Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface,
+                                                ),
+                                              ),
+                                              Text(
+                                                AppLocalizations.of(context).usesYourIpAddress,
+                                                style: const TextStyle(
+                                                    fontSize: 11,
+                                                    color:
+                                                        AppColors.bone500),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (dialogUseAuto)
+                                          const Icon(Icons.check_circle,
+                                              color: AppColors.forest700,
+                                              size: 18),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                // Divider with OR label
+                                Row(
+                                  children: [
+                                    Expanded(
+                                        child: Divider(
+                                            color:
+                                                AppColors.bone200)),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                      child: Text('or',
+                                          style: TextStyle(
+                                              color: AppColors.bone500,
+                                              fontSize: 12)),
+                                    ),
+                                    Expanded(
+                                        child: Divider(
+                                            color:
+                                                AppColors.bone200)),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                // Manual city text field
+                                TextField(
+                                  controller: cityController,
+                                  onTap: () {
+                                    if (dialogUseAuto) {
+                                      setDialogState(
+                                          () => dialogUseAuto = false);
+                                    }
+                                  },
+                                  decoration: const InputDecoration(
+                                    hintText:
+                                        'e.g. London, Tokyo, New York',
+                                    prefixIcon:
+                                        Icon(Icons.location_city),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              child: Text(AppLocalizations.of(context).cancel),
-                            ),
-                            ElevatedButton(
-                              onPressed: () async {
-                                final newCity = cityController.text.trim();
-                                if (newCity.isNotEmpty) {
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: Text(AppLocalizations.of(context)
+                                    .cancel),
+                              ),
+                              ElevatedButton(
+                                onPressed: () async {
                                   final nav = Navigator.of(ctx);
-                                  final messenger = ScaffoldMessenger.of(context);
-                                  final l10n = AppLocalizations.of(context);
-                                  await WeatherService().saveCity(newCity);
-                                  if (mounted) {
-                                    nav.pop();
-                                    setState(() {});
-                                    messenger.showSnackBar(
-                                      SnackBar(content: Text(l10n.citySetTo(newCity))),
-                                    );
+                                  final messenger =
+                                      ScaffoldMessenger.of(context);
+                                  final l10n =
+                                      AppLocalizations.of(context);
+                                  final ws = WeatherService();
+
+                                  if (dialogUseAuto) {
+                                    await ws.saveAutoLocation(true);
+                                    if (mounted) {
+                                      nav.pop();
+                                      setState(() {});
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              l10n.detectAutomatically),
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    final newCity =
+                                        cityController.text.trim();
+                                    if (newCity.isNotEmpty) {
+                                      await ws.saveCity(newCity);
+                                      if (mounted) {
+                                        nav.pop();
+                                        setState(() {});
+                                        messenger.showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  l10n.citySetTo(newCity))),
+                                        );
+                                      }
+                                    } else {
+                                      nav.pop();
+                                    }
                                   }
-                                }
-                              },
-                              child: Text(AppLocalizations.of(context).save),
-                            ),
-                          ],
+                                },
+                                child: Text(
+                                    AppLocalizations.of(context).save),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(16),
@@ -592,18 +751,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.location_city, color: AppColors.forest600, size: 24),
+                          Icon(
+                            useAuto
+                                ? Icons.my_location
+                                : Icons.location_city,
+                            color: AppColors.forest600,
+                            size: 24,
+                          ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   AppLocalizations.of(context).myCity,
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -617,13 +785,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ],
                             ),
                           ),
-                          const Icon(Icons.chevron_right, color: AppColors.bone500),
+                          const Icon(Icons.chevron_right,
+                              color: AppColors.bone500),
                         ],
                       ),
                     ),
                   );
                 },
               ),
+
               const SizedBox(height: 12),
               _buildSettingsRow(
                 icon: Icons.history,

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'add_plant_screen.dart';
 import 'flora_screen.dart';
 import 'wiki_plant_detail_screen.dart';
@@ -41,11 +41,10 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
     return null;
   }
 
-  Color _scoreColor(int score, BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (score > 70) return isDark ? AppColors.successDark : AppColors.successLight;
-    if (score >= 40) return isDark ? AppColors.warningDark : AppColors.warningLight;
-    return isDark ? AppColors.errorDark : AppColors.errorLight;
+  Color _scoreColor(int score) {
+    if (score >= 70) return AppColors.forest500;
+    if (score >= 40) return const Color(0xFFC8893A);
+    return AppColors.errorLight;
   }
 
   String _scoreLabel(int score, AppLocalizations l) {
@@ -282,12 +281,12 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.baseline,
                                     textBaseline: TextBaseline.alphabetic,
                                     children: [
-                                      Text(
+                                       Text(
                                         '$healthScore',
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 48,
                                           fontWeight: FontWeight.bold,
-                                          color: _scoreColor(healthScore, context),
+                                          color: _scoreColor(healthScore),
                                         ),
                                       ),
                                       Text(
@@ -295,24 +294,24 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.normal,
-                                          color: _scoreColor(healthScore, context).withValues(alpha: 0.7),
+                                          color: _scoreColor(healthScore).withValues(alpha: 0.7),
                                         ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: _scoreColor(healthScore, context).withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(20),
+                                      color: _scoreColor(healthScore),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
                                       _scoreLabel(healthScore, l),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
-                                        color: _scoreColor(healthScore, context),
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ),

@@ -661,7 +661,7 @@
   "personalizedScheduleBasedOnHome": "Personalized schedule based on your home",
   "notSignedIn": "Not signed in.",
   "noCompletedTasksYet": "No completed tasks yet.",
-  "tasksDoneThisWeek": "{count} tasks done this week",
+  "tasksDoneThisWeek": "{count, plural, =0{No tasks done this week} =1{1 task done this week} other{{count} tasks done this week}}",
   "@tasksDoneThisWeek": {
     "placeholders": {
       "count": {
@@ -1166,5 +1166,47 @@
         "type": "int"
       }
     }
-  }
+  },
+  "startYourStreakToday": "Start your streak today",
+  "welcomeBackToYourSanctuary": "Welcome back to your sanctuary.",
+  "yourPlantsAssistantSanctuary": "Your plants, your assistant, your sanctuary.",
+  "plantCareCompanion": "Plant care companion",
+  "viewAllSentenceCase": "View all",
+  "postAction": "Post",
+  "yourConservatoryIsWaiting": "Your conservatory is waiting",
+  "swipeToSkip": "← Skip",
+  "swipeToComplete": "Complete →",
+  "scientificNameOptional": "Scientific name (optional)",
+  "askFloraShort": "Ask Flora...",
+  "logCare": "Log Care",
+  "askFloraCTA": "Ask Flora",
+  "whatShouldICareForToday": "What should I care for today?",
+  "addAPlantFirst": "Add a plant first",
+  "locationField": "Location",
+  "locationHint": "e.g. Living room, South-facing window",
+  "tourHomeTitle": "Your Home",
+  "tourHomeBody": "See what needs attention today — care tasks, streaks, and your plant health at a glance.",
+  "tourGardenTitle": "Your Garden",
+  "tourGardenBody": "All your plants in one place. Tap a plant to see its full care history and health profile.",
+  "tourFloraTitle": "Meet Flora",
+  "tourFloraBody": "Your AI plant companion. Ask anything about your plants — care advice, diagnosis, or just plant chat.",
+  "tourIdentifyTitle": "Identify & Analyse",
+  "tourIdentifyBody": "Point your camera at any plant to identify it instantly or check its health with Flora's analysis.",
+  "tourCommunityTitle": "Community",
+  "tourCommunityBody": "Share your plants, join care challenges, explore the wiki, and swap cuttings with other plant lovers.",
+  "tourNext": "Next",
+  "tourStartExploring": "Start exploring",
+  "welcomeTourTitle1": "Your Home",
+  "welcomeTourBody1": "See what needs attention today — care tasks, streaks, and your plant health at a glance.",
+  "welcomeTourTitle2": "Your Garden",
+  "welcomeTourBody2": "All your plants in one place. Tap a plant to see its full care history and health profile.",
+  "welcomeTourTitle3": "Meet Flora",
+  "welcomeTourBody3": "Your AI plant companion. Ask anything about your plants — care advice, diagnosis, or just plant chat.",
+  "welcomeTourTitle4": "Identify & Analyse",
+  "welcomeTourBody4": "Point your camera at any plant to identify it instantly or check its health with Flora's analysis.",
+  "welcomeTourTitle5": "Community",
+  "welcomeTourBody5": "Share your plants, join care challenges, explore the wiki, and swap cuttings with other plant lovers.",
+  "startExploring": "Start exploring",
+  "detectAutomatically": "Detect automatically",
+  "usesYourIpAddress": "Uses your IP address"
 }

@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'signup_screen.dart';
 import '../services/auth_service.dart';
 import '../main.dart';
@@ -184,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Welcome back to your sanctuary.',
+                AppLocalizations.of(context).welcomeBackToYourSanctuary,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.plusJakartaSans(
                   color: AppColors.bone500,

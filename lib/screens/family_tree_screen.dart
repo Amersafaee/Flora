@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'create_listing_screen.dart';
 import '../theme/app_theme.dart';
 
@@ -21,97 +22,202 @@ class FamilyTreeScreen extends StatefulWidget {
 class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// Returns the current user's UID, or null if not signed in.
+  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+
+  /// Scoped reference to this user's lineage sub-collection.
+  CollectionReference? get _lineageRef {
+    final uid = _uid;
+    if (uid == null) return null;
+    return _firestore.collection('users').doc(uid).collection('lineage');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Record Parent Plant dialog — picker from user's existing plants
+  // ---------------------------------------------------------------------------
   void _showRecordParentDialog() {
     final l = AppLocalizations.of(context);
-    final TextEditingController parentNameController = TextEditingController();
+    final uid = _uid;
+    if (uid == null) return;
+
+    // Load user's plants for the picker
+    final plantsRef = _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('plants')
+        .orderBy('name');
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(l.recordParentPlant, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          backgroundColor: AppColors.white,
-          content: TextField(
-            controller: parentNameController,
-            decoration: InputDecoration(
-              hintText: l.recordParentHint,
-              hintStyle: const TextStyle(color: AppColors.bone300),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+        String? selectedPlantId;
+        String? selectedPlantName;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(
+                l.recordParentPlant,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.forest900, width: 2),
+              backgroundColor: AppColors.white,
+              content: FutureBuilder<QuerySnapshot>(
+                future: plantsRef.get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      height: 60,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final docs = snapshot.data?.docs ?? [];
+                  // Exclude the current plant from the parent picker
+                  final filtered = docs
+                      .where((d) => d.id != widget.plantId)
+                      .toList();
+
+                  if (filtered.isEmpty) {
+                    return Text(
+                      l.noPlantsFound,
+                      style: const TextStyle(color: AppColors.bone500),
+                    );
+                  }
+
+                  return DropdownButtonFormField<String>(
+                    value: selectedPlantId,
+                    hint: Text(
+                      l.recordParentHint,
+                      style: const TextStyle(color: AppColors.bone300),
+                    ),
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withValues(alpha: 0.3),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.forest900, width: 2),
+                      ),
+                    ),
+                    items: filtered.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final name =
+                          data['name']?.toString() ?? 'Unknown';
+                      return DropdownMenuItem<String>(
+                        value: doc.id,
+                        child: Text(name),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      final doc =
+                          filtered.firstWhere((d) => d.id == value);
+                      final data = doc.data() as Map<String, dynamic>;
+                      setDialogState(() {
+                        selectedPlantId = value;
+                        selectedPlantName =
+                            data['name']?.toString() ?? 'Unknown';
+                      });
+                    },
+                  );
+                },
               ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l.cancel, style: const TextStyle(color: AppColors.bone500)),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final name = parentNameController.text.trim();
-                if (name.isNotEmpty) {
-                  await _firestore.collection('lineage').add({
-                    'parentPlantId': 'unknown',
-                    'parentPlantName': name,
-                    'childPlantId': widget.plantId,
-                    'childPlantName': widget.plantName,
-                    'dateRecorded': FieldValue.serverTimestamp(),
-                  });
-                }
-                if (context.mounted) Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.forest900),
-              child: Text(l.save, style: const TextStyle(color: Colors.white)),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l.cancel,
+                      style:
+                          const TextStyle(color: AppColors.bone500)),
+                ),
+                ElevatedButton(
+                  onPressed: selectedPlantId == null
+                      ? null
+                      : () async {
+                          await _lineageRef?.add({
+                            'parentPlantId': selectedPlantId,
+                            'parentPlantName': selectedPlantName,
+                            'childPlantId': widget.plantId,
+                            'childPlantName': widget.plantName,
+                            'dateRecorded':
+                                FieldValue.serverTimestamp(),
+                          });
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.forest900),
+                  child: Text(l.save,
+                      style: const TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Add Propagation dialog — text field for new plant name
+  // ---------------------------------------------------------------------------
   void _showAddPropagationDialog() {
     final l = AppLocalizations.of(context);
-    final TextEditingController childNameController = TextEditingController();
+    final TextEditingController childNameController =
+        TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(l.addPropagation, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+          title: Text(
+            l.addPropagation,
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface),
+          ),
           backgroundColor: AppColors.white,
           content: TextField(
             controller: childNameController,
             decoration: InputDecoration(
               hintText: l.propagationHint,
-              hintStyle: const TextStyle(color: AppColors.bone300),
+              hintStyle:
+                  const TextStyle(color: AppColors.bone300),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                borderSide: BorderSide(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.3),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.forest900, width: 2),
+                borderSide: const BorderSide(
+                    color: AppColors.forest900, width: 2),
               ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(l.cancel, style: const TextStyle(color: AppColors.bone500)),
+              child: Text(l.cancel,
+                  style: const TextStyle(color: AppColors.bone500)),
             ),
             ElevatedButton(
               onPressed: () async {
                 final name = childNameController.text.trim();
                 if (name.isNotEmpty) {
-                  await _firestore.collection('lineage').add({
+                  // Store plantId as '' — will be linked when/if the
+                  // propagation is saved as its own plant.
+                  await _lineageRef?.add({
                     'parentPlantId': widget.plantId,
                     'parentPlantName': widget.plantName,
-                    'childPlantId': 'new_prop_${DateTime.now().millisecondsSinceEpoch}',
+                    'childPlantId': '',
                     'childPlantName': name,
                     'dateRecorded': FieldValue.serverTimestamp(),
                   });
@@ -121,39 +227,80 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                     final lSheet = AppLocalizations.of(context);
                     showModalBottomSheet(
                       context: context,
-                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                      shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(20))),
                       builder: (sheetContext) {
-                        final ls = AppLocalizations.of(sheetContext);
+                        final ls =
+                            AppLocalizations.of(sheetContext);
                         return SafeArea(
                           child: Padding(
                             padding: const EdgeInsets.all(24.0),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.stretch,
                               children: [
-                                Text(lSheet.listCuttingForSwap, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                Text(
+                                  lSheet.listCuttingForSwap,
+                                  style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight:
+                                          FontWeight.bold),
+                                ),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Share your ${widget.plantName} cutting with the community',
-                                  style: const TextStyle(color: AppColors.bone500, fontSize: 16),
+                                  style: const TextStyle(
+                                      color: AppColors.bone500,
+                                      fontSize: 16),
                                 ),
                                 const SizedBox(height: 24),
                                 ElevatedButton(
                                   onPressed: () {
                                     Navigator.pop(sheetContext);
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => CreateListingScreen(initialPlantName: name)));
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            CreateListingScreen(
+                                                initialPlantName:
+                                                    name),
+                                      ),
+                                    );
                                   },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.forest900,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  style:
+                                      ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        AppColors.forest900,
+                                    padding:
+                                        const EdgeInsets.symmetric(
+                                            vertical: 16),
+                                    shape:
+                                        RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius
+                                                    .circular(12)),
                                   ),
-                                  child: Text(ls.listForSwap, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  child: Text(
+                                    ls.listForSwap,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight:
+                                            FontWeight.bold),
+                                  ),
                                 ),
                                 const SizedBox(height: 12),
                                 TextButton(
-                                  onPressed: () => Navigator.pop(sheetContext),
-                                  child: Text(ls.notNow, style: const TextStyle(color: AppColors.bone500, fontWeight: FontWeight.bold)),
+                                  onPressed: () =>
+                                      Navigator.pop(sheetContext),
+                                  child: Text(
+                                    ls.notNow,
+                                    style: const TextStyle(
+                                        color: AppColors.bone500,
+                                        fontWeight:
+                                            FontWeight.bold),
+                                  ),
                                 ),
                               ],
                             ),
@@ -166,8 +313,10 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                   if (context.mounted) Navigator.pop(context);
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.forest900),
-              child: Text(l.save, style: const TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.forest900),
+              child: Text(l.save,
+                  style: const TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -183,6 +332,8 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     const Color softGreen = AppColors.forest100;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
 
+    final uid = _uid;
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -194,7 +345,10 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
         ),
         title: Text(
           l.plantFamilyTree,
-          style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -202,117 +356,196 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
         child: Column(
           children: [
             const SizedBox(height: 8),
-            Text(widget.plantName, style: const TextStyle(color: AppColors.bone500, fontSize: 14)),
+            Text(widget.plantName,
+                style: const TextStyle(
+                    color: AppColors.bone500, fontSize: 14)),
             const SizedBox(height: 32),
             Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: _firestore.collection('lineage').snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text(l.couldNotLoadFamilyTree, style: const TextStyle(color: AppColors.bone500)),
-                    );
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+              child: uid == null
+                  ? Center(
+                      child: Text(
+                        l.notSignedIn,
+                        style:
+                            const TextStyle(color: AppColors.bone500),
+                      ),
+                    )
+                  : StreamBuilder<QuerySnapshot>(
+                      stream: _firestore
+                          .collection('users')
+                          .doc(uid)
+                          .collection('lineage')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              l.couldNotLoadFamilyTree,
+                              style: const TextStyle(
+                                  color: AppColors.bone500),
+                            ),
+                          );
+                        }
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
 
-                  final docs = snapshot.data?.docs ?? [];
+                        final docs = snapshot.data?.docs ?? [];
 
-                  // Find parent (where childPlantId == widget.plantId)
-                  final parentDocs = docs.where((d) => d['childPlantId'] == widget.plantId).toList();
-                  final Map<String, dynamic>? parentData = parentDocs.isNotEmpty ? parentDocs.first.data() as Map<String, dynamic> : null;
+                        // Find parent (where childPlantId == widget.plantId)
+                        final parentDocs = docs
+                            .where((d) =>
+                                d['childPlantId'] == widget.plantId)
+                            .toList();
+                        final Map<String, dynamic>? parentData =
+                            parentDocs.isNotEmpty
+                                ? parentDocs.first.data()
+                                    as Map<String, dynamic>
+                                : null;
 
-                  // Find children (where parentPlantId == widget.plantId)
-                  final childDocs = docs.where((d) => d['parentPlantId'] == widget.plantId).toList();
+                        // Find children (where parentPlantId == widget.plantId)
+                        final childDocs = docs
+                            .where((d) =>
+                                d['parentPlantId'] == widget.plantId)
+                            .toList();
 
-                  return SingleChildScrollView(
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Parent Node
-                          if (parentData != null)
-                            Column(
+                        return SingleChildScrollView(
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(l.parentPlantLabel, style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
-                                const SizedBox(height: 4),
+                                // Parent Node
+                                if (parentData != null)
+                                  Column(
+                                    children: [
+                                      Text(
+                                        l.parentPlantLabel,
+                                        style: const TextStyle(
+                                            color: AppColors.bone500,
+                                            fontSize: 12),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 20,
+                                                vertical: 12),
+                                        decoration: BoxDecoration(
+                                            color: softGreen,
+                                            borderRadius:
+                                                BorderRadius.circular(
+                                                    12)),
+                                        child: Text(
+                                          parentData[
+                                                  'parentPlantName'] ??
+                                              l.unknownParent,
+                                          style: const TextStyle(
+                                              color: primaryColor,
+                                              fontWeight:
+                                                  FontWeight.bold,
+                                              fontSize: 16),
+                                        ),
+                                      ),
+                                      _buildVerticalLine(),
+                                    ],
+                                  )
+                                else
+                                  Column(
+                                    children: [
+                                      _buildDashedPlaceholder(
+                                          l.noParentRecorded),
+                                      _buildVerticalLine(),
+                                    ],
+                                  ),
+
+                                // Root Node (Current Plant)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                  decoration: BoxDecoration(color: softGreen, borderRadius: BorderRadius.circular(12)),
+                                  padding:
+                                      const EdgeInsets.symmetric(
+                                          horizontal: 32,
+                                          vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor,
+                                    borderRadius:
+                                        BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: primaryColor.withValues(
+                                            alpha: 0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
                                   child: Text(
-                                    parentData['parentPlantName'] ?? l.unknownParent,
-                                    style: const TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 16),
+                                    widget.plantName,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18),
                                   ),
                                 ),
-                                _buildVerticalLine(),
-                              ],
-                            )
-                          else
-                            Column(
-                              children: [
-                                _buildDashedPlaceholder(l.noParentRecorded),
-                                _buildVerticalLine(),
-                              ],
-                            ),
 
-                          // Root Node (Current Plant)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                            decoration: BoxDecoration(
-                              color: primaryColor,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: primaryColor.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
+                                // Children Nodes
+                                if (childDocs.isNotEmpty)
+                                  Column(
+                                    children: [
+                                      _buildVerticalLine(),
+                                      for (var child in childDocs) ...[
+                                        Text(
+                                          l.propagatedFromThis,
+                                          style: const TextStyle(
+                                              color: AppColors.bone500,
+                                              fontSize: 12),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                                  horizontal: 20,
+                                                  vertical: 12),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .cardColor,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                                color: primaryColor,
+                                                width: 1.5),
+                                          ),
+                                          child: Text(
+                                            (child.data() as Map<
+                                                        String,
+                                                        dynamic>)[
+                                                    'childPlantName'] ??
+                                                l.unknownProp,
+                                            style: TextStyle(
+                                                color: textColor,
+                                                fontWeight:
+                                                    FontWeight.bold,
+                                                fontSize: 16),
+                                          ),
+                                        ),
+                                        if (childDocs.last != child)
+                                          const SizedBox(height: 16),
+                                      ],
+                                    ],
+                                  )
+                                else
+                                  Column(
+                                    children: [
+                                      _buildVerticalLine(),
+                                      _buildDashedPlaceholder(
+                                          l.noPropagationsYet),
+                                    ],
+                                  ),
                               ],
-                            ),
-                            child: Text(
-                              widget.plantName,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                             ),
                           ),
-
-                          // Children Nodes
-                          if (childDocs.isNotEmpty)
-                            Column(
-                              children: [
-                                _buildVerticalLine(),
-                                for (var child in childDocs) ...[
-                                  Text(l.propagatedFromThis, style: const TextStyle(color: AppColors.bone500, fontSize: 12)),
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).cardColor,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: primaryColor, width: 1.5),
-                                    ),
-                                    child: Text(
-                                      (child.data() as Map<String, dynamic>)['childPlantName'] ?? l.unknownProp,
-                                      style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16),
-                                    ),
-                                  ),
-                                  if (childDocs.last != child) const SizedBox(height: 16),
-                                ],
-                              ],
-                            )
-                          else
-                            Column(
-                              children: [
-                                _buildVerticalLine(),
-                                _buildDashedPlaceholder(l.noPropagationsYet),
-                              ],
-                            ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
 
             // Bottom Buttons
@@ -326,13 +559,20 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                       onPressed: _showRecordParentDialog,
                       style: OutlinedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: primaryColor, width: 2),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(
+                            color: primaryColor, width: 2),
+                        shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(16)),
                       ),
                       child: Text(
                         l.recordParentPlant,
-                        style: const TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            color: primaryColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -343,13 +583,19 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                       onPressed: _showAddPropagationDialog,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(16)),
                         elevation: 0,
                       ),
                       child: Text(
                         l.addPropagation,
-                        style: TextStyle(color: Theme.of(context).cardColor, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: Theme.of(context).cardColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -368,7 +614,8 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
 
   Widget _buildDashedPlaceholder(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(12),
@@ -376,7 +623,10 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
       ),
       child: Text(
         text,
-        style: const TextStyle(color: AppColors.bone500, fontStyle: FontStyle.italic, fontSize: 14),
+        style: const TextStyle(
+            color: AppColors.bone500,
+            fontStyle: FontStyle.italic,
+            fontSize: 14),
       ),
     );
   }

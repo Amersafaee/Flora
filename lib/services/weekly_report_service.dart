@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/plant_model.dart';
 import '../models/task_model.dart';
@@ -20,7 +21,9 @@ class WeeklyReportService {
     int skippedTasks = 0;
     
     for (var doc in tasksQuery.docs) {
-      final task = Task.fromMap(doc.data()..['id'] = doc.id);
+      final taskData = Map<String, dynamic>.from(doc.data());
+      taskData['id'] = doc.id;
+      final task = Task.fromMap(taskData);
       // Ensure dueDate is strictly before 'now' or within the 7 day period
       if (task.dueDate.isBefore(now) || task.dueDate.isAtSameMomentAs(now)) {
         if (task.isCompleted) {
@@ -166,6 +169,28 @@ class WeeklyReportService {
     final now = DateTime.now();
     // Only show on Sundays (weekday == 7)
     if (now.weekday != DateTime.sunday) return false;
+
+    // Account age check — suppress report for accounts younger than 7 days
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        if (userDoc.exists) {
+          final createdAtRaw = userDoc.data()?['createdAt'];
+          DateTime? createdAt;
+          if (createdAtRaw is Timestamp) {
+            createdAt = createdAtRaw.toDate();
+          } else if (createdAtRaw is String) {
+            createdAt = DateTime.tryParse(createdAtRaw);
+          }
+          if (createdAt != null && now.difference(createdAt).inDays < 7) {
+            return false;
+          }
+        }
+      } catch (_) {
+        // If we can't read the doc, fall through to the date guard
+      }
+    }
 
     final prefs = await SharedPreferences.getInstance();
     final todayStr =

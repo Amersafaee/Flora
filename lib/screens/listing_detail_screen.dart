@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -257,13 +257,15 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           return Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100,
+                              color: isDark ? AppColors.darkSurfaceElevated : AppColors.forest50,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: isDark ? AppColors.darkBorderDefault : AppColors.terracotta500),
+                              border: Border.all(
+                                color: isDark ? AppColors.darkBorderDefault : AppColors.bone200,
+                              ),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.swap_horiz, color: isDark ? AppColors.darkTerracotta : AppColors.terracotta900),
+                                Icon(Icons.swap_horiz, color: isDark ? AppColors.darkTerracotta : AppColors.terracotta700),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
@@ -271,10 +273,21 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                     children: [
                                       Text(
                                         l.lookingToSwapFor,
-                                        style: TextStyle(color: isDark ? AppColors.darkTerracotta : AppColors.terracotta900, fontSize: 12, fontWeight: FontWeight.bold),
+                                        style: const TextStyle(
+                                          color: AppColors.terracotta700,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(lookingFor, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                      Text(
+                                        lookingFor,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 15,
+                                          color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -348,18 +361,27 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           ? null
           : SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ElevatedButton(
-                  onPressed: () => _showPassportSheet(data),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.forest900,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    l.messageSeller,
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: () => _showPassportSheet(data),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.forest700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      l.messageSeller,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -473,11 +495,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       _startConversation();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.forest900,
+                      backgroundColor: AppColors.forest700,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: Text(l.messageSellerEmoji, style: const TextStyle(color: Colors.white)),
+                    child: Text(l.messageSeller, style: const TextStyle(color: Colors.white)),
                   ),
                 ),
               ],

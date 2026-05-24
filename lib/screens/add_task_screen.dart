@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 import '../models/task_model.dart';
@@ -9,7 +9,9 @@ import '../theme/app_theme.dart';
 
 class AddTaskScreen extends StatefulWidget {
   final Task? task;
-  const AddTaskScreen({super.key, this.task});
+  final String? initialPlantId;
+  final String? initialPlantName;
+  const AddTaskScreen({super.key, this.task, this.initialPlantId, this.initialPlantName});
 
   @override
   State<AddTaskScreen> createState() => _AddTaskScreenState();
@@ -22,6 +24,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   String? _selectedTaskType;
   DateTime _selectedDate = DateTime.now();
   String _repeatType = 'none';
+  String? _selectedPlantName;
 
   bool _isLoading = false;
   bool _showNameError = false;
@@ -35,6 +38,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     super.initState();
     _plantNameController = TextEditingController(text: widget.task?.plantName ?? '');
     _notesController = TextEditingController(text: widget.task?.notes ?? '');
+    _selectedPlantName = widget.task?.plantName.isEmpty == false
+        ? widget.task!.plantName
+        : widget.initialPlantName;
+    if (widget.initialPlantId != null && widget.initialPlantId!.isNotEmpty) {
+      _selectedPlantId = widget.initialPlantId!;
+    }
 
     if (widget.task != null) {
       _selectedPlantId = widget.task!.plantId;
@@ -54,7 +63,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   void _saveTask() async {
     final l = AppLocalizations.of(context);
     setState(() {
-      _showNameError = _plantNameController.text.trim().isEmpty;
+      _showNameError = (_selectedPlantName == null || _selectedPlantName!.trim().isEmpty);
       _showTypeError = _selectedTaskType == null;
     });
 
@@ -91,8 +100,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
       final task = Task(
         id: taskId,
-        plantId: lookedUpPlantId,
-        plantName: _plantNameController.text.trim(),
+        plantId: _selectedPlantId,
+        plantName: _selectedPlantName ?? '',
         taskType: _selectedTaskType!,
         dueDate: _selectedDate,
         isCompleted: widget.task?.isCompleted ?? false,
@@ -107,7 +116,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         await _firestoreService.addTask(task);
       }
 
-      await NotificationService().scheduleTaskNotification(taskId, task.plantName, task.taskType, task.dueDate);
+      // Notification failure must never crash the save flow
+      try {
+        await NotificationService().scheduleTaskNotification(
+            task.id, task.plantName, task.taskType, task.dueDate);
+      } catch (e) {
+        debugPrint('Warning: could not schedule task notification: $e');
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -188,18 +203,90 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
               Text(l.plantNameLabel, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
-              TextField(
-                controller: _plantNameController,
-                decoration: InputDecoration(
-                  hintText: l.plantNameHint,
-                  hintStyle: const TextStyle(color: AppColors.bone300),
-                  filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
-                ),
+              FutureBuilder<QuerySnapshot>(
+                future: FirebaseAuth.instance.currentUser != null
+                    ? FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser!.uid)
+                        .collection('plants')
+                        .where('isDeceased', isEqualTo: false)
+                        .get()
+                    : null,
+                builder: (context, snapshot) {
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final fillColor = isDark ? AppColors.darkSurface : AppColors.white;
+                  final inputDecoration = InputDecoration(
+                    filled: true,
+                    fillColor: fillColor,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                  );
+
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return DropdownButtonFormField<String>(
+                      value: null,
+                      items: const [],
+                      onChanged: null,
+                      decoration: inputDecoration.copyWith(hintText: '...', hintStyle: const TextStyle(color: AppColors.bone300)),
+                    );
+                  }
+
+                  final docs = snapshot.data?.docs ?? [];
+                  if (docs.isEmpty) {
+                    return DropdownButtonFormField<String>(
+                      value: null,
+                      items: const [],
+                      onChanged: null,
+                      decoration: inputDecoration.copyWith(
+                        hintText: AppLocalizations.of(context).addAPlantFirst,
+                        hintStyle: const TextStyle(color: AppColors.bone300),
+                      ),
+                    );
+                  }
+
+                  final plantItems = docs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final commonName = (data['commonName'] as String?)?.trim() ?? '';
+                    final name = (data['name'] as String?)?.trim() ?? '';
+                    final displayName = commonName.isNotEmpty ? commonName : name;
+                    return DropdownMenuItem<String>(
+                      value: name,
+                      child: Text(displayName, overflow: TextOverflow.ellipsis),
+                    );
+                  }).toList();
+
+                  // Ensure the pre-filled value from an existing task actually exists in the list
+                  final validValues = docs.map((d) => ((d.data() as Map<String, dynamic>)['name'] as String?)?.trim() ?? '').toSet();
+                  if (_selectedPlantName != null && !validValues.contains(_selectedPlantName)) {
+                    _selectedPlantName = null;
+                  }
+
+                  return DropdownButtonFormField<String>(
+                    value: _selectedPlantName,
+                    items: plantItems,
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        _selectedPlantName = value;
+                        _showNameError = false;
+                        // Look up plantId for the selected plant name
+                        for (final doc in docs) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          if ((data['name'] as String?)?.trim() == value) {
+                            _selectedPlantId = doc.id;
+                            break;
+                          }
+                        }
+                      });
+                    },
+                    decoration: inputDecoration.copyWith(
+                      hintText: l.plantNameHint,
+                      hintStyle: const TextStyle(color: AppColors.bone300),
+                    ),
+                  );
+                },
               ),
               if (_showNameError)
                 Padding(padding: const EdgeInsets.only(top: 6, left: 4), child: Text(l.plantNameRequired, style: const TextStyle(color: Colors.red, fontSize: 12))),

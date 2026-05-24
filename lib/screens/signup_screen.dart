@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/onboarding_service.dart';
 import 'login_screen.dart';
+import 'welcome_tour_screen.dart';
 import '../main.dart';
 import '../theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -58,6 +59,22 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     if (email.isEmpty || password.isEmpty) return;
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l.passwordTooWeak, style: const TextStyle(color: Colors.white)),
+          backgroundColor: colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+          elevation: 4,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -115,9 +132,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) => MainTabScreen(
-              onThemeChanged: widget.onThemeChanged ?? (_) {},
-              onLocaleChanged: widget.onLocaleChanged ?? (_) {},
+            builder: (_) => WelcomeTourScreen(
+              onThemeChanged: widget.onThemeChanged,
+              onLocaleChanged: widget.onLocaleChanged,
             ),
           ),
           (route) => false,
@@ -216,7 +233,7 @@ class _SignupScreenState extends State<SignupScreen> {
               Text(l.createAccount, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'serif', fontSize: 28, fontWeight: FontWeight.bold, color: primaryColor)),
               const SizedBox(height: 8),
               Text(
-                'Your plants, your assistant, your sanctuary.',
+                AppLocalizations.of(context).yourPlantsAssistantSanctuary,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.plusJakartaSans(
                   color: AppColors.bone500,

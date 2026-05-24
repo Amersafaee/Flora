@@ -1,7 +1,8 @@
 import '../services/badges_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'care_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -61,6 +62,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (uid != null) {
         await FirestoreService().computeAllHealthScores(uid);
         await MilestoneService().checkMilestones(uid);
+        await BadgesService().checkAndAwardBadges(uid).catchError((_) {});
+
+        // Check if a badge was earned — show celebration dialog after first frame
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final pendingBadge = prefs.getString('pending_badge_celebration');
+          if (pendingBadge != null && mounted) {
+            await prefs.remove('pending_badge_celebration');
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _showBadgeCelebrationDialog(pendingBadge);
+            });
+          }
+        } catch (_) {}
 
         if (!_weeklyCheckDone) {
           _weeklyCheckDone = true;
@@ -85,7 +99,57 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  void _showBadgeCelebrationDialog(String badgeName) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.emoji_events,
+              size: 64,
+              color: Color(0xFFC8893A),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Badge Earned!',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              badgeName,
+              style: const TextStyle(fontSize: 16, color: AppColors.bone500),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.forest700,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Awesome!',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildWeatherCard(WeatherData? weather, bool isLoading) {
+
     if (isLoading) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -158,13 +222,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    final firestoreService = FirestoreService();
-    
+        final firestoreService = FirestoreService();
     final userId = firestoreService.currentUserId;
-    if (userId != null) {
-      BadgesService().checkAndAwardBadges(userId);
-    }
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -462,7 +521,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         children: [
                                           Text(
                                             careStreak == 0
-                                              ? 'Start your streak today'
+                                              ? AppLocalizations.of(context).startYourStreakToday
                                               : '$careStreak ${AppLocalizations.of(context).dayCareStreak}',
                                             style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.terracotta900, fontWeight: FontWeight.bold, fontSize: 18),
                                           ),
@@ -718,59 +777,77 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   
                   // Only show empty state when data has actually loaded (not just waiting)
                   if (plants.isEmpty && snapshot.connectionState == ConnectionState.active) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Color(0x1A14301E),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(Icons.eco, color: AppColors.forest900, size: 80),
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkSurfaceElevated : AppColors.forest50,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.local_florist, size: 64, color: AppColors.forest300),
+                          const SizedBox(height: 20),
+                          Text(
+                            AppLocalizations.of(context).yourConservatoryIsWaiting,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.notoSerif(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
                             ),
-                            const SizedBox(height: 24),
-                            Text(
-                              AppLocalizations.of(context).yourConservatoryIsEmpty,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            AppLocalizations.of(context).addFirstPlantDescription,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.bone500,
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              AppLocalizations.of(context).addFirstPlantDescription,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: AppColors.bone500, fontSize: 14),
-                            ),
-                            const SizedBox(height: 24),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 50,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen()));
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.forest900,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: Text(AppLocalizations.of(context).addYourFirstPlantEmoji, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            TextButton(
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: ElevatedButton(
                               onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()));
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen()));
                               },
-                              child: Text(AppLocalizations.of(context).orIdentifyWithCamera, style: const TextStyle(color: AppColors.forest900)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.forest700,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(26),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                AppLocalizations.of(context).addYourFirstPlant,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 12),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const IdentifyScreen()));
+                            },
+                            child: Text(
+                              AppLocalizations.of(context).orIdentifyWithCamera,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? AppColors.darkForestPrimary : AppColors.forest600,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   }

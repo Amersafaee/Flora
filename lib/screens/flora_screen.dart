@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -240,6 +240,18 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
     });
 
     await _saveMessageToFirestore(userMsg);
+
+    // Mark that the user has used Flora Chat — enables the flora_friend badge
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await _firestore
+            .collection('users')
+            .doc(uid)
+            .update({'usedFloraChat': true});
+      }
+    } catch (_) {}
+
     await _updateConversationMeta(
       lastMessage: messageText,
       newTitle: wasFirst
@@ -343,7 +355,19 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
     // null means user cancelled
     if (caption == null) return;
 
-    setState(() => _isTyping = true);
+    // Validate the image file before proceeding
+    final bool fileExists = await imageFile.exists();
+    final bool fileNonEmpty = fileExists && imageFile.lengthSync() > 0;
+    if (!fileExists || !fileNonEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not read image. Please try again.')),
+        );
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _isTyping = true);
 
     String imageUrl = '';
     try {
@@ -588,7 +612,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                               ),
                             ),
                             Text(
-                              'Plant care companion',
+                              AppLocalizations.of(context).plantCareCompanion,
                               style: GoogleFonts.plusJakartaSans(
                                 color: isDark ? AppColors.darkTextSecondary : AppColors.bone500,
                                 fontSize: 13,
@@ -833,7 +857,7 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                           if (_hasText) _sendMessage();
                         },
                         decoration: InputDecoration(
-                          hintText: 'Ask Flora...',
+                          hintText: AppLocalizations.of(context).askFloraShort,
                           hintStyle: TextStyle(
                             color: isDark ? AppColors.darkTextSecondary : AppColors.bone500,
                             fontSize: 14,
@@ -899,16 +923,42 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                 ),
               ),
               const SizedBox(height: 40),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: [
-                  _buildSuggestionChip(AppLocalizations.of(context).howOftenWaterMonstera),
-                  _buildSuggestionChip(AppLocalizations.of(context).whyLeavesYellow),
-                  _buildSuggestionChip(AppLocalizations.of(context).plantsGoodForLowLight),
-                  _buildSuggestionChip(AppLocalizations.of(context).howToRepotPlant),
-                ],
+              FutureBuilder<QuerySnapshot>(
+                future: _uid != null
+                    ? _firestore
+                        .collection('users')
+                        .doc(_uid)
+                        .collection('plants')
+                        .where('isDeceased', isEqualTo: false)
+                        .limit(3)
+                        .get()
+                    : null,
+                builder: (context, snapshot) {
+                  List<String> chips;
+                  if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                    chips = snapshot.data!.docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final name = (data['commonName'] as String?)?.trim().isNotEmpty == true
+                          ? (data['commonName'] as String).trim()
+                          : (data['name'] as String?)?.trim() ?? 'my plant';
+                      return "How's my $name doing?";
+                    }).toList();
+                    chips.add(AppLocalizations.of(context).whatShouldICareForToday);
+                  } else {
+                    chips = [
+                      AppLocalizations.of(context).howOftenWaterMonstera,
+                      AppLocalizations.of(context).whyLeavesYellow,
+                      AppLocalizations.of(context).plantsGoodForLowLight,
+                      AppLocalizations.of(context).howToRepotPlant,
+                    ];
+                  }
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: chips.map((c) => _buildSuggestionChip(c)).toList(),
+                  );
+                },
               ),
             ],
           ),

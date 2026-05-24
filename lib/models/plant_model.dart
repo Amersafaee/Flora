@@ -14,6 +14,7 @@ class Plant {
   final DateTime? deceasedDate;
   final String? memorialNote;
   final String? eulogy;
+  final String? location;
 
   Plant({
     required this.id,
@@ -29,6 +30,7 @@ class Plant {
     this.deceasedDate,
     this.memorialNote,
     this.eulogy,
+    this.location,
   });
 
   Map<String, dynamic> toMap() {
@@ -46,6 +48,7 @@ class Plant {
       'deceasedDate': deceasedDate,
       'memorialNote': memorialNote,
       'eulogy': eulogy,
+      if (location != null && location!.isNotEmpty) 'location': location,
     };
   }
 
@@ -69,6 +72,7 @@ class Plant {
               : null),
       memorialNote: (map['memorialNote'] as String?),
       eulogy: (map['eulogy'] as String?),
+      location: (map['location'] as String?),
       dateAdded: map['dateAdded'] is Timestamp
           ? (map['dateAdded'] as Timestamp).toDate()
           : (map['dateAdded'] is DateTime

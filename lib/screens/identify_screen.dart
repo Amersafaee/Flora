@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/gemini_service.dart';
 import 'identify_result_screen.dart';

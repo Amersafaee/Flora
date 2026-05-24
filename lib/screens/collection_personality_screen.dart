@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
@@ -18,6 +20,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
   String _personalityKey = 'buddingPlantParent';
   IconData _personalityIcon = Icons.eco;
   bool _isLoading = true;
+  bool _hasInsufficientData = false;
 
   @override
   void initState() {
@@ -32,12 +35,42 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
       return;
     }
 
+    // Account age check
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        final createdAtRaw = userDoc.data()?['createdAt'];
+        DateTime? createdAt;
+        if (createdAtRaw is Timestamp) {
+          createdAt = createdAtRaw.toDate();
+        } else if (createdAtRaw is String) {
+          createdAt = DateTime.tryParse(createdAtRaw);
+        }
+        if (createdAt != null && DateTime.now().difference(createdAt).inDays < 7) {
+          setState(() {
+            _hasInsufficientData = true;
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {}
+
     final stream = FirestoreService().getPlants();
     final plants = await stream.first;
 
     // Only count active plants for personality
     final activePlants = plants.where((p) => !p.isDeceased).toList();
     _totalPlants = activePlants.length;
+
+    // Fewer than 3 plants → insufficient
+    if (_totalPlants < 3) {
+      setState(() {
+        _hasInsufficientData = true;
+        _isLoading = false;
+      });
+      return;
+    }
 
     for (var p in activePlants) {
       final cat = p.category.trim();
@@ -123,6 +156,71 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
       return const Scaffold(
         backgroundColor: AppColors.forest900,
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
+    // Placeholder for users without enough data
+    if (_hasInsufficientData) {
+      return Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.forest700, AppColors.forest900],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.psychology_outlined,
+                            size: 64,
+                            color: AppColors.forest300,
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Still getting to know you',
+                            style: GoogleFonts.notoSerif(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.bone900,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Add at least 3 plants and use the app for a week — then I\'ll have a picture of your care style.',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: AppColors.bone500,
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
 

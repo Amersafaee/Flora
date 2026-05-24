@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_screen.dart';
 import '../theme/app_theme.dart';
@@ -47,116 +47,114 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) => setState(() => _currentPage = index),
-                children: [
-                  _buildPage(
-                    icon: Icons.eco,
-                    iconSize: 100,
-                    iconColor: accentColor,
-                    heading: l.welcomeToDigitalConservatory,
-                    subtitle: l.onboardingWelcomeSubtitle,
-                  ),
-                  _buildPageWithStackedIcon(
-                    baseIcon: Icons.calendar_today,
-                    overlayIcon: Icons.water_drop,
-                    heading: l.neverMissACareDay,
-                    subtitle: l.onboardingCareSubtitle,
-                    accentColor: accentColor,
-                  ),
-                  _buildPage(
-                    icon: Icons.camera_alt,
-                    iconSize: 80,
-                    iconColor: accentColor,
-                    heading: l.identifyAnyPlantInstantly,
-                    subtitle: l.onboardingIdentifySubtitle,
-                  ),
-                  _buildPage(
-                    icon: Icons.people,
-                    iconSize: 80,
-                    iconColor: accentColor,
-                    heading: l.joinTheCommunity,
-                    subtitle: l.onboardingCommunitySubtitle,
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-              child: Column(
-                children: [
-                  // Dot indicators
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(4, (index) {
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4.0),
-                        height: 8.0,
-                        width: _currentPage == index ? 24.0 : 8.0,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index ? accentColor : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(4.0),
-                        ),
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 32.0),
-                  if (_currentPage == 3)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56.0,
-                      child: ElevatedButton(
-                        onPressed: _completeOnboarding,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: accentColor,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-                          elevation: 0,
-                        ),
-                        child: Text(l.letsGrowSomething, style: TextStyle(color: Theme.of(context).cardColor, fontSize: 18.0, fontWeight: FontWeight.bold)),
+            Column(
+              children: [
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    onPageChanged: (index) => setState(() => _currentPage = index),
+                    children: [
+                      _buildPage(
+                        icon: Icons.eco,
+                        iconSize: 100,
+                        iconColor: accentColor,
+                        heading: l.welcomeToDigitalConservatory,
+                        subtitle: l.onboardingWelcomeSubtitle,
                       ),
-                    )
-                  else
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 56.0,
-                            child: OutlinedButton(
-                              onPressed: _completeOnboarding,
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: accentColor),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-                              ),
-                              child: Text(l.skip, style: const TextStyle(color: accentColor, fontSize: 16.0, fontWeight: FontWeight.w600)),
+                      _buildPageWithStackedIcon(
+                        baseIcon: Icons.calendar_today,
+                        overlayIcon: Icons.water_drop,
+                        heading: l.neverMissACareDay,
+                        subtitle: l.onboardingCareSubtitle,
+                        accentColor: accentColor,
+                      ),
+                      _buildPage(
+                        icon: Icons.camera_alt,
+                        iconSize: 80,
+                        iconColor: accentColor,
+                        heading: l.identifyAnyPlantInstantly,
+                        subtitle: l.onboardingIdentifySubtitle,
+                      ),
+                      _buildPage(
+                        icon: Icons.people,
+                        iconSize: 80,
+                        iconColor: accentColor,
+                        heading: l.joinTheCommunity,
+                        subtitle: l.onboardingCommunitySubtitle,
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 32.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Page indicator dots
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(4, (index) {
+                          final isActive = _currentPage == index;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                            height: 8.0,
+                            width: isActive ? 24.0 : 8.0,
+                            decoration: BoxDecoration(
+                              color: isActive ? AppColors.forest700 : AppColors.bone300,
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 32.0),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54.0,
+                        child: ElevatedButton(
+                          onPressed: _currentPage == 3 ? _completeOnboarding : _nextPage,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.forest700,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(26.0),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            _currentPage == 3
+                                ? l.letsGrowSomething.replaceAll('🌱', '').replaceAll('🌿', '').trim()
+                                : l.nextLabel,
+                            style: const TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          flex: 2,
-                          child: SizedBox(
-                            height: 56.0,
-                            child: ElevatedButton(
-                              onPressed: _nextPage,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: accentColor,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-                                elevation: 0,
-                              ),
-                              child: Text(l.nextLabel, style: TextStyle(color: Theme.of(context).cardColor, fontSize: 18.0, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+            if (_currentPage < 3)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: TextButton(
+                  onPressed: _completeOnboarding,
+                  child: Text(
+                    l.skip,
+                    style: const TextStyle(
+                      color: AppColors.bone500,
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

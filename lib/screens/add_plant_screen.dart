@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
+import '../services/badges_service.dart';
 import '../models/plant_model.dart';
 import '../models/task_model.dart';
 import 'flora_screen.dart';
@@ -43,7 +44,6 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
   // Internal Firestore values — must stay English
   String _selectedCategory = 'Tropical';
-  String _selectedHealth = 'Healthy';
 
   bool _isLoading = false;
   bool _showNameError = false;
@@ -65,11 +65,6 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     if (widget.initialCategory != null &&
         ['Tropical', 'Succulent', 'Fern', 'Herb', 'Cactus', 'Other'].contains(widget.initialCategory)) {
       _selectedCategory = widget.initialCategory!;
-    }
-
-    if (widget.initialHealthStatus != null &&
-        ['Healthy', 'Needs Attention', 'Critical'].contains(widget.initialHealthStatus)) {
-      _selectedHealth = widget.initialHealthStatus!;
     }
 
     if (widget.initialImageFile != null) {
@@ -128,11 +123,17 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         category: _selectedCategory,
         zone: '',
         imageUrl: imageUrl,
-        healthStatus: _selectedHealth,
+        healthStatus: 'Healthy',
         dateAdded: DateTime.now(),
       );
 
       await _firestoreService.addPlant(plant);
+
+      // Award badges for plant milestones — fire and forget, never blocks the UI
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        BadgesService().checkAndAwardBadges(uid).catchError((_) {});
+      }
 
       if (mounted) {
         _showCareScheduleBottomSheet(plant.name, plantId);
@@ -169,12 +170,6 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
       {'value': 'Herb', 'label': 'Herb'},
       {'value': 'Cactus', 'label': 'Cactus'},
       {'value': 'Other', 'label': 'Other'},
-    ];
-
-    final List<Map<String, String>> healthOptions = [
-      {'value': 'Healthy', 'label': l.healthy},
-      {'value': 'Needs Attention', 'label': l.needsAttention},
-      {'value': 'Critical', 'label': l.critical},
     ];
 
     return Scaffold(
@@ -217,7 +212,44 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     // Image Picker
                     GestureDetector(
                       onTap: () async {
-                        final picked = await _picker.pickImage(source: ImageSource.gallery);
+                        final ImageSource? source = await showModalBottomSheet<ImageSource>(
+                          context: context,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                          ),
+                          builder: (ctx) => SafeArea(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: 40,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ListTile(
+                                  leading: const Icon(Icons.camera_alt, color: AppColors.forest900),
+                                  title: Text(AppLocalizations.of(context).takeAPhoto,
+                                      style: const TextStyle(fontWeight: FontWeight.w500)),
+                                  onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                                ),
+                                ListTile(
+                                  leading: const Icon(Icons.photo_library, color: AppColors.forest900),
+                                  title: Text(AppLocalizations.of(context).chooseFromGallery,
+                                      style: const TextStyle(fontWeight: FontWeight.w500)),
+                                  onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                            ),
+                          ),
+                        );
+                        if (source == null) return;
+                        final picked = await _picker.pickImage(source: source);
                         if (picked != null) {
                           setState(() {
                             _imageFile = File(picked.path);
@@ -254,15 +286,13 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                                   ),
                       ),
                     ),
-                    const SizedBox(height: 32),
-
-                    // Plant Name
-                    Text(l.plantNameLabel, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 32),                    // First field: Name
+                    const Text("Name", style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _nameController,
                       decoration: InputDecoration(
-                        hintText: l.plantNameHint,
+                        hintText: "what you call this plant, common name/nickname",
                         hintStyle: const TextStyle(color: AppColors.bone300),
                         filled: true,
                         fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
@@ -279,13 +309,13 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                       ),
                     const SizedBox(height: 20),
 
-                    // Common Name
-                    Text(l.commonName, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    // Second field: Scientific name (optional)
+                    Text(AppLocalizations.of(context).scientificNameOptional, style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _commonNameController,
                       decoration: InputDecoration(
-                        hintText: l.commonNameHint,
+                        hintText: AppLocalizations.of(context).scientificNameOptional,
                         hintStyle: const TextStyle(color: AppColors.bone300),
                         filled: true,
                         fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
@@ -322,43 +352,18 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Health Status
-                    Text(l.healthStatus, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedHealth,
-                          isExpanded: true,
-                          icon: const Icon(Icons.keyboard_arrow_down),
-                          items: healthOptions.map((opt) => DropdownMenuItem<String>(
-                            value: opt['value'],
-                            child: Text(opt['label']!),
-                          )).toList(),
-                          onChanged: (newValue) {
-                            setState(() { if (newValue != null) _selectedHealth = newValue; });
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
 
                     // Save Button
                     SizedBox(
+                      width: double.infinity,
                       height: 54,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _savePlant,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          backgroundColor: AppColors.forest700,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                           elevation: 0,
                         ),
                         child: _isLoading
@@ -366,9 +371,9 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                                 width: 24, height: 24,
                                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                               )
-                            : Text(
-                                l.savePlant,
-                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            : const Text(
+                                "Save plant",
+                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                       ),
                     ),
@@ -398,7 +403,9 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? AppColors.darkSurfaceElevated
+          : Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         final l = AppLocalizations.of(context);
@@ -502,7 +509,9 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                         await _saveSchedules(plantName, plantId, wateringVal, fertilizingVal, mistingVal);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.forest900,
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF3A7A52)
+                            : AppColors.forest900,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -529,6 +538,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   }
 
   Widget _buildCareRow(String title, IconData icon, Color color, String value, List<String> options, ValueChanged<String?> onChanged) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Container(
@@ -541,7 +551,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? AppColors.darkSurface : Colors.white,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
           ),

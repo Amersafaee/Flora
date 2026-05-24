@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/firestore_service.dart';
 
 class BadgesService {
@@ -76,13 +77,19 @@ class BadgesService {
     for (var badge in potentialBadges) {
       final badgeId = badge['badgeId'];
       final docSnap = await badgesRef.doc(badgeId).get();
-      if (!docSnap.exists) {
+        if (!docSnap.exists) {
         await badgesRef.doc(badgeId).set({
           'badgeId': badge['badgeId'],
           'badgeName': badge['badgeName'],
           'badgeDescription': badge['badgeDescription'],
           'earnedDate': FieldValue.serverTimestamp(),
         });
+
+        // Store badge name for home screen celebration dialog
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('pending_badge_celebration', badge['badgeName']);
+        } catch (_) {}
         
         await _db.collection('users').doc(userId).collection('notifications').add({
           'badgeCelebration': true,

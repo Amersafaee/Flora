@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -21,6 +21,8 @@ import 'onboarding_overlay_screen.dart';
 import 'home_screen.dart';
 import '../theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'add_task_screen.dart';
+import 'flora_chats_list_screen.dart';
 
 // ignore_for_file: avoid_dynamic_calls
 
@@ -420,32 +422,35 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                         child: Icon(Icons.favorite, color: primaryColor), // heart
                                       ),
                                       const SizedBox(width: 12),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            AppLocalizations.of(context).healthScore,
-                                            style: TextStyle(
-                                              color: AppColors.bone500,
-                                              fontSize: 12,
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              AppLocalizations.of(context).healthScore,
+                                              style: TextStyle(
+                                                color: AppColors.bone500,
+                                                fontSize: 12,
+                                              ),
                                             ),
-                                          ),
-                                          Text(
-                                            '$healthScore/100',
-                                            style: TextStyle(
-                                              color: primaryColor,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
+                                            Text(
+                                              '$healthScore/100',
+                                              style: TextStyle(
+                                                color: primaryColor,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                          ),
-                                          Text(
-                                            AppLocalizations.of(context).vitals,
-                                            style: TextStyle(
-                                              color: AppColors.bone500,
-                                              fontSize: 11,
+                                            Text(
+                                              AppLocalizations.of(context).vitals,
+                                              style: TextStyle(
+                                                color: AppColors.bone500,
+                                                fontSize: 11,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -472,34 +477,38 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                   child: Icon(Icons.water_drop, color: primaryColor),
                                 ),
                                 const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      AppLocalizations.of(context).lastWatered,
-                                      style: TextStyle(
-                                        color: AppColors.bone500,
-                                        fontSize: 12,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        AppLocalizations.of(context).lastWatered,
+                                        style: TextStyle(
+                                          color: AppColors.bone500,
+                                          fontSize: 12,
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      lastWateredDate != null 
-                                          ? DateFormat('MMM d').format(lastWateredDate) 
-                                          : AppLocalizations.of(context).never,
-                                      style: TextStyle(
-                                        color: primaryColor,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
+                                      Text(
+                                        lastWateredDate != null 
+                                            ? DateFormat('MMM d').format(lastWateredDate) 
+                                            : AppLocalizations.of(context).never,
+                                        style: TextStyle(
+                                          color: primaryColor,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                    Text(
-                                      lastWateredDate != null ? AppLocalizations.of(context).completed : AppLocalizations.of(context).noHistory,
-                                      style: TextStyle(
-                                        color: AppColors.bone500,
-                                        fontSize: 11,
+                                      Text(
+                                        lastWateredDate != null ? AppLocalizations.of(context).completed : AppLocalizations.of(context).noHistory,
+                                        style: TextStyle(
+                                          color: AppColors.bone500,
+                                          fontSize: 11,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -511,7 +520,63 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
+              // Primary action buttons — Log Care & Ask Flora
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AddTaskScreen(
+                                  task: null,
+                                  initialPlantId: plantId,
+                                  initialPlantName: plantData['name'] as String? ?? plantName,
+                                ),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.forest700),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: Text(AppLocalizations.of(context).logCare, style: const TextStyle(color: AppColors.forest700, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const FloraChatsListScreen()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.forest700,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                            padding: EdgeInsets.zero,
+                            elevation: 0,
+                          ),
+                          child: Text(AppLocalizations.of(context).askFloraCTA, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
               if (plantData['lastLightReading'] != null) ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),

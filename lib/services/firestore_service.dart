@@ -44,6 +44,7 @@ class FirestoreService {
       id: plantId, name: plant.name, commonName: plant.commonName,
       category: plant.category, zone: plant.zone, imageUrl: plant.imageUrl,
       healthStatus: plant.healthStatus, dateAdded: plant.dateAdded, healthScore: plant.healthScore,
+      location: plant.location,
     );
     await _db.collection('users').doc(uid).collection('plants').doc(plantId).set(newPlant.toMap());
   }

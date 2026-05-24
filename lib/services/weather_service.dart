@@ -40,9 +40,29 @@ class WeatherData {
 class WeatherService {
   static const String _cacheKey = 'cached_weather';
   static const String _cityKey = 'user_city';
+  static const String _autoLocationKey = 'use_automatic_location';
   static const Duration _cacheExpiry = Duration(hours: 3);
 
   String get _apiKey => dotenv.env['WEATHER_CALENDAR'] ?? '';
+
+  // ---------------------------------------------------------------------------
+  // Auto-location preference
+  // ---------------------------------------------------------------------------
+
+  Future<bool> getUseAutoLocation() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_autoLocationKey) ?? false;
+  }
+
+  Future<void> saveAutoLocation(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_autoLocationKey, value);
+    await clearCache();
+  }
+
+  // ---------------------------------------------------------------------------
+  // City preference
+  // ---------------------------------------------------------------------------
 
   Future<String?> getSavedCity() async {
     final prefs = await SharedPreferences.getInstance();
@@ -52,8 +72,38 @@ class WeatherService {
   Future<void> saveCity(String city) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_cityKey, city);
+    // When manually setting a city, disable auto-location
+    await prefs.setBool(_autoLocationKey, false);
     await clearCache();
   }
+
+  // ---------------------------------------------------------------------------
+  // IP-based city detection (uses ip-api.com — free, no key, no new package)
+  // ---------------------------------------------------------------------------
+
+  /// Detects the user's approximate city via their public IP address.
+  /// Returns null if detection fails or there is no internet.
+  Future<String?> detectCityFromIp() async {
+    try {
+      final response = await http
+          .get(Uri.parse('https://ip-api.com/json/?fields=city,status'))
+          .timeout(const Duration(seconds: 8));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        if (json['status'] == 'success') {
+          final city = json['city'] as String?;
+          if (city != null && city.isNotEmpty) return city;
+        }
+      }
+    } catch (_) {
+      // Network unavailable or timed out — silent fail
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Weather fetching
+  // ---------------------------------------------------------------------------
 
   Future<WeatherData?> getCurrentWeather() async {
     if (_apiKey.isEmpty || _apiKey == 'YOUR_KEY_HERE') return null;
@@ -61,7 +111,15 @@ class WeatherService {
     final cached = await _getCachedWeather();
     if (cached != null) return cached;
 
-    final city = await getSavedCity();
+    // Resolve city: auto-detect first if the user chose that option
+    String? city;
+    final useAuto = await getUseAutoLocation();
+    if (useAuto) {
+      city = await detectCityFromIp();
+    }
+    // Fall back to manually saved city
+    city ??= await getSavedCity();
+
     if (city == null || city.isEmpty) return null;
 
     return await fetchWeatherForCity(city);

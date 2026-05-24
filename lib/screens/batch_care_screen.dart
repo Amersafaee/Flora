@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/task_model.dart';
 import '../services/firestore_service.dart';
 import '../services/care_intelligence_service.dart';
@@ -288,13 +289,43 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                             ],
                           ),
                         ),
-                        Expanded(
-                          child: Container(
-                            color: AppColors.forest100,
-                            child: const Center(
-                              child: Icon(Icons.eco, size: 100, color: AppColors.forest900),
-                            ),
-                          ),
+                        FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(FirestoreService().currentUserId)
+                              .collection('plants')
+                              .doc(currentTask.plantId)
+                              .get(),
+                          builder: (context, snapshot) {
+                            String? imageUrl;
+                            if (snapshot.hasData && snapshot.data!.exists) {
+                              final data = snapshot.data!.data() as Map<String, dynamic>?;
+                              imageUrl = data?['imageUrl'] as String?;
+                            }
+                            
+                            if (imageUrl != null && imageUrl.isNotEmpty) {
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: 200,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    height: 200,
+                                    color: AppColors.forest50,
+                                    child: const Icon(Icons.local_florist, size: 64, color: AppColors.forest300),
+                                  ),
+                                ),
+                              );
+                            } else {
+                              return Container(
+                                height: 200,
+                                color: AppColors.forest50,
+                                child: const Icon(Icons.local_florist, size: 64, color: AppColors.forest300),
+                              );
+                            }
+                          },
                         ),
                       ],
                     ),
@@ -302,53 +333,31 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
-            // Action Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: () => _handleSwipe(false),
-                  child: Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    AppLocalizations.of(context).swipeToSkip,
+                    style: const TextStyle(
+                      color: AppColors.bone500,
+                      fontSize: 13,
                     ),
-                    child: const Icon(Icons.close, color: Colors.red, size: 32),
                   ),
-                ),
-                const SizedBox(width: 48),
-                GestureDetector(
-                  onTap: () => _handleSwipe(true),
-                  child: Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: AppColors.forest900,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                  Text(
+                    AppLocalizations.of(context).swipeToComplete,
+                    style: const TextStyle(
+                      color: AppColors.forest600,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: const Icon(Icons.check, color: Colors.white, size: 32),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
           ],
         ),
       ),

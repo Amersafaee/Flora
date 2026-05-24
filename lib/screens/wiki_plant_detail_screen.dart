@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'add_plant_screen.dart';
 import 'flora_chats_list_screen.dart';
 import '../theme/app_theme.dart';

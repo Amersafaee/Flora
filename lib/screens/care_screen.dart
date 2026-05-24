@@ -1,7 +1,7 @@
 import '../services/badges_service.dart';
 import 'add_task_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:digital_conservatory/l10n/app_localizations.dart';
 import 'global_search_screen.dart';
 import 'climate_screen.dart';
 import 'light_meter_screen.dart';
