@@ -300,7 +300,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                         ],
                       ),
                     ),
-                    Switch(value: _isEnabled, onChanged: _toggleVacationMode, activeColor: primaryColor),
+                    Switch(value: _isEnabled, onChanged: _toggleVacationMode, activeThumbColor: primaryColor),
                   ],
                 ),
               ),

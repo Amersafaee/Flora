@@ -64,6 +64,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     try {
       // Resolve author name: Firestore fullName → Firestore displayName → Auth displayName → email prefix
       String resolvedAuthorName = '';
+      String resolvedAuthorPhotoUrl = '';
       try {
         final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
@@ -72,15 +73,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           if (resolvedAuthorName.isEmpty) {
             resolvedAuthorName = (d?['displayName'] as String? ?? '').trim();
           }
+          // FIX 5: Use Firestore profilePhotoUrl as the source of truth for post author photo
+          resolvedAuthorPhotoUrl = (d?['profilePhotoUrl'] as String? ?? '').trim();
         }
       } catch (_) {}
       if (resolvedAuthorName.isEmpty) resolvedAuthorName = (user.displayName ?? '').trim();
       if (resolvedAuthorName.isEmpty) resolvedAuthorName = user.email?.split('@').first ?? 'Plant Lover';
+      // Fall back to Firebase Auth photo if Firestore hasn't stored one yet
+      if (resolvedAuthorPhotoUrl.isEmpty) resolvedAuthorPhotoUrl = user.photoURL ?? '';
 
       final postDoc = await _firestore.collection('posts').add({
         'authorUid': user.uid,
         'authorName': resolvedAuthorName,
-        'authorPhotoUrl': user.photoURL ?? '',
+        'authorPhotoUrl': resolvedAuthorPhotoUrl,
         'title': title,
         'body': body,
         'category': _selectedCategory,

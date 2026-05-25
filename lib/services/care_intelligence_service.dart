@@ -1,4 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
+import 'gemini_service.dart';
 
 class CareIntelligenceService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -115,98 +118,129 @@ class CareIntelligenceService {
     };
   }
 
-  Future<List<Map<String, dynamic>>> generateWeeklyCarePlan(String userUid) async {
-    final plantsQuery = await _db.collection('users').doc(userUid).collection('plants').get();
-    
-    List<Map<String, dynamic>> plan = [];
+  /// Generates a Gemini-powered 7-day care schedule for ALL of the user's
+  /// non-deceased plants, informed by their actual task history.
+  /// Returns a formatted string with DAY 1 … DAY 7 sections.
+  Future<String> generateWeeklyCarePlan(String userUid) async {
+    // 1. Load all non-deceased plants
+    final plantsSnap = await _db
+        .collection('users')
+        .doc(userUid)
+        .collection('plants')
+        .where('isDeceased', isEqualTo: false)
+        .get();
 
-    for (var plantDoc in plantsQuery.docs) {
-      final plantData = plantDoc.data();
-      final plantId = plantDoc.id;
-      final plantName = plantData['name'] ?? 'Unknown Plant';
-      final category = plantData['category'] ?? '';
-      
-      // Get last completed watering
-      final lastWaterQuery = await _db
-          .collection('users')
-          .doc(userUid)
-          .collection('tasks')
-          .where('plantName', isEqualTo: plantName)
-          .where('taskType', isEqualTo: 'Watering')
-          .where('isCompleted', isEqualTo: true)
-          .orderBy('dueDate', descending: true)
-          .limit(1)
-          .get();
-
-      DateTime lastWatered = DateTime.now().subtract(const Duration(days: 7)); // Default fallback
-      if (lastWaterQuery.docs.isNotEmpty) {
-        lastWatered = (lastWaterQuery.docs.first.data()['dueDate'] as Timestamp).toDate();
-      } else if (plantData['dateAdded'] != null) {
-        lastWatered = (plantData['dateAdded'] as Timestamp).toDate();
-      }
-
-      final smartWatering = await computeNextCareDate(
-        plantId: plantId,
-        plantName: plantName,
-        category: category,
-        baseIntervalDays: 7, // Default base interval for watering
-        lastWateredDate: lastWatered,
-        zoneUid: 'main_zone', // Assuming main_zone for simplicity, or we can fetch plant's zone if it exists
-        userUid: userUid,
-      );
-
-      plan.add({
-        'plantName': plantName,
-        'taskType': 'Watering',
-        'recommendedDate': smartWatering['nextDate'],
-        'reasoning': smartWatering['reasoning'],
-      });
-
-      // Fertilizing (Base 30)
-      // For simplicity, let's just use the same lastWatered base or today.
-      final smartFertilizing = await computeNextCareDate(
-        plantId: plantId,
-        plantName: plantName,
-        category: category,
-        baseIntervalDays: 30,
-        lastWateredDate: lastWatered, // Not entirely accurate, but serves the purpose
-        zoneUid: 'main_zone',
-        userUid: userUid,
-      );
-      
-      plan.add({
-        'plantName': plantName,
-        'taskType': 'Fertilizing',
-        'recommendedDate': smartFertilizing['nextDate'],
-        'reasoning': smartFertilizing['reasoning'],
-      });
-
-      // Repotting (Base 365)
-      final smartRepotting = await computeNextCareDate(
-        plantId: plantId,
-        plantName: plantName,
-        category: category,
-        baseIntervalDays: 365,
-        lastWateredDate: lastWatered,
-        zoneUid: 'main_zone',
-        userUid: userUid,
-      );
-
-      plan.add({
-        'plantName': plantName,
-        'taskType': 'Repotting check',
-        'recommendedDate': smartRepotting['nextDate'],
-        'reasoning': smartRepotting['reasoning'],
-      });
+    if (plantsSnap.docs.isEmpty) {
+      return '';
     }
 
-    // Sort by recommendedDate ascending
-    plan.sort((a, b) {
-      final dateA = a['recommendedDate'] as DateTime;
-      final dateB = b['recommendedDate'] as DateTime;
-      return dateA.compareTo(dateB);
-    });
+    // 2. Build per-plant context strings with task history
+    final contextLines = <String>[];
 
-    return plan;
+    for (final plantDoc in plantsSnap.docs) {
+      final d = plantDoc.data();
+      final name = (d['commonName'] as String?)?.trim().isNotEmpty == true
+          ? (d['commonName'] as String).trim()
+          : (d['name'] as String?)?.trim() ?? 'Unknown Plant';
+      final health = (d['healthStatus'] as String?)?.trim() ?? 'Unknown';
+      final waterEvery = (d['wateringFrequencyDays'] as num?)?.toInt();
+      final fertilizeEvery = (d['fertilizingFrequencyDays'] as num?)?.toInt();
+
+      // Last watering
+      String lastWatered = 'unknown';
+      try {
+        final wQ = await _db
+            .collection('users')
+            .doc(userUid)
+            .collection('tasks')
+            .where('plantId', isEqualTo: plantDoc.id)
+            .where('taskType', isEqualTo: 'Watering')
+            .where('isCompleted', isEqualTo: true)
+            .orderBy('dueDate', descending: true)
+            .limit(1)
+            .get();
+        if (wQ.docs.isNotEmpty) {
+          final ts = wQ.docs.first.data()['dueDate'];
+          if (ts is Timestamp) {
+            lastWatered = DateFormat('d MMM yyyy').format(ts.toDate());
+          }
+        }
+      } catch (e) {
+        debugPrint('CareIntelligenceService: watering query error: $e');
+      }
+
+      // Last fertilizing
+      String lastFertilized = 'unknown';
+      try {
+        final fQ = await _db
+            .collection('users')
+            .doc(userUid)
+            .collection('tasks')
+            .where('plantId', isEqualTo: plantDoc.id)
+            .where('taskType', isEqualTo: 'Fertilizing')
+            .where('isCompleted', isEqualTo: true)
+            .orderBy('dueDate', descending: true)
+            .limit(1)
+            .get();
+        if (fQ.docs.isNotEmpty) {
+          final ts = fQ.docs.first.data()['dueDate'];
+          if (ts is Timestamp) {
+            lastFertilized = DateFormat('d MMM yyyy').format(ts.toDate());
+          }
+        }
+      } catch (e) {
+        debugPrint('CareIntelligenceService: fertilizing query error: $e');
+      }
+
+      final schedule = [
+        if (waterEvery != null) 'water every $waterEvery days',
+        if (fertilizeEvery != null) 'fertilize every $fertilizeEvery days',
+      ].join(', ');
+
+      contextLines.add(
+        'Plant: $name | Health: $health | Last watered: $lastWatered'
+        '${lastFertilized != 'unknown' ? ' | Last fertilized: $lastFertilized' : ''}'
+        '${schedule.isNotEmpty ? ' | Care schedule: $schedule' : ''}',
+      );
+    }
+
+    // 3. Build the prompt with today's date and the DAY N format
+    final today = DateTime.now();
+    final formatter = DateFormat('EEEE d MMMM');
+    final dayLines = List.generate(7, (i) {
+      final d = today.add(Duration(days: i));
+      return 'DAY ${i + 1} - ${formatter.format(d)}';
+    }).join('\n');
+
+    final plantContext = contextLines.join('\n');
+
+    final prompt = '''
+You are a plant care expert. Based on these plants and their care history, create a practical 7-day care schedule for this week starting from today (${DateFormat('EEEE d MMMM yyyy').format(today)}).
+
+Plants:
+$plantContext
+
+Format your response as 7 sections, one per day, using EXACTLY this format (no markdown, no asterisks, no bold):
+
+DAY 1 - ${formatter.format(today)}:
+• [PlantName]: [specific care task and why]
+• [PlantName]: [specific care task and why]
+
+DAY 2 - ${formatter.format(today.add(const Duration(days: 1)))}:
+[Continue for all 7 days]
+
+The 7 day headers must be exactly:
+$dayLines
+
+Only include plants that need something on that day. If a day has nothing, write exactly:
+DAY N - [day name and date]: Rest day — no tasks needed.
+
+Keep each task to one line. Be specific and practical. Do not use markdown formatting.
+''';
+
+    // 4. Call Gemini
+    final gemini = GeminiService();
+    final response = await gemini.generateWeeklySchedule(prompt);
+    return response;
   }
 }

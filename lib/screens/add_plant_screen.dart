@@ -15,6 +15,9 @@ import '../theme/app_theme.dart';
 class AddPlantScreen extends StatefulWidget {
   final String? initialPlantName;
   final String? initialCommonName;
+  /// Scientific name — pre-fills the same field as [initialCommonName].
+  /// When both are supplied, [initialScientificName] takes precedence.
+  final String? initialScientificName;
   final String? initialCategory;
   final String? initialHealthStatus;
   final File? initialImageFile;
@@ -26,6 +29,7 @@ class AddPlantScreen extends StatefulWidget {
     super.key,
     this.initialPlantName,
     this.initialCommonName,
+    this.initialScientificName,
     this.initialCategory,
     this.initialHealthStatus,
     this.initialImageFile,
@@ -44,6 +48,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
   // Internal Firestore values — must stay English
   String _selectedCategory = 'Tropical';
+  String _selectedHealthStatus = 'Healthy';
 
   bool _isLoading = false;
   bool _showNameError = false;
@@ -60,11 +65,19 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialPlantName ?? '');
-    _commonNameController = TextEditingController(text: widget.initialCommonName ?? '');
+    // initialScientificName takes precedence over initialCommonName
+    _commonNameController = TextEditingController(
+      text: widget.initialScientificName ?? widget.initialCommonName ?? '',
+    );
 
     if (widget.initialCategory != null &&
         ['Tropical', 'Succulent', 'Fern', 'Herb', 'Cactus', 'Other'].contains(widget.initialCategory)) {
       _selectedCategory = widget.initialCategory!;
+    }
+
+    if (widget.initialHealthStatus != null &&
+        ['Healthy', 'Needs Attention', 'Critical', 'Recovering'].contains(widget.initialHealthStatus)) {
+      _selectedHealthStatus = widget.initialHealthStatus!;
     }
 
     if (widget.initialImageFile != null) {
@@ -123,7 +136,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         category: _selectedCategory,
         zone: '',
         imageUrl: imageUrl,
-        healthStatus: 'Healthy',
+        healthStatus: _selectedHealthStatus,
         dateAdded: DateTime.now(),
       );
 
@@ -348,6 +361,38 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                           )).toList(),
                           onChanged: (newValue) {
                             setState(() { if (newValue != null) _selectedCategory = newValue; });
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Health Status
+                    const Text(
+                      'Health Status',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedHealthStatus,
+                          isExpanded: true,
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          items: const [
+                            DropdownMenuItem(value: 'Healthy',         child: Text('Healthy')),
+                            DropdownMenuItem(value: 'Needs Attention', child: Text('Needs Attention')),
+                            DropdownMenuItem(value: 'Critical',        child: Text('Critical')),
+                            DropdownMenuItem(value: 'Recovering',      child: Text('Recovering')),
+                          ],
+                          onChanged: (newValue) {
+                            setState(() { if (newValue != null) _selectedHealthStatus = newValue; });
                           },
                         ),
                       ),

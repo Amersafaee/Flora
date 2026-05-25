@@ -322,6 +322,8 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
               ),
               padding: const EdgeInsets.all(8.0),
               child: Row(
+                // FIX 2: anchor buttons to bottom as field expands
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   IconButton(
                     icon: const Icon(Icons.add_photo_alternate_outlined, color: AppColors.bone500),
@@ -346,20 +348,25 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
                         fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       ),
-                      maxLines: null,
+                      // FIX 2: Telegram-style expanding field (1–6 lines)
+                      minLines: 1,
+                      maxLines: 6,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Container(
-                    decoration: const BoxDecoration(
-                      color: AppColors.forest900,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_upward, color: Colors.white),
-                      onPressed: () => _sendMessage(),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: AppColors.forest900,
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_upward, color: Colors.white),
+                        onPressed: () => _sendMessage(),
+                      ),
                     ),
                   ),
                 ],

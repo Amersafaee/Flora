@@ -101,7 +101,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               TextField(controller: lookCtrl, decoration: InputDecoration(labelText: l.lookingFor)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: type,
+                initialValue: type,
                 items: ['Cutting', 'Free Seeds', 'Whole Plant', 'Adoption']
                     .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                     .toList(),

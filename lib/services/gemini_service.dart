@@ -87,6 +87,26 @@ Write it as plain readable text, no markdown. Use simple emojis for visual flair
     }
   }
 
+  /// Sends a plain prompt to Gemini without the Flora persona system instruction,
+  /// used for structured outputs like the 7-day care schedule where the word-limit
+  /// and conversational persona would break the format.
+  Future<String> generateWeeklySchedule(String prompt) async {
+    try {
+      final planModel = GenerativeModel(
+        model: 'gemini-2.5-flash',
+        apiKey: geminiApiKey,
+      );
+      final response = await planModel
+          .generateContent([Content.text(prompt)])
+          .timeout(const Duration(seconds: 45));
+      return response.text?.trim() ?? '';
+    } catch (e) {
+      debugPrint('Error in generateWeeklySchedule: ${e.toString()}');
+      return '';
+    }
+  }
+
+
   Future<String> generatePlantEulogy({
     required String plantName,
     required String category,

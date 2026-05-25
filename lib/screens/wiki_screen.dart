@@ -269,11 +269,11 @@ class _WikiScreenState extends State<WikiScreen> {
                     }
 
                     final allBlogsRaw = snapshot.data?.docs ?? [];
-                    // Only show blogs with a real localImagePath starting with 'assets/'
+                    // Show blogs that have a Firebase Storage imageUrl
                     final allBlogs = allBlogsRaw.where((doc) {
                       final d = doc.data() as Map<String, dynamic>;
-                      final path = (d['localImagePath'] as String? ?? '').trim();
-                      return path.isNotEmpty && path.startsWith('assets/');
+                      final imageUrl = (d['imageUrl'] as String? ?? '').trim();
+                      return imageUrl.isNotEmpty;
                     }).toList();
 
                     if (allBlogs.isEmpty) {
@@ -570,7 +570,7 @@ class _WikiScreenState extends State<WikiScreen> {
     final category = (blogData['category'] as String? ?? 'General');
     final readMinutes = (blogData['readMinutes'] as num?)?.toInt() ?? 5;
     final summary = (blogData['summary'] as String? ?? '');
-    final localImagePath = (blogData['localImagePath'] as String? ?? '');
+    final imageUrl = (blogData['imageUrl'] as String? ?? '').trim();
 
     return GestureDetector(
       onTap: () {
@@ -594,11 +594,11 @@ class _WikiScreenState extends State<WikiScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (localImagePath.isNotEmpty)
+            if (imageUrl.isNotEmpty)
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.asset(
-                  localImagePath,
+                child: Image.network(
+                  imageUrl,
                   height: 160,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -607,9 +607,23 @@ class _WikiScreenState extends State<WikiScreen> {
                     width: double.infinity,
                     color: AppColors.forest100,
                     child: const Center(
-                      child: Icon(Icons.article, color: AppColors.forest900, size: 48),
+                      child: Icon(Icons.article_outlined, color: AppColors.forest300, size: 48),
                     ),
                   ),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 160,
+                      width: double.infinity,
+                      color: AppColors.forest100,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.forest700,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               )
             else
@@ -621,7 +635,7 @@ class _WikiScreenState extends State<WikiScreen> {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: const Center(
-                  child: Icon(Icons.article, color: AppColors.forest900, size: 48),
+                  child: Icon(Icons.article_outlined, color: AppColors.forest300, size: 48),
                 ),
               ),
             Padding(

@@ -1,4 +1,5 @@
 import '../services/badges_service.dart';
+import '../services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:digital_conservatory/l10n/app_localizations.dart';
@@ -607,10 +608,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   final now = DateTime.now();
                   final startOfToday = DateTime(now.year, now.month, now.day);
                   
+                  // BUG 3 FIX: exclude ALL completed tasks — previously only
+                  // overdue completed tasks were filtered, letting today's
+                  // completed tasks bleed through.
                   final tasks = allTasks.where((t) {
-                    if (t.dueDate.isBefore(startOfToday)) {
-                      return !t.isCompleted;
-                    }
+                    if (t.isCompleted) return false;  // always hide completed
                     return true;
                   }).toList();
                   
@@ -718,9 +720,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   task.isCompleted ? Icons.check_circle : Icons.check_circle_outline,
                                   color: task.isCompleted ? Colors.green : AppColors.bone500,
                                 ),
-                                onPressed: () {
+                                onPressed: () async {
                                   if (!task.isCompleted) {
-                                    firestoreService.markTaskCompleted(task.id);
+                                    await firestoreService.markTaskCompleted(task.id);
+                                    // BUG 3 FIX: cancel any scheduled notification for this task
+                                    try {
+                                      await NotificationService().cancelTaskNotification(task.id);
+                                    } catch (_) {}
                                   }
                                 },
                               ),

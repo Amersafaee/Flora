@@ -85,7 +85,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                   }
 
                   return DropdownButtonFormField<String>(
-                    value: selectedPlantId,
+                    initialValue: selectedPlantId,
                     hint: Text(
                       l.recordParentHint,
                       style: const TextStyle(color: AppColors.bone300),

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
-import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/care_intelligence_service.dart';
-import '../services/gemini_service.dart';
 import '../theme/app_theme.dart';
 
 class CareInsightsScreen extends StatefulWidget {
@@ -15,266 +13,173 @@ class CareInsightsScreen extends StatefulWidget {
 }
 
 class _CareInsightsScreenState extends State<CareInsightsScreen> {
+  static const _cacheKey = 'smart_care_plan_cache';
+  static const _timestampKey = 'smart_care_plan_timestamp';
+  static const _cacheTtlHours = 24;
+
   final CareIntelligenceService _intelligenceService = CareIntelligenceService();
-  final GeminiService _geminiService = GeminiService();
+
   bool _isLoading = true;
-  bool _isGeneratingPlan = false;
   String? _errorMessage;
-  List<Map<String, dynamic>> _carePlan = [];
+  String _rawPlan = '';
+  bool _noPlants = false;
+  bool _fromCache = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCarePlan();
+    _loadFromCacheOrGenerate();
   }
 
-  Future<void> _loadCarePlan() async {
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        final plan = await _intelligenceService.generateWeeklyCarePlan(uid);
+  // ── Cache helpers ────────────────────────────────────────────────
 
-        // Filter for next 14 days only
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        final maxDate = today.add(const Duration(days: 14));
+  Future<String?> _readCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString(_cacheKey);
+    final ts = prefs.getInt(_timestampKey);
+    if (cached == null || ts == null) return null;
+    final age = DateTime.now().millisecondsSinceEpoch - ts;
+    if (age > const Duration(hours: _cacheTtlHours).inMilliseconds) return null;
+    return cached;
+  }
 
-        final filteredPlan = plan.where((task) {
-          final date = task['recommendedDate'] as DateTime;
-          final taskDate = DateTime(date.year, date.month, date.day);
-          return !taskDate.isBefore(today) && taskDate.isBefore(maxDate);
-        }).toList();
+  Future<void> _writeCache(String plan) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_cacheKey, plan);
+    await prefs.setInt(_timestampKey, DateTime.now().millisecondsSinceEpoch);
+  }
 
+  Future<void> _clearCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_cacheKey);
+    await prefs.remove(_timestampKey);
+  }
+
+  // ── Load logic ───────────────────────────────────────────────────
+
+  Future<void> _loadFromCacheOrGenerate({bool forceRefresh = false}) async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _noPlants = false;
+      _fromCache = false;
+    });
+
+    // Step 3: Try cache first (unless refresh forced)
+    if (!forceRefresh) {
+      final cached = await _readCache();
+      if (cached != null && cached.isNotEmpty) {
         if (mounted) {
           setState(() {
-            _carePlan = filteredPlan;
+            _rawPlan = cached;
             _isLoading = false;
+            _fromCache = true;
           });
         }
-      } else {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+        return;
       }
+    }
+
+    await _generatePlan();
+  }
+
+  Future<void> _generatePlan() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      final plan = await _intelligenceService.generateWeeklyCarePlan(uid);
+
+      if (!mounted) return;
+
+      if (plan.isEmpty) {
+        setState(() {
+          _noPlants = true;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      await _writeCache(plan);
+      setState(() {
+        _rawPlan = plan;
+        _isLoading = false;
+        _fromCache = false;
+      });
     } catch (e) {
-      debugPrint('CareInsightsScreen: error loading care plan: $e');
+      debugPrint('CareInsightsScreen: error generating plan: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Could not load your care plan. Please try again.';
+          _errorMessage = 'Could not generate your care plan. Please try again.';
         });
       }
     }
   }
 
-  Future<void> _generatePersonalizedPlan() async {
-    final l = AppLocalizations.of(context);
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
+  // ── Parse DAY sections from Gemini response ───────────────────────
 
-    setState(() => _isGeneratingPlan = true);
+  List<_DaySection> _parseDaySections(String raw) {
+    final sections = <_DaySection>[];
 
-    try {
-      final snap = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('plants')
-          .get();
-
-      if (snap.docs.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l.addSomePlantsForPlan),
-              backgroundColor: AppColors.forest900,
-            ),
-          );
-        }
-        setState(() => _isGeneratingPlan = false);
-        return;
-      }
-
-      final plants = snap.docs.map((d) => d.data()).toList();
-      final String planTextRaw = await _geminiService.generatePersonalizedWeeklyPlan(plants);
-      final String planText = (planTextRaw.trim().isEmpty)
-          ? "Unable to generate plan. Make sure you have plants added to your collection."
-          : planTextRaw;
-
-      if (mounted) {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          showDragHandle: true,
-          builder: (ctx) {
-            final lSheet = AppLocalizations.of(ctx);
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        lSheet.yourWeeklyCarePlan,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.forest900,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: AppColors.bone500),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        child: Text(
-                          planText,
-                          style: TextStyle(
-                            fontSize: 15,
-                            height: 1.5,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final lErr = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(lErr.failedToGeneratePlan),
-            backgroundColor: AppColors.terracotta900,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isGeneratingPlan = false);
-    }
-  }
-
-  void _showReasoningSheet(String reasoning) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: MediaQuery.of(context).padding.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: AppColors.forest100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.eco,
-                      color: AppColors.forest900,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(20),
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        reasoning,
-                        style: const TextStyle(
-                          color: AppColors.forest900,
-                          fontSize: 15,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
+    // Split on "DAY N" pattern
+    final dayRegex = RegExp(
+      r'DAY\s+(\d+)\s*[-–]\s*([^\n:]+):?\s*\n(.*?)(?=DAY\s+\d+|$)',
+      dotAll: true,
+      caseSensitive: false,
     );
+
+    for (final match in dayRegex.allMatches(raw)) {
+      final dayNum = int.tryParse(match.group(1) ?? '0') ?? 0;
+      final dayLabel = (match.group(2) ?? '').trim();
+      final body = (match.group(3) ?? '').trim();
+
+      final isRestDay = body.toLowerCase().contains('rest day') ||
+          body.toLowerCase().contains('no tasks');
+
+      final tasks = <String>[];
+      if (!isRestDay) {
+        for (final line in body.split('\n')) {
+          final trimmed = line
+              .replaceAll(RegExp(r'^[•\-\*]\s*'), '')
+              .trim();
+          if (trimmed.isNotEmpty) tasks.add(trimmed);
+        }
+      }
+
+      sections.add(_DaySection(
+        dayNumber: dayNum,
+        dayLabel: dayLabel,
+        tasks: tasks,
+        isRestDay: isRestDay,
+      ));
+    }
+
+    // Fallback: if regex found nothing, show raw text in one card
+    if (sections.isEmpty && raw.isNotEmpty) {
+      sections.add(_DaySection(
+        dayNumber: 1,
+        dayLabel: 'This Week',
+        tasks: raw
+            .split('\n')
+            .where((l) => l.trim().isNotEmpty)
+            .toList(),
+        isRestDay: false,
+      ));
+    }
+
+    return sections;
   }
+
+  // ── Build ─────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    // Group tasks by date
-    final groupedTasks = <DateTime, List<Map<String, dynamic>>>{};
-    for (var task in _carePlan) {
-      final date = task['recommendedDate'] as DateTime;
-      final taskDate = DateTime(date.year, date.month, date.day);
-      if (!groupedTasks.containsKey(taskDate)) {
-        groupedTasks[taskDate] = [];
-      }
-      groupedTasks[taskDate]!.add(task);
-    }
-
-    // List of dates with tasks
-    final taskDates = groupedTasks.keys.toSet();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -282,298 +187,312 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+          icon: Icon(Icons.arrow_back,
+              color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
+        title: Text(
+          'Smart Care Plan',
+          style: GoogleFonts.notoSerif(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          if (!_isLoading)
+            IconButton(
+              icon: Icon(Icons.refresh,
+                  color: isDark
+                      ? AppColors.darkForestPrimary
+                      : AppColors.forest700),
+              tooltip: 'Regenerate plan',
+              onPressed: () async {
+                await _clearCache();
+                _loadFromCacheOrGenerate(forceRefresh: true);
+              },
+            ),
+        ],
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? _buildLoading()
             : _errorMessage != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.cloud_off_outlined, size: 48, color: AppColors.bone300),
-                          const SizedBox(height: 16),
-                          Text(
-                            _errorMessage!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: AppColors.bone500, fontSize: 15),
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _isLoading = true;
-                                _errorMessage = null;
-                              });
-                              _loadCarePlan();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.forest900,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text('Try Again', style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ? _buildError()
+                : _noPlants
+                    ? _buildNoPlants()
+                    : _buildPlan(isDark),
+      ),
+    );
+  }
+
+  // ── States ────────────────────────────────────────────────────────
+
+  Widget _buildLoading() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(color: AppColors.forest700),
+          const SizedBox(height: 20),
+          Text(
+            'Flora is analyzing your plants…',
+            style: TextStyle(
+              color: AppColors.bone500,
+              fontSize: 15,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.cloud_off_outlined,
+                size: 48, color: AppColors.bone300),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.bone500, fontSize: 15),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => _loadFromCacheOrGenerate(forceRefresh: true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.forest900,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child:
+                  const Text('Try Again', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoPlants() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.local_florist_outlined,
+                size: 56, color: AppColors.bone300),
+            const SizedBox(height: 20),
+            Text(
+              'Add your first plant to get a personalized care plan',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                color: AppColors.bone500,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlan(bool isDark) {
+    final sections = _parseDaySections(_rawPlan);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Subtitle / cache badge
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+          child: Row(
+            children: [
+              Icon(Icons.eco, size: 14, color: AppColors.forest500),
+              const SizedBox(width: 6),
+              Text(
+                _fromCache
+                    ? 'Showing cached plan · tap ↻ to refresh'
+                    : 'AI-generated for your plants this week',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.bone500,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+            itemCount: sections.length,
+            itemBuilder: (context, index) =>
+                _buildDayCard(sections[index], isDark),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDayCard(_DaySection section, bool isDark) {
+    final isRestDay = section.isRestDay;
+
+    final cardColor = isRestDay
+        ? (isDark ? AppColors.darkSurface : const Color(0xFFF7F7F7))
+        : (isDark ? AppColors.darkSurfaceElevated : Colors.white);
+
+    final borderColor = isRestDay
+        ? (isDark ? AppColors.darkBorderSubtle : AppColors.bone200)
+        : AppColors.forest700;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border(
+          left: BorderSide(color: borderColor, width: 3),
+        ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Day header
+            Text(
+              section.dayLabel,
+              style: GoogleFonts.notoSerif(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isRestDay
+                    ? (isDark ? AppColors.darkTextSecondary : AppColors.bone500)
+                    : (isDark
+                        ? AppColors.darkForestPrimary
+                        : AppColors.forest700),
+              ),
+            ),
+
+            if (isRestDay) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Rest day — no tasks needed.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark
+                      ? AppColors.darkTextTertiary
+                      : AppColors.bone300,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 10),
+              ...section.tasks.map((task) => _buildTaskRow(task, isDark)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskRow(String task, bool isDark) {
+    // Separate "PlantName: task description" if Gemini followed the format
+    final colonIdx = task.indexOf(':');
+    String plantName = '';
+    String taskBody = task;
+    if (colonIdx > 0 && colonIdx < 40) {
+      plantName = task.substring(0, colonIdx).trim();
+      taskBody = task.substring(colonIdx + 1).trim();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(Icons.eco,
+                size: 16,
+                color: isDark ? AppColors.darkForestPrimary : AppColors.forest500),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: plantName.isNotEmpty
+                ? RichText(
+                    text: TextSpan(
                       children: [
-                        Text(
-                          l.smartCarePlan,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'serif',
-                            color: AppColors.forest900,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          l.smartCarePlanSubtitle,
-                          style: const TextStyle(
+                        TextSpan(
+                          text: '$plantName: ',
+                          style: TextStyle(
                             fontSize: 14,
-                            color: AppColors.bone500,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.bone900,
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _isGeneratingPlan ? null : _generatePersonalizedPlan,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.forest900,
-                              disabledBackgroundColor: const Color(0x8C14301E),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            icon: _isGeneratingPlan
-                                ? const SizedBox(
-                                    width: 20, height: 20,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.auto_awesome, color: Colors.white),
-                            label: Text(
-                              _isGeneratingPlan ? l.generating : l.getPersonalizedPlan,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
+                        TextSpan(
+                          text: taskBody,
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.4,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.bone700,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 14-day scrollable strip
-                  SizedBox(
-                    height: 70,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: 14,
-                      itemBuilder: (context, index) {
-                        final date = today.add(Duration(days: index));
-                        final isToday = index == 0;
-                        final hasTask = taskDates.contains(date);
-                        final dayLetter = DateFormat('E').format(date).substring(0, 1);
-                        final dateNumber = DateFormat('d').format(date);
-
-                        Widget dateWidget;
-                        if (isToday) {
-                          dateWidget = Container(
-                            width: 50,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: const BoxDecoration(
-                              color: AppColors.forest900,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(dayLetter, style: const TextStyle(color: Colors.white, fontSize: 12)),
-                                Text(dateNumber, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                              ],
-                            ),
-                          );
-                        } else {
-                          dateWidget = Container(
-                            width: 50,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              color: hasTask ? AppColors.forest900 : Colors.transparent,
-                              borderRadius: BorderRadius.circular(16),
-                              border: hasTask ? null : Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  dayLetter,
-                                  style: TextStyle(color: hasTask ? Colors.white : AppColors.bone500, fontSize: 12),
-                                ),
-                                Text(
-                                  dateNumber,
-                                  style: TextStyle(
-                                    color: hasTask ? Colors.white : Colors.black87,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                        return dateWidget;
-                      },
+                  )
+                : Text(
+                    taskBody,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.bone700,
                     ),
                   ),
-                  const SizedBox(height: 24),
-
-                  // Task list
-                  Expanded(
-                    child: groupedTasks.isEmpty
-                        ? Center(
-                            child: Text(
-                              l.noTasksNext14Days,
-                              style: const TextStyle(color: AppColors.bone500),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            itemCount: groupedTasks.length,
-                            itemBuilder: (context, index) {
-                              final sortedDates = groupedTasks.keys.toList()..sort();
-                              final date = sortedDates[index];
-                              final tasks = groupedTasks[date]!;
-
-                              String dateHeader;
-                              if (date == today) {
-                                dateHeader = l.today;
-                              } else if (date == today.add(const Duration(days: 1))) {
-                                dateHeader = l.tomorrow;
-                              } else {
-                                dateHeader = DateFormat('EEEE, MMM d').format(date);
-                              }
-
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 12, top: 8),
-                                    child: Text(
-                                      dateHeader,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.bone500,
-                                      ),
-                                    ),
-                                  ),
-                                  ...tasks.map((task) {
-                                    final type = task['taskType'] as String;
-
-                                    final isDark = Theme.of(context).brightness == Brightness.dark;
-                                    Color iconBg = isDark ? AppColors.darkForestSubtle : AppColors.forest100;
-                                    Color iconColor = isDark ? AppColors.darkForestPrimary : AppColors.forest500;
-                                    IconData iconData = Icons.water_drop;
-
-                                    if (type.contains('Fertiliz')) {
-                                      iconBg = isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100;
-                                      iconColor = isDark ? AppColors.errorDark : AppColors.errorLight;
-                                      iconData = Icons.science;
-                                    } else if (type.contains('Repot')) {
-                                      iconBg = isDark ? AppColors.darkSurfaceElevated : AppColors.forest50;
-                                      iconColor = isDark ? AppColors.darkForestPrimary : AppColors.forest600;
-                                      iconData = Icons.yard;
-                                    }
-
-                                    return Container(
-                                      margin: const EdgeInsets.only(bottom: 16),
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).cardColor,
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(alpha: 0.03),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(10),
-                                                decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-                                                child: Icon(iconData, color: iconColor, size: 20),
-                                              ),
-                                              const SizedBox(width: 16),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      task['plantName'],
-                                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                                    ),
-                                                    Text(
-                                                      type,
-                                                      style: const TextStyle(color: AppColors.bone500, fontSize: 13),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(Icons.chat_bubble_outline, color: AppColors.forest900),
-                                                onPressed: () => _showReasoningSheet(task['reasoning']),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 12),
-                                          Text(
-                                            task['reasoning'],
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: AppColors.bone500,
-                                              fontStyle: FontStyle.italic,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }),
-                                  const SizedBox(height: 8),
-                                ],
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
+          ),
+        ],
       ),
     );
   }
+}
+
+// ── Data class ────────────────────────────────────────────────────
+
+class _DaySection {
+  final int dayNumber;
+  final String dayLabel;
+  final List<String> tasks;
+  final bool isRestDay;
+
+  const _DaySection({
+    required this.dayNumber,
+    required this.dayLabel,
+    required this.tasks,
+    required this.isRestDay,
+  });
 }

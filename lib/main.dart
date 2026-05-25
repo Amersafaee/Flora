@@ -57,45 +57,44 @@ void main() async {
     debugPrint('Warning: Notification initialization failed: $e');
   }
 
+  // BUG 1 FIX: Read the saved theme BEFORE runApp so the very first frame
+  // already has the correct ThemeMode — this prevents the system dark-mode
+  // from flickering in while _loadTheme() is awaited inside initState.
+  final savedThemeMode = await ThemeService().getThemeMode();
+
   runApp(
-    const ProviderScope(
-      child: DigitalConservatoryApp(),
+    ProviderScope(
+      child: DigitalConservatoryApp(initialThemeMode: savedThemeMode),
     ),
   );
 }
 
 class DigitalConservatoryApp extends StatefulWidget {
-  const DigitalConservatoryApp({super.key});
+  final ThemeMode initialThemeMode;
+  const DigitalConservatoryApp({super.key, this.initialThemeMode = ThemeMode.light});
 
   @override
   State<DigitalConservatoryApp> createState() => _DigitalConservatoryAppState();
 }
 
 class _DigitalConservatoryAppState extends State<DigitalConservatoryApp> {
-  ThemeMode _themeMode = ThemeMode.light;
+  // Initialised from widget.initialThemeMode (which was read before runApp),
+  // so the saved preference is honoured from the very first frame.
+  late ThemeMode _themeMode;
   Locale _locale = const Locale('en');
   late final Stream<User?> _authStream;
 
   @override
   void initState() {
     super.initState();
+    _themeMode = widget.initialThemeMode;
     // _authStream is initialized once here and never recreated — this is
     // intentional to prevent StreamBuilder from resubscribing on every rebuild
     // which was the root cause of the "sign-in spins forever" bug.
     _authStream = FirebaseAuth.instance.authStateChanges();
-    _loadTheme();
     LocaleService.getInitialLocale().then((loc) {
       if (mounted) setState(() => _locale = loc);
     });
-  }
-
-  Future<void> _loadTheme() async {
-    final isDark = await ThemeService().loadThemeMode();
-    if (!mounted) return;
-    setState(() {
-      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    });
-    _applySystemUiOverlay(isDark);
   }
 
   void _onThemeChanged(bool isDark) {

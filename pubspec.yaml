@@ -97,17 +97,6 @@ flutter:
 
   assets:
     - .env
-    - assets/blog_images/
-    - assets/blog_images/blog_watering_mistakes.jpg
-    - assets/blog_images/blog_light_levels.jpg
-    - assets/blog_images/blog_yellow_leaves.jpg
-    - assets/blog_images/blog_propagation.jpg
-    - assets/blog_images/blog_winter_care.jpg
-    - assets/blog_images/blog_repotting.jpg
-    - assets/blog_images/blog_pest_control.jpg
-    - assets/blog_images/blog_soil_mix.jpg
-    - assets/blog_images/blog_humidity.jpg
-    - assets/blog_images/blog_reading_plants.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

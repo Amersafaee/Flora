@@ -5,7 +5,6 @@ import '../models/plant_model.dart';
 import '../models/task_model.dart';
 import '../models/user_model.dart';
 import '../models/treatment_case_model.dart';
-import 'gemini_service.dart';
 import 'package:flutter/foundation.dart';
 import '../utils/task_utils.dart';
 import 'weather_service.dart';
@@ -1351,63 +1350,7 @@ class FirestoreService {
     });
   }
 
-  Future<void> addFloraAnswer(String postId, String answerText) async {
-    await _db.collection('posts').doc(postId).collection('comments').add({
-      'authorUid': 'flora-ai',
-      'authorName': 'Flora AI',
-      'text': answerText,
-      'timestamp': FieldValue.serverTimestamp(),
-      'isFloraAnswer': true,
-    });
-    await _db.collection('posts').doc(postId).update({
-      'commentsCount': FieldValue.increment(1),
-    });
-  }
 
-  Future<void> checkAndAnswerUnansweredQuestions() async {
-    try {
-      final postsQuery = await _db.collection('posts')
-          .where('category', isEqualTo: 'Question')
-          .where('status', isEqualTo: 'published')
-          .get();
-
-      var postDocs = postsQuery.docs.toList();
-      postDocs.sort((a, b) {
-        final aTs = a.data()['timestamp'] as Timestamp?;
-        final bTs = b.data()['timestamp'] as Timestamp?;
-        if (aTs == null && bTs == null) return 0;
-        if (aTs == null) return 1;
-        if (bTs == null) return -1;
-        return bTs.compareTo(aTs);
-      });
-      final topPosts = postDocs.take(10).toList();
-
-      for (var doc in topPosts) {
-        final data = doc.data();
-        final postId = doc.id;
-        
-        final commentsQuery = await doc.reference.collection('comments')
-            .where('isFloraAnswer', isEqualTo: true)
-            .get();
-            
-        if (commentsQuery.docs.isEmpty) {
-          final title = data['title'] as String? ?? '';
-          final content = data['content'] as String? ?? '';
-          final category = data['category'] as String? ?? '';
-          
-          final gemini = GeminiService();
-          final answer = await gemini.generateCommunityAnswer(title, content, category);
-          
-          await addFloraAnswer(postId, answer);
-          
-          // Delay to avoid rate limits
-          await Future.delayed(const Duration(milliseconds: 500));
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking unanswered questions: $e');
-    }
-  }
   Future<void> checkAndFlagReportedPosts() async {
     try {
       final reportsSnap = await _db.collection('reports').get();

@@ -19,7 +19,7 @@ class BlogDetailScreen extends StatelessWidget {
     final category = (blogData['category'] as String? ?? 'General');
     final readMinutes = (blogData['readMinutes'] as num?)?.toInt() ?? 5;
     final content = (blogData['content'] as String? ?? '');
-    final localImagePath = (blogData['localImagePath'] as String? ?? '');
+    final imageUrl = (blogData['imageUrl'] as String? ?? '').trim();
     final tags = (blogData['tags'] as List<dynamic>? ?? []).cast<String>();
     final summary = (blogData['summary'] as String? ?? '');
 
@@ -47,18 +47,34 @@ class BlogDetailScreen extends StatelessWidget {
                 backgroundColor: AppColors.forest900,
                 automaticallyImplyLeading: false, // Hide default back button
                 flexibleSpace: FlexibleSpaceBar(
-                  background: localImagePath.isNotEmpty
-                      ? Image.asset(
-                          localImagePath,
+                  background: imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             color: AppColors.forest100,
-                            child: const Center(child: Icon(Icons.article, color: AppColors.forest900, size: 64)),
+                            child: const Center(
+                              child: Icon(Icons.article_outlined, color: AppColors.forest300, size: 64),
+                            ),
                           ),
+                          loadingBuilder: (_, child, progress) {
+                            if (progress == null) return child;
+                            return Container(
+                              color: AppColors.forest100,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.forest700,
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            );
+                          },
                         )
                       : Container(
                           color: AppColors.forest100,
-                          child: const Center(child: Icon(Icons.article, color: AppColors.forest900, size: 64)),
+                          child: const Center(
+                            child: Icon(Icons.article_outlined, color: AppColors.forest300, size: 64),
+                          ),
                         ),
                 ),
               ),

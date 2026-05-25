@@ -226,7 +226,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return DropdownButtonFormField<String>(
-                      value: null,
+                      initialValue: null,
                       items: const [],
                       onChanged: null,
                       decoration: inputDecoration.copyWith(hintText: '...', hintStyle: const TextStyle(color: AppColors.bone300)),
@@ -236,7 +236,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   final docs = snapshot.data?.docs ?? [];
                   if (docs.isEmpty) {
                     return DropdownButtonFormField<String>(
-                      value: null,
+                      initialValue: null,
                       items: const [],
                       onChanged: null,
                       decoration: inputDecoration.copyWith(
@@ -264,7 +264,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   }
 
                   return DropdownButtonFormField<String>(
-                    value: _selectedPlantName,
+                    initialValue: _selectedPlantName,
                     items: plantItems,
                     onChanged: (value) {
                       if (value == null) return;

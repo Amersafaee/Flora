@@ -431,110 +431,123 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
     }
   }
 
-  /// Shows a bottom sheet with the picked image preview and an optional caption
-  /// input. Returns the caption string (may be empty) when the user taps Send,
-  /// or null when the user cancels.
   Future<String?> _showImageCaptionSheet(File imageFile) async {
     final captionController = TextEditingController();
-    String? result; // stays null unless user taps Send
+    String? result;
 
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Drag handle
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(2),
+    try {
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (ctx) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Drag handle
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Image preview
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.file(
-                      imageFile,
-                      height: 200,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Caption text field
-                  TextField(
-                    controller: captionController,
-                    autofocus: false,
-                    maxLines: 3,
-                    minLines: 1,
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context).addCaptionOrQuestion,
-                      hintStyle: const TextStyle(color: AppColors.bone500, fontSize: 14),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+                      const SizedBox(height: 16),
+                      // Image preview — explicit height+width to satisfy layout constraints
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: SizedBox(
+                          height: 200,
+                          width: double.infinity,
+                          child: Image.file(
+                            imageFile,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Send button
-                  SizedBox(
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        result = captionController.text.trim();
-                        Navigator.pop(ctx);
-                      },
-                      icon: const Icon(Icons.send, color: Colors.white, size: 18),
-                      label: Text(
-                        AppLocalizations.of(context).send,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      const SizedBox(height: 16),
+                      // Caption text field
+                      TextField(
+                        controller: captionController,
+                        autofocus: false,
+                        maxLines: 3,
+                        minLines: 1,
+                        decoration: InputDecoration(
+                          hintText: AppLocalizations.of(context).addCaptionOrQuestion,
+                          hintStyle: const TextStyle(color: AppColors.bone500, fontSize: 14),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.forest900,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
+                      const SizedBox(height: 16),
+                      // Send button
+                      SizedBox(
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            result = captionController.text.trim();
+                            Navigator.pop(ctx);
+                          },
+                          icon: const Icon(Icons.send, color: Colors.white, size: 18),
+                          label: Text(
+                            AppLocalizations.of(context).send,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.forest900,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      // Cancel button
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text(
+                          AppLocalizations.of(context).cancel,
+                          style: const TextStyle(color: AppColors.bone500, fontSize: 15),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  // Cancel button
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: Text(
-                      AppLocalizations.of(context).cancel,
-                      style: const TextStyle(color: AppColors.bone500, fontSize: 15),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('Caption sheet error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open image preview'),
+            backgroundColor: AppColors.terracotta900,
           ),
         );
-      },
-    );
+      }
+    }
 
     captionController.dispose();
     return result;
@@ -825,22 +838,28 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
               ),
               padding: const EdgeInsets.only(top: 12, left: 16, right: 16, bottom: 16),
               child: Row(
+                // FIX 1: anchor buttons to bottom as field expands
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   GestureDetector(
                     onTap: _pickImage,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        shape: BoxShape.circle,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.image_outlined, color: AppColors.bone500),
                       ),
-                      child: Icon(Icons.image_outlined, color: AppColors.bone500),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      // No fixed height — padding only, grows with content
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: isDark
                             ? AppColors.darkSurface
@@ -853,6 +872,9 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                       child: TextField(
                         controller: _textController,
                         focusNode: _focusNode,
+                        // FIX 1: Telegram-style expanding field
+                        minLines: 1,
+                        maxLines: 6,
                         onSubmitted: (_) {
                           if (_hasText) _sendMessage();
                         },
@@ -863,20 +885,25 @@ class _FloraScreenState extends State<FloraScreen> with SingleTickerProviderStat
                             fontSize: 14,
                           ),
                           border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: _hasText ? () => _sendMessage() : null,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _hasText ? AppColors.forest900 : AppColors.bone300,
-                        shape: BoxShape.circle,
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: GestureDetector(
+                      onTap: _hasText ? () => _sendMessage() : null,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _hasText ? AppColors.forest900 : AppColors.bone300,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.send, color: Colors.white, size: 20),
                       ),
-                      child: Icon(Icons.send, color: Colors.white, size: 20),
                     ),
                   ),
                 ],

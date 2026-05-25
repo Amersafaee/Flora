@@ -39,10 +39,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   void initState() {
     super.initState();
-    _checkUnansweredQuestions();
     _checkAndSeedChallenge();
     _loadUserPlants();
     _loadReportedPosts();
+    _loadJoinedChallenges();
     FirestoreService().checkAndFlagReportedPosts();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -142,12 +142,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
-  Future<void> _checkUnansweredQuestions() async {
-    try {
-      await FirestoreService().checkAndAnswerUnansweredQuestions();
-    } catch (e) {
-      debugPrint('Error checking unanswered questions: $e');
-    }
+  // FIX 3: Track joined challenge IDs locally
+  final Map<String, bool> _joinedChallenges = {};
+
+  Future<void> _loadJoinedChallenges() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys().where((k) => k.startsWith('joined_challenge_'));
+    if (!mounted) return;
+    setState(() {
+      for (final k in keys) {
+        final challengeId = k.replaceFirst('joined_challenge_', '');
+        _joinedChallenges[challengeId] = prefs.getBool(k) ?? false;
+      }
+    });
+  }
+
+  Future<void> _joinChallenge(String challengeId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('joined_challenge_$challengeId', true);
+    if (mounted) setState(() => _joinedChallenges[challengeId] = true);
   }
 
   @override
@@ -284,18 +297,22 @@ class _CommunityScreenState extends State<CommunityScreen> {
               ),
               const SizedBox(height: 10),
 
-              // Challenge Banner (FIX 2 & FIX 5)
+              // Challenge Banner (FIX 3 & FIX 4)
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance.collection('challenges').where('isActive', isEqualTo: true).limit(1).snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const SizedBox();
-                  final challengeData = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+                  final challengeDoc = snapshot.data!.docs.first;
+                  final challengeId = challengeDoc.id;
+                  final challengeData = challengeDoc.data() as Map<String, dynamic>;
                   final title = challengeData['title'] ?? '';
                   final description = challengeData['description'] ?? '';
                   final endDate = (challengeData['endDate'] as Timestamp?)?.toDate() ?? DateTime.now();
                   final rawDaysLeft = endDate.difference(DateTime.now()).inDays;
                   final daysLeft = rawDaysLeft < 0 ? 0 : rawDaysLeft;
-                  
+                  final isJoined = _joinedChallenges[challengeId] == true;
+                  final isExpired = daysLeft == 0;
+
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                     child: Container(
@@ -307,8 +324,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                               borderRadius: BorderRadius.circular(20),
                             )
                           : BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [AppColors.forest900, AppColors.forest700],
+                              gradient: LinearGradient(
+                                colors: isExpired
+                                    ? [const Color(0xFF6B7F6B), const Color(0xFF4A5E4A)]
+                                    : [AppColors.forest900, AppColors.forest700],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -319,7 +338,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.emoji_events, color: Colors.amber, size: 24),
+                              Icon(
+                                isExpired ? Icons.emoji_events_outlined : Icons.emoji_events,
+                                color: isExpired ? Colors.white54 : Colors.amber,
+                                size: 24,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -331,11 +354,22 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                   ),
                                 ),
                               ),
-                              Text(
-                                AppLocalizations.of(context).daysLeft(daysLeft),
-                                style: TextStyle(
-                                  color: isDark ? AppColors.darkTextSecondary : Colors.white,
-                                  fontSize: 12,
+                              // FIX 4: Show "Challenge ended" label or days left
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  isExpired
+                                      ? (isJoined ? 'Complete' : 'Ended')
+                                      : AppLocalizations.of(context).daysLeft(daysLeft),
+                                  style: TextStyle(
+                                    color: isDark ? AppColors.darkTextSecondary : Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],
@@ -351,18 +385,58 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           const SizedBox(height: 12),
                           SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => CreatePostScreen(initialCategory: 'Showcase', initialTitle: title)));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isDark ? AppColors.forest700 : Colors.white,
-                                foregroundColor: isDark ? Colors.white : AppColors.forest900,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                elevation: 0,
-                              ),
-                              child: Text(AppLocalizations.of(context).joinChallenge, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            ),
+                            child: isExpired
+                                // FIX 4: Expired state — show appropriate label
+                                ? ElevatedButton(
+                                    onPressed: null,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.3),
+                                      foregroundColor: isDark ? AppColors.darkTextTertiary : Colors.white,
+                                      disabledBackgroundColor: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.3),
+                                      disabledForegroundColor: isDark ? AppColors.darkTextTertiary : Colors.white70,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      elevation: 0,
+                                    ),
+                                    child: Text(
+                                      isJoined ? 'Challenge complete 🏆' : 'Challenge ended',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  )
+                                : isJoined
+                                    // FIX 3: Already joined — show "Joined ✓" disabled button
+                                    ? ElevatedButton(
+                                        onPressed: null,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.forest700,
+                                          foregroundColor: Colors.white,
+                                          disabledBackgroundColor: AppColors.forest700,
+                                          disabledForegroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          elevation: 0,
+                                        ),
+                                        child: const Text('Joined ✓', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      )
+                                    // FIX 3: Not yet joined — show join button, mark joined on tap
+                                    : ElevatedButton(
+                                        onPressed: () async {
+                                          // Capture navigator before the async gap to satisfy
+                                          // use_build_context_synchronously inside StreamBuilder closure
+                                          final nav = Navigator.of(context);
+                                          await _joinChallenge(challengeId);
+                                          if (mounted) {
+                                            nav.push(MaterialPageRoute(
+                                              builder: (_) => CreatePostScreen(initialCategory: 'Showcase', initialTitle: title),
+                                            ));
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: isDark ? AppColors.forest700 : Colors.white,
+                                          foregroundColor: isDark ? Colors.white : AppColors.forest900,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          elevation: 0,
+                                        ),
+                                        child: Text(AppLocalizations.of(context).joinChallenge, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      ),
                           ),
                         ],
                       ),
@@ -370,6 +444,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   );
                 },
               ),
+
 
               // Swap Market Banner
               Padding(

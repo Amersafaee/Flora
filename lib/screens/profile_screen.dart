@@ -1129,7 +1129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Switch(
                 value: toggleValue,
                 onChanged: onToggle,
-                activeColor: primaryColor,
+                activeThumbColor: primaryColor,
               )
             else if (!isInfo)
               const Icon(Icons.chevron_right, color: AppColors.bone500),
