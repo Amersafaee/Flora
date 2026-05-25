@@ -19,8 +19,7 @@ import 'package:http/http.dart' as http;
 
 const _projectId = 'flora-99ff7';
 const _bucket = 'flora-99ff7.firebasestorage.app';
-// Android API key — read from .env (same key used by the app)
-const _apiKey = 'AIzaSyDC94PXNxLYGEY9vpqSs-QHXFfN3cJkmTY';
+// Android API key — read at runtime from .env (see STEP 2 comment in main())
 const _assetDir = 'assets/blog_images';
 
 // ---------------------------------------------------------------------------
@@ -89,7 +88,7 @@ const Map<String, String> _docToFilename = {
 // Auth: get an anonymous Firebase ID token via REST API
 // ---------------------------------------------------------------------------
 
-Future<String> _getFirebaseToken() async {
+Future<String> _getFirebaseToken(String apiKey) async {
   // First try FIREBASE_TOKEN env var (set via firebase login:ci or gcloud)
   final envToken = Platform.environment['FIREBASE_TOKEN'];
   if (envToken != null && envToken.isNotEmpty) {
@@ -99,7 +98,7 @@ Future<String> _getFirebaseToken() async {
 
   stdout.writeln('  Signing in anonymously via Firebase Auth REST API...');
   final url = Uri.parse(
-    'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$_apiKey',
+    'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$apiKey',
   );
   final response = await http.post(
     url,
@@ -209,6 +208,20 @@ Future<bool> _patchImageUrl(
 // ---------------------------------------------------------------------------
 
 Future<void> main() async {
+  // Read Android API key from .env file (never hardcoded)
+  final apiKey = File('.env')
+      .readAsLinesSync()
+      .firstWhere((l) => l.startsWith('ANDROID_API_KEY='), orElse: () => '')
+      .replaceFirst('ANDROID_API_KEY=', '');
+
+  if (apiKey.isEmpty) {
+    stderr.writeln(
+      '  ❌  ANDROID_API_KEY not found in .env — '
+      'add a line: ANDROID_API_KEY=<your-key>',
+    );
+    exit(1);
+  }
+
   stdout.writeln('\n🌿  UPLOAD BLOG IMAGES — Flora Firebase Storage\n');
   stdout.writeln('  Project : $_projectId');
   stdout.writeln('  Bucket  : $_bucket');
@@ -217,7 +230,7 @@ Future<void> main() async {
 
   // Step 1: Auth
   stdout.writeln('Step 1/3  Getting auth token...');
-  final token = await _getFirebaseToken();
+  final token = await _getFirebaseToken(apiKey);
 
   // Step 2 + 3: Upload + Patch
   stdout.writeln('Step 2/3  Uploading images & updating Firestore...\n');
