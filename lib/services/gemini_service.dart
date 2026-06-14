@@ -4,7 +4,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:http/http.dart' as http;
-import 'flora_context_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'verdoro_context_service.dart';
 
 class GeminiService {
   static String get geminiApiKey {
@@ -23,6 +24,9 @@ class GeminiService {
       final model = GenerativeModel(
         model: 'gemini-2.5-flash',
         apiKey: geminiApiKey,
+        safetySettings: [
+          SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.medium),
+        ],
       );
       final response = await model.generateContent([Content.text("ping")]).timeout(const Duration(seconds: 30));
       return response.text != null;
@@ -37,11 +41,24 @@ class GeminiService {
         _model = GenerativeModel(
           model: 'gemini-2.5-flash',
           apiKey: geminiApiKey,
+          safetySettings: [
+            SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.medium),
+          ],
           systemInstruction: Content.system(
-              "You are Flora, the AI plant companion inside Digital Conservatory. You know the user's entire plant collection and home conditions.\n\nRules you always follow:\n- Always speak in first person. Never say 'Flora thinks' or 'Flora suggests' — say 'I think' and 'I suggest'.\n- Never self-identify at the end of responses. Do not add 'I'm Flora and I'm here to help!' or similar.\n- Keep responses to 80–120 words maximum unless the user explicitly asks for more detail.\n- Ask at most one follow-up question per response.\n- Address the user by name when you know it.\n- Reference their specific plants by name when relevant.\n- Never use endearments like 'dear', 'lovely', 'darling'.\n- No bold text, headers, or bullet lists in conversational responses. Write in plain flowing sentences.\n- Use emoji sparingly — maximum 2 per message, only 🌿 💧 🌱 ☀️.\n- When the user's plant data is available, give specific advice for that plant rather than generic advice.\n- Always respond in the same language the user writes in."),
+              '''You are Verdoro, a plant care assistant inside the Verdoro app. You help users care for their plants.
+
+Rules you always follow:
+- Speak in first person only. Never say "Verdoro thinks" or "Verdoro suggests" — say "I think" or "I suggest".
+- Never introduce yourself or sign off with your name. Do not end messages with "— Verdoro" or "Verdoro here!".
+- Never use endearments: no "dear", "lovely", "sweetie", "darling", "hun", or similar.
+- Keep responses under 120 words unless the user explicitly asks for a detailed explanation.
+- Use plain text only. No markdown asterisks, no bullet dashes, no headers. Write in natural sentences.
+- Ask at most one follow-up question per response. Never stack multiple questions.
+- Be warm and direct. Skip preamble like "Great question!" or "Absolutely!".
+- If you don't know something, say so simply. Never hallucinate plant care facts.'''),
         );
 
-  Future<String> askFlora(
+  Future<String> askVerdoro(
       List<Map<String, String>> previousMessages, String newMsg) async {
     try {
       final history = previousMessages.map((m) {
@@ -51,10 +68,10 @@ class GeminiService {
 
       final chat = _model.startChat(history: history);
       final response = await chat.sendMessage(Content.text(newMsg)).timeout(const Duration(seconds: 30));
-      return response.text ??
-          "Sorry I could not connect right now. Please try again.";
+      return _cleanVerdoroResponse(response.text ??
+          "Sorry I could not connect right now. Please try again.");
     } catch (e) {
-      debugPrint("Error in askFlora: ${e.toString()}");
+      debugPrint("Error in askVerdoro: ${e.toString()}");
       return "Sorry I could not connect right now. Please try again.";
     }
   }
@@ -65,18 +82,17 @@ class GeminiService {
         final name = p['name'] ?? 'Unknown plant';
         final category = p['category'] ?? 'Unknown category';
         final health = p['healthStatus'] ?? 'Unknown health';
-        final zone = p['zone'] ?? 'Unknown zone';
-        return "- $name (Category: $category, Health: $health, Zone: $zone)";
+        return "- $name (Category: $category, Health: $health)";
       }).join("\n");
 
       final prompt = '''
-You are Flora, an expert plant care companion. I need a structured 7-day care schedule for my specific plants.
+You are Verdoro, an expert plant care companion. I need a structured 7-day care schedule for my specific plants.
 Here are my plants:
 $plantDescriptions
 
 Please create a day-by-day weekly care plan (Monday to Sunday) for these plants.
-Provide practical advice, watering tips, and any specific attention they need based on their health status and zone.
-Write it as plain readable text, no markdown. Use simple emojis for visual flair. Keep it engaging but concise.
+Provide practical advice, watering tips, and any specific attention they need based on their health status.
+Write it as plain readable text, no markdown. Keep it engaging but concise.
 ''';
 
       final response = await _model.generateContent([Content.text(prompt)]).timeout(const Duration(seconds: 30));
@@ -87,7 +103,7 @@ Write it as plain readable text, no markdown. Use simple emojis for visual flair
     }
   }
 
-  /// Sends a plain prompt to Gemini without the Flora persona system instruction,
+  /// Sends a plain prompt to Gemini without the Verdoro persona system instruction,
   /// used for structured outputs like the 7-day care schedule where the word-limit
   /// and conversational persona would break the format.
   Future<String> generateWeeklySchedule(String prompt) async {
@@ -95,6 +111,9 @@ Write it as plain readable text, no markdown. Use simple emojis for visual flair
       final planModel = GenerativeModel(
         model: 'gemini-2.5-flash',
         apiKey: geminiApiKey,
+        safetySettings: [
+          SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.medium),
+        ],
       );
       final response = await planModel
           .generateContent([Content.text(prompt)])
@@ -136,7 +155,7 @@ Write a heartfelt 3-sentence eulogy. Reference the care and data softly, and end
   Future<String> generateCommunityAnswer(String postTitle, String postBody, String postCategory) async {
     try {
       final prompt = '''
-You are Flora, the AI plant expert for the Digital Conservatory app community. 
+You are Verdoro, the AI plant expert for the Verdoro app community. 
 A user has posted a question and you need to provide a helpful expert answer. 
 Post title: $postTitle
 Post content: $postBody
@@ -187,7 +206,7 @@ The summary should mention how long it has been cared for, its current health, a
 
   /// Sends a message with a deeply personalised system prompt built from the
   /// user's live plant data. This is the preferred method for all text chat.
-  Future<String> askFloraWithContext(
+  Future<String> askVerdoroWithContext(
     List<Map<String, String>> previousMessages,
     String newMessage,
     String userUid, {
@@ -196,31 +215,50 @@ The summary should mention how long it has been cared for, its current health, a
     // Guard: check API key is configured
     if (geminiApiKey == 'PASTE_YOUR_KEY_HERE') {
       debugPrint(
-          '⚠️  FLORA ERROR: Gemini API key is not configured. '
+          '⚠️  VERDORO ERROR: Gemini API key is not configured. '
           'Please add your GEMINI_API_KEY to the .env file.');
-      return 'Flora is not configured. Please add your Gemini API key to the .env file.';
+      return 'Verdoro is not configured. Please add your Gemini API key to the .env file.';
     }
 
     try {
       // 1. Build the rich context document for this user
-      final context = await FloraContextService().buildContext(userUid, conversationId);
+      final context = await VerdoroContextService().buildContext(userUid, conversationId);
 
-      // 2. Compose the enhanced, personalised system prompt
+      // 2. Query plant names to append to system prompt
+      String plantContext = '';
+      try {
+        final plantsSnap = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userUid)
+            .collection('plants')
+            .get();
+        if (plantsSnap.docs.isNotEmpty) {
+          final names = plantsSnap.docs
+              .map((doc) => doc.data()['commonName'] as String? ?? doc.data()['name'] as String? ?? '')
+              .where((name) => name.trim().isNotEmpty)
+              .map((name) => name.trim())
+              .toList();
+          if (names.isNotEmpty) {
+            plantContext = "\n\nThe user's current plants: ${names.join(', ')}. Reference these by name when relevant.";
+          }
+        }
+      } catch (e) {
+        debugPrint("Error fetching plant names for system prompt: $e");
+      }
+
+      // 3. Compose the enhanced, personalised system prompt
       final enhancedSystemPrompt = '''
-You are Flora, the AI plant companion inside Digital Conservatory. You know the user's entire plant collection and home conditions.
+You are Verdoro, a plant care assistant inside the Verdoro app. You help users care for their plants.
 
 Rules you always follow:
-- Always speak in first person. Never say 'Flora thinks' or 'Flora suggests' — say 'I think' and 'I suggest'.
-- Never self-identify at the end of responses. Do not add 'I'm Flora and I'm here to help!' or similar.
-- Keep responses to 80–120 words maximum unless the user explicitly asks for more detail.
-- Ask at most one follow-up question per response.
-- Address the user by name when you know it.
-- Reference their specific plants by name when relevant.
-- Never use endearments like 'dear', 'lovely', 'darling'.
-- No bold text, headers, or bullet lists in conversational responses. Write in plain flowing sentences.
-- Use emoji sparingly — maximum 2 per message, only 🌿 💧 🌱 ☀️.
-- When the user's plant data is available, give specific advice for that plant rather than generic advice.
-- Always respond in the same language the user writes in.
+- Speak in first person only. Never say "Verdoro thinks" or "Verdoro suggests" — say "I think" or "I suggest".
+- Never introduce yourself or sign off with your name. Do not end messages with "— Verdoro" or "Verdoro here!".
+- Never use endearments: no "dear", "lovely", "sweetie", "darling", "hun", or similar.
+- Keep responses under 120 words unless the user explicitly asks for a detailed explanation.
+- Use plain text only. No markdown asterisks, no bullet dashes, no headers. Write in natural sentences.
+- Ask at most one follow-up question per response. Never stack multiple questions.
+- Be warm and direct. Skip preamble like "Great question!" or "Absolutely!".
+- If you don't know something, say so simply. Never hallucinate plant care facts.$plantContext
 
 Here is everything you know about this user and their plants right now:
 
@@ -228,14 +266,17 @@ $context
 
 Reference their specific plants by name when relevant. Be proactive but concise. Never give generic advice when you have their actual data.''';
 
-      // 3. Build a context-aware model for this request
+      // 4. Build a context-aware model for this request
       final contextModel = GenerativeModel(
         model: 'gemini-2.5-flash',
         apiKey: geminiApiKey,
+        safetySettings: [
+          SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.medium),
+        ],
         systemInstruction: Content.system(enhancedSystemPrompt),
       );
 
-      // 4. Replay history and send the new message
+      // 5. Replay history and send the new message
       final history = previousMessages.map((m) {
         final role = m['role'] == 'user' ? 'user' : 'model';
         return Content(role, [TextPart(m['text'] ?? '')]);
@@ -243,10 +284,10 @@ Reference their specific plants by name when relevant. Be proactive but concise.
 
       final chat = contextModel.startChat(history: history);
       final response = await chat.sendMessage(Content.text(newMessage)).timeout(const Duration(seconds: 30));
-      return response.text ??
-          'Sorry, I could not connect right now. Please try again.';
+      return _cleanVerdoroResponse(response.text ??
+          'Sorry, I could not connect right now. Please try again.');
     } catch (e, stackTrace) {
-      debugPrint("❌ Flora askFloraWithContext error: ${e.toString()}");
+      debugPrint("❌ Verdoro askVerdoroWithContext error: ${e.toString()}");
       debugPrint("Stack trace:\n$stackTrace");
       return 'Sorry, I could not connect right now. Please try again.';
     }
@@ -288,7 +329,7 @@ Reference their specific plants by name when relevant. Be proactive but concise.
           'Care tip: [one practical care tip specific to this species]\n\n'
           'Keep the entire response under 150 words. Do not use asterisks, dashes as bullets, or ALL CAPS headers. Write in plain conversational English as if speaking directly to the plant owner.';
       final questionSuffix = question != null ? '\n\nAlso answer this question: $question' : '';
-      final prompt = '$basePrompt$questionSuffix Please provide your entire response in the following language: $languageName.';
+      final prompt = '$basePrompt$questionSuffix Please provide your entire response in the following language: $languageName. Respond in plain conversational English. Do not use markdown formatting, bullet points, or asterisks. Keep the response under 150 words.';
       final imageBytes = await image.readAsBytes();
 
       // Simple MIME type derivation or default to jpeg
@@ -499,5 +540,18 @@ Return JSON only. No markdown. No explanation.''';
       debugPrint("Error in assessTreatmentProgress: ${e.toString()}");
       return fallback();
     }
+  }
+
+  String _cleanVerdoroResponse(String raw) {
+    // Remove markdown bold/italic
+    var clean = raw.replaceAll(RegExp(r'\*{1,3}'), '');
+    // Remove markdown headers
+    clean = clean.replaceAll(RegExp(r'^#{1,6}\s', multiLine: true), '');
+    // Remove "— Verdoro" sign-offs
+    clean = clean.replaceAll(RegExp(r'[-–—]\s*Verdoro\s*$', caseSensitive: false), '');
+    // Remove self-introduction openers
+    clean = clean.replaceAll(RegExp(r"^(Hi,?\s+I'm Verdoro[!.]?\s*)", caseSensitive: false), '');
+    // Trim
+    return clean.trim();
   }
 }

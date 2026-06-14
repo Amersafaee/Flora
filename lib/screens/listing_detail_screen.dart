@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/cupertino.dart';
 import 'swap_chat_screen.dart';
 import '../theme/app_theme.dart';
+import '../widgets/shared/app_card.dart';
+import '../widgets/shared/primary_button.dart';
 
 class ListingDetailScreen extends StatefulWidget {
   final DocumentSnapshot doc;
@@ -85,6 +88,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
@@ -132,9 +136,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppColors.darkBackground : AppColors.bone50;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: backgroundColor,
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('swap_listings').doc(widget.doc.id).snapshots(),
         builder: (context, snapshot) {
@@ -173,12 +179,13 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               SliverAppBar(
                 expandedHeight: 320,
                 pinned: true,
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                backgroundColor: backgroundColor,
                 leading: IconButton(
                   icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
-                    child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
+                    child: const Icon(CupertinoIcons.chevron_back, color: Colors.white, size: 20),
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -299,13 +306,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       const SizedBox(height: 24),
 
                       // Owner card
-                      Container(
+                      AppCard(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
-                        ),
                         child: Row(
                           children: [
                             const CircleAvatar(
@@ -365,23 +367,9 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   height: 54,
-                  child: ElevatedButton(
+                  child: PrimaryButton(
                     onPressed: () => _showPassportSheet(data),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.forest700,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(26),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      l.messageSeller,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    label: l.messageSeller,
                   ),
                 ),
               ),
@@ -431,7 +419,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.bone50,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(20),

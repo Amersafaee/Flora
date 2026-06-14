@@ -1,6 +1,7 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -122,7 +123,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final Color primaryColor = Theme.of(context).primaryColor;
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
-    const Color terracotta = AppColors.terracotta900;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -130,7 +130,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         backgroundColor: backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textColor),
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(l.editProfile, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 20)),
@@ -157,11 +157,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   height: 120,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [AppColors.forest500, AppColors.forest900],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: AppColors.forest700,
                     image: user?.photoURL != null
                         ? DecorationImage(image: NetworkImage(user!.photoURL!), fit: BoxFit.cover)
                         : null,
@@ -174,7 +170,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 16),
             TextButton(
               onPressed: _isUploading ? null : _changePhoto,
-              child: Text(l.changePhoto, style: const TextStyle(color: terracotta, fontWeight: FontWeight.bold)),
+              child: Text(l.changePhoto, style: const TextStyle(color: AppColors.forest700, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 32),
 
@@ -188,10 +184,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               controller: _nameController,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: primaryColor, width: 2)),
+                fillColor: AppColors.bone100,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
               ),
             ),
             const SizedBox(height: 24),
@@ -208,10 +204,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               style: const TextStyle(color: AppColors.bone500),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                fillColor: AppColors.bone100,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
               ),
             ),
           ],

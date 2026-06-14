@@ -136,11 +136,11 @@ abstract class AppLocalizations {
   /// **'Garden'**
   String get garden;
 
-  /// No description provided for @flora.
+  /// No description provided for @verdoro.
   ///
   /// In en, this message translates to:
   /// **'Flora'**
-  String get flora;
+  String get verdoro;
 
   /// No description provided for @discover.
   ///
@@ -514,11 +514,11 @@ abstract class AppLocalizations {
   /// **'Add to collection'**
   String get addToCollection;
 
-  /// No description provided for @askFlora.
+  /// No description provided for @askVerdoro.
   ///
   /// In en, this message translates to:
   /// **'Ask Flora'**
-  String get askFlora;
+  String get askVerdoro;
 
   /// No description provided for @careTips.
   ///
@@ -628,11 +628,11 @@ abstract class AppLocalizations {
   /// **'tasks completed'**
   String get tasksCompleted;
 
-  /// No description provided for @askFloraAnything.
+  /// No description provided for @askVerdoroAnything.
   ///
   /// In en, this message translates to:
   /// **'Ask Flora anything'**
-  String get askFloraAnything;
+  String get askVerdoroAnything;
 
   /// No description provided for @typeAMessage.
   ///
@@ -640,11 +640,11 @@ abstract class AppLocalizations {
   /// **'Type a message'**
   String get typeAMessage;
 
-  /// No description provided for @floraIsThinking.
+  /// No description provided for @verdoroIsThinking.
   ///
   /// In en, this message translates to:
   /// **'Flora is thinking'**
-  String get floraIsThinking;
+  String get verdoroIsThinking;
 
   /// No description provided for @newChat.
   ///
@@ -688,11 +688,11 @@ abstract class AppLocalizations {
   /// **'Choose from Gallery'**
   String get chooseFromGallery;
 
-  /// No description provided for @analyzeWithFlora.
+  /// No description provided for @analyzeWithVerdoro.
   ///
   /// In en, this message translates to:
   /// **'Analyze with Flora'**
-  String get analyzeWithFlora;
+  String get analyzeWithVerdoro;
 
   /// No description provided for @identifying.
   ///
@@ -712,11 +712,11 @@ abstract class AppLocalizations {
   /// **'Analyze Another'**
   String get analyzeAnother;
 
-  /// No description provided for @continueWithFlora.
+  /// No description provided for @continueWithVerdoro.
   ///
   /// In en, this message translates to:
   /// **'Continue with Flora'**
-  String get continueWithFlora;
+  String get continueWithVerdoro;
 
   /// No description provided for @healthStatus.
   ///
@@ -1393,14 +1393,14 @@ abstract class AppLocalizations {
   /// No description provided for @memorialGardenEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No plants in the memorial garden yet — every plant lives a full life here first 🌿'**
+  /// **'No plants in the memorial garden yet — every plant lives a full life here first'**
   String get memorialGardenEmpty;
 
-  /// No description provided for @joinedLabel.
+  /// No description provided for @joinedBadgeLabel.
   ///
   /// In en, this message translates to:
   /// **'Joined'**
-  String get joinedLabel;
+  String get joinedBadgeLabel;
 
   /// No description provided for @passedLabel.
   ///
@@ -1711,13 +1711,13 @@ abstract class AppLocalizations {
   /// No description provided for @letsGrowSomething.
   ///
   /// In en, this message translates to:
-  /// **'Let\'s grow something 🌱'**
+  /// **'Let\'s grow something'**
   String get letsGrowSomething;
 
   /// No description provided for @gotItLetsGo.
   ///
   /// In en, this message translates to:
-  /// **'Got it, let\'s go! 🌿'**
+  /// **'Got it, let\'s go!'**
   String get gotItLetsGo;
 
   /// No description provided for @plantNameLabel.
@@ -1936,11 +1936,11 @@ abstract class AppLocalizations {
   /// **'Add Journal Entry'**
   String get addJournalEntry;
 
-  /// No description provided for @notSureAskFlora.
+  /// No description provided for @notSureAskVerdoro.
   ///
   /// In en, this message translates to:
-  /// **'Not sure what to write? Ask Flora 🌿'**
-  String get notSureAskFlora;
+  /// **'Not sure what to write? Ask Flora'**
+  String get notSureAskVerdoro;
 
   /// No description provided for @journalEntrySaved.
   ///
@@ -2008,11 +2008,11 @@ abstract class AppLocalizations {
   /// **'Describe how your plant looks today...'**
   String get notesPlantHint;
 
-  /// No description provided for @floraNoticedSomething.
+  /// No description provided for @verdoroNoticedSomething.
   ///
   /// In en, this message translates to:
-  /// **'Flora noticed something 🌿'**
-  String get floraNoticedSomething;
+  /// **'Flora noticed something'**
+  String get verdoroNoticedSomething;
 
   /// No description provided for @aiCarePlan.
   ///
@@ -2194,11 +2194,11 @@ abstract class AppLocalizations {
   /// **'min read'**
   String get minRead;
 
-  /// No description provided for @askFloraAboutTopic.
+  /// No description provided for @askVerdoroAboutTopic.
   ///
   /// In en, this message translates to:
-  /// **'Ask Flora about this topic 🌿'**
-  String get askFloraAboutTopic;
+  /// **'Ask Flora about this topic'**
+  String get askVerdoroAboutTopic;
 
   /// No description provided for @quickCare.
   ///
@@ -2314,11 +2314,11 @@ abstract class AppLocalizations {
   /// **'AI Plant Consultant'**
   String get aiPlantConsultant;
 
-  /// No description provided for @pleaseLogInToUseFlora.
+  /// No description provided for @pleaseLogInToUseVerdoro.
   ///
   /// In en, this message translates to:
   /// **'Please log in to use Flora.'**
-  String get pleaseLogInToUseFlora;
+  String get pleaseLogInToUseVerdoro;
 
   /// No description provided for @startFirstConversation.
   ///
@@ -2821,7 +2821,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveToPlant.
   ///
   /// In en, this message translates to:
-  /// **'Save to a Plant 🌿'**
+  /// **'Save to a Plant'**
   String get saveToPlant;
 
   /// No description provided for @saveLightReading.
@@ -2893,7 +2893,7 @@ abstract class AppLocalizations {
   /// No description provided for @generateCarePlanAction.
   ///
   /// In en, this message translates to:
-  /// **'Generate Care Plan 🌿'**
+  /// **'Generate Care Plan'**
   String get generateCarePlanAction;
 
   /// No description provided for @yourCarePlan.
@@ -2923,7 +2923,7 @@ abstract class AppLocalizations {
   /// No description provided for @copiedToClipboard.
   ///
   /// In en, this message translates to:
-  /// **'Copied to clipboard 📋'**
+  /// **'Copied to clipboard'**
   String get copiedToClipboard;
 
   /// No description provided for @pleaseSelectDates.
@@ -2968,11 +2968,11 @@ abstract class AppLocalizations {
   /// **'Close Report'**
   String get closeReport;
 
-  /// No description provided for @generatedByFlora.
+  /// No description provided for @generatedByVerdoro.
   ///
   /// In en, this message translates to:
   /// **'Generated by Flora every Sunday'**
-  String get generatedByFlora;
+  String get generatedByVerdoro;
 
   /// No description provided for @didYouKnow.
   ///
@@ -2986,11 +2986,11 @@ abstract class AppLocalizations {
   /// **'Care Guidelines'**
   String get careGuidelines;
 
-  /// No description provided for @askFloraAboutThisPlant.
+  /// No description provided for @askVerdoroAboutThisPlant.
   ///
   /// In en, this message translates to:
   /// **'Ask Flora About This Plant'**
-  String get askFloraAboutThisPlant;
+  String get askVerdoroAboutThisPlant;
 
   /// No description provided for @lightLabel.
   ///
@@ -3058,11 +3058,11 @@ abstract class AppLocalizations {
   /// **'How often does this plant need care? We will add it to your calendar automatically.'**
   String get howOftenCareDesc;
 
-  /// No description provided for @askFloraForAdvice.
+  /// No description provided for @askVerdoroForAdvice.
   ///
   /// In en, this message translates to:
-  /// **'Ask Flora for advice 🌿'**
-  String get askFloraForAdvice;
+  /// **'Ask Flora for advice'**
+  String get askVerdoroForAdvice;
 
   /// No description provided for @saveCareSchedule.
   ///
@@ -3079,7 +3079,7 @@ abstract class AppLocalizations {
   /// No description provided for @careScheduleSaved.
   ///
   /// In en, this message translates to:
-  /// **'Care schedule saved — tasks added to your calendar 🌿'**
+  /// **'Care schedule saved — tasks added to your calendar'**
   String get careScheduleSaved;
 
   /// No description provided for @everyDay.
@@ -3124,11 +3124,11 @@ abstract class AppLocalizations {
   /// **'Please sign in to continue with Flora.'**
   String get pleaseSignInToContinue;
 
-  /// No description provided for @couldNotOpenFloraPrefix.
+  /// No description provided for @couldNotOpenVerdoroPrefix.
   ///
   /// In en, this message translates to:
   /// **'Could not open Flora: '**
-  String get couldNotOpenFloraPrefix;
+  String get couldNotOpenVerdoroPrefix;
 
   /// No description provided for @listingsByLocation.
   ///
@@ -3331,7 +3331,7 @@ abstract class AppLocalizations {
   /// No description provided for @listCuttingForSwap.
   ///
   /// In en, this message translates to:
-  /// **'List this cutting for swap? 🔄'**
+  /// **'List this cutting for swap?'**
   String get listCuttingForSwap;
 
   /// No description provided for @listForSwap.
@@ -3478,11 +3478,11 @@ abstract class AppLocalizations {
   /// **'Comments'**
   String get comments;
 
-  /// No description provided for @floraAiExpertAnswer.
+  /// No description provided for @verdoroAiExpertAnswer.
   ///
   /// In en, this message translates to:
   /// **'FLORA AI EXPERT ANSWER'**
-  String get floraAiExpertAnswer;
+  String get verdoroAiExpertAnswer;
 
   /// No description provided for @noCommentsYet.
   ///
@@ -3685,13 +3685,13 @@ abstract class AppLocalizations {
   /// No description provided for @askTheCommunity.
   ///
   /// In en, this message translates to:
-  /// **'Ask the Community 🌿'**
+  /// **'Ask the Community'**
   String get askTheCommunity;
 
   /// No description provided for @recoveryComplete.
   ///
   /// In en, this message translates to:
-  /// **'Recovery Complete! 🎉'**
+  /// **'Recovery Complete!'**
   String get recoveryComplete;
 
   /// No description provided for @beforeLabel.
@@ -3721,7 +3721,7 @@ abstract class AppLocalizations {
   /// No description provided for @recoveryMessage.
   ///
   /// In en, this message translates to:
-  /// **'Your {plantName} fought back from {diagnosis} and won. You did that. 🌿'**
+  /// **'Your {plantName} fought back from {diagnosis} and won. You did that.'**
   String recoveryMessage(String plantName, String diagnosis);
 
   /// No description provided for @searchDiscussions.
@@ -3793,7 +3793,7 @@ abstract class AppLocalizations {
   /// No description provided for @noPostsAboutYourPlants.
   ///
   /// In en, this message translates to:
-  /// **'No community posts about your plants yet. Be the first to share! 🌿'**
+  /// **'No community posts about your plants yet. Be the first to share!'**
   String get noPostsAboutYourPlants;
 
   /// No description provided for @noPostsFoundForSearch.
@@ -3961,7 +3961,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncedTasksToCalendar.
   ///
   /// In en, this message translates to:
-  /// **'Synced {count} tasks to your calendar 📅'**
+  /// **'Synced {count} tasks to your calendar'**
   String syncedTasksToCalendar(int count);
 
   /// No description provided for @noUpcomingTasksToSync.
@@ -4018,23 +4018,23 @@ abstract class AppLocalizations {
   /// **'Clear Chat History'**
   String get clearChatHistory;
 
-  /// No description provided for @aboutFlora.
+  /// No description provided for @aboutVerdoro.
   ///
   /// In en, this message translates to:
   /// **'About Flora'**
-  String get aboutFlora;
+  String get aboutVerdoro;
 
-  /// No description provided for @floraIsReviewingYourPlants.
+  /// No description provided for @verdoroIsReviewingYourPlants.
   ///
   /// In en, this message translates to:
   /// **'Flora is reviewing your plants…'**
-  String get floraIsReviewingYourPlants;
+  String get verdoroIsReviewingYourPlants;
 
-  /// No description provided for @hiIAmFlora.
+  /// No description provided for @hiIAmVerdoro.
   ///
   /// In en, this message translates to:
   /// **'Hi, I\'m Flora'**
-  String get hiIAmFlora;
+  String get hiIAmVerdoro;
 
   /// No description provided for @yourPersonalPlantCareAssistant.
   ///
@@ -4066,11 +4066,11 @@ abstract class AppLocalizations {
   /// **'How do I repot a plant'**
   String get howToRepotPlant;
 
-  /// No description provided for @floraKnowsPlantsDesc.
+  /// No description provided for @verdoroKnowsPlantsDesc.
   ///
   /// In en, this message translates to:
   /// **'Flora knows your entire plant collection and uses that knowledge to give you personalized advice.'**
-  String get floraKnowsPlantsDesc;
+  String get verdoroKnowsPlantsDesc;
 
   /// No description provided for @version100.
   ///
@@ -4333,7 +4333,7 @@ abstract class AppLocalizations {
   /// No description provided for @newGrowthDetected.
   ///
   /// In en, this message translates to:
-  /// **'New growth detected! 🌱'**
+  /// **'New growth detected!'**
   String get newGrowthDetected;
 
   /// No description provided for @issuesDetected.
@@ -4429,7 +4429,7 @@ abstract class AppLocalizations {
   /// No description provided for @propagatedFrom.
   ///
   /// In en, this message translates to:
-  /// **'🌱 Propagated from {name}'**
+  /// **'Propagated from {name}'**
   String propagatedFrom(String name);
 
   /// No description provided for @propagationsFromThisPlant.
@@ -4501,7 +4501,7 @@ abstract class AppLocalizations {
   /// No description provided for @citySetTo.
   ///
   /// In en, this message translates to:
-  /// **'City set to {city} 🌤️'**
+  /// **'City set to {city} ️'**
   String citySetTo(String city);
 
   /// No description provided for @plantHistory.
@@ -4543,14 +4543,14 @@ abstract class AppLocalizations {
   /// No description provided for @noNewNotifications.
   ///
   /// In en, this message translates to:
-  /// **'No new notifications 🌿'**
+  /// **'No new notifications'**
   String get noNewNotifications;
 
-  /// No description provided for @welcomeToFlora.
+  /// No description provided for @welcomeToVerdoro.
   ///
   /// In en, this message translates to:
   /// **'Welcome to Flora'**
-  String get welcomeToFlora;
+  String get welcomeToVerdoro;
 
   /// No description provided for @joinFloraStartJourney.
   ///
@@ -4642,11 +4642,11 @@ abstract class AppLocalizations {
   /// **'Connection timed out. Check your internet and try again.'**
   String get connectionTimedOut;
 
-  /// No description provided for @welcomeToFloraSnackbar.
+  /// No description provided for @welcomeToVerdoroSnackbar.
   ///
   /// In en, this message translates to:
-  /// **'🌱 Welcome to Flora! Your garden awaits.'**
-  String get welcomeToFloraSnackbar;
+  /// **'Welcome to Flora! Your garden awaits.'**
+  String get welcomeToVerdoroSnackbar;
 
   /// No description provided for @noInternetCheckNetwork.
   ///
@@ -4834,11 +4834,11 @@ abstract class AppLocalizations {
   /// **'Care Tasks'**
   String get careTasksToggle;
 
-  /// No description provided for @floraChatMessages.
+  /// No description provided for @verdoroChatMessages.
   ///
   /// In en, this message translates to:
   /// **'Flora Chat Messages'**
-  String get floraChatMessages;
+  String get verdoroChatMessages;
 
   /// No description provided for @swapMarketMessages.
   ///
@@ -4975,7 +4975,7 @@ abstract class AppLocalizations {
   /// No description provided for @listingPostedSuccessfully.
   ///
   /// In en, this message translates to:
-  /// **'Listing posted successfully! 🌱'**
+  /// **'Listing posted successfully!'**
   String get listingPostedSuccessfully;
 
   /// No description provided for @failedToPostListing.
@@ -5275,7 +5275,7 @@ abstract class AppLocalizations {
   /// No description provided for @growthEntryAdded.
   ///
   /// In en, this message translates to:
-  /// **'📝 Growth entry added!'**
+  /// **'Growth entry added!'**
   String get growthEntryAdded;
 
   /// No description provided for @failedToSavePrefix.
@@ -5593,7 +5593,7 @@ abstract class AppLocalizations {
   /// No description provided for @farewellToPlant.
   ///
   /// In en, this message translates to:
-  /// **'A farewell to {plantName} 🕊️'**
+  /// **'A farewell to {plantName} ️'**
   String farewellToPlant(String plantName);
 
   /// No description provided for @thankYouForDaysOfCare.
@@ -5692,11 +5692,11 @@ abstract class AppLocalizations {
   /// **'Scientific name (optional)'**
   String get scientificNameOptional;
 
-  /// No description provided for @askFloraShort.
+  /// No description provided for @askVerdoroShort.
   ///
   /// In en, this message translates to:
   /// **'Ask Flora...'**
-  String get askFloraShort;
+  String get askVerdoroShort;
 
   /// No description provided for @logCare.
   ///
@@ -5704,11 +5704,11 @@ abstract class AppLocalizations {
   /// **'Log Care'**
   String get logCare;
 
-  /// No description provided for @askFloraCTA.
+  /// No description provided for @askVerdoroCTA.
   ///
   /// In en, this message translates to:
   /// **'Ask Flora'**
-  String get askFloraCTA;
+  String get askVerdoroCTA;
 
   /// No description provided for @whatShouldICareForToday.
   ///
@@ -5761,7 +5761,7 @@ abstract class AppLocalizations {
   /// No description provided for @tourIdentifyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Identify & Analyse'**
+  /// **'Identify & Analyze'**
   String get tourIdentifyTitle;
 
   /// No description provided for @tourIdentifyBody.
@@ -5833,7 +5833,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeTourTitle4.
   ///
   /// In en, this message translates to:
-  /// **'Identify & Analyse'**
+  /// **'Identify & Analyze'**
   String get welcomeTourTitle4;
 
   /// No description provided for @welcomeTourBody4.
@@ -5871,6 +5871,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Uses your IP address'**
   String get usesYourIpAddress;
+
+  /// No description provided for @askVerdoroAboutThis.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Verdoro about this'**
+  String get askVerdoroAboutThis;
+
+  /// No description provided for @plantNameFieldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Monstera'**
+  String get plantNameFieldHint;
+
+  /// No description provided for @recoveringStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovering'**
+  String get recoveringStatus;
+
+  /// No description provided for @ofCounterLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {total}'**
+  String ofCounterLabel(String current, String total);
+
+  /// No description provided for @couldNotGenerateCarePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not generate care plan'**
+  String get couldNotGenerateCarePlan;
+
+  /// No description provided for @thisWeekLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'This Week'**
+  String get thisWeekLabel;
+
+  /// No description provided for @addFirstPlantForPersonalizedPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first plant to get a personalized plan'**
+  String get addFirstPlantForPersonalizedPlan;
+
+  /// No description provided for @showingCachedPlanRefreshHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing cached plan. Pull to refresh.'**
+  String get showingCachedPlanRefreshHint;
+
+  /// No description provided for @aiGeneratedForPlantsThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'AI generated for your plants this week'**
+  String get aiGeneratedForPlantsThisWeek;
+
+  /// No description provided for @restDayNoTasksNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest day. No tasks needed.'**
+  String get restDayNoTasksNeeded;
+
+  /// No description provided for @unknownPlantFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Plant'**
+  String get unknownPlantFallback;
+
+  /// No description provided for @chartMaxLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get chartMaxLabel;
+
+  /// No description provided for @chartMinLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Min'**
+  String get chartMinLabel;
+
+  /// No description provided for @joinedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get joinedLabel;
+
+  /// No description provided for @verdoroIsAnalyzingPlants.
+  ///
+  /// In en, this message translates to:
+  /// **'Verdoro is analyzing your plants...'**
+  String get verdoroIsAnalyzingPlants;
 }
 
 class _AppLocalizationsDelegate

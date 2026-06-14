@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:digital_conservatory/models/plant_model.dart';
+import 'package:verdoro/models/plant_model.dart';
 
 void main() {
   group('Plant Model Tests', () {

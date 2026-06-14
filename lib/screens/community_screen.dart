@@ -1,24 +1,28 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
-import 'profile_screen.dart';
-import 'create_post_screen.dart';
-import 'post_comments_screen.dart';
-import 'swap_market_screen.dart';
-import 'all_plants_screen.dart';
-import 'wiki_screen.dart';
-import '../services/firestore_service.dart';
-import '../utils/user_utils.dart';
-import '../services/onboarding_service.dart';
-import 'onboarding_overlay_screen.dart';
-import '../theme/app_theme.dart';
 
+import '../services/firestore_service.dart';
+import '../services/onboarding_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/shared/app_card.dart';
+import '../widgets/shared/empty_state.dart';
+import '../utils/toast_utils.dart';
+import '../utils/user_utils.dart';
+import 'all_plants_screen.dart';
+import 'create_post_screen.dart';
+import 'onboarding_overlay_screen.dart';
+import 'post_comments_screen.dart';
+import 'profile_screen.dart';
+import 'swap_market_screen.dart';
+import 'wiki_screen.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -98,7 +102,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           'endDate': Timestamp.fromDate(DateTime.now().add(const Duration(days: 7))),
           'participantCount': 0,
           'isActive': true,
-          'authorName': 'Digital Conservatory Team',
+          'authorName': 'Verdoro Team',
           'authorUid': 'system',
         });
       } else {
@@ -107,7 +111,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         final data = doc.data();
         if (!data.containsKey('authorName')) {
           await doc.reference.update({
-            'authorName': 'Digital Conservatory Team',
+            'authorName': 'Verdoro Team',
             'authorUid': 'system',
           });
         }
@@ -166,9 +170,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).primaryColor;
-    final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     const Color softGreen = AppColors.forest100;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color backgroundColor = isDark ? AppColors.darkBackground : AppColors.bone50;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -223,15 +227,23 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   },
                   decoration: InputDecoration(
                     hintText: AppLocalizations.of(context).searchDiscussions,
-                    hintStyle: TextStyle(color: AppColors.bone300),
-                    prefixIcon: Icon(Icons.search, color: AppColors.bone300),
-                    filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                    hintStyle: const TextStyle(color: AppColors.bone500),
+                    prefixIcon: const Icon(Icons.search, color: AppColors.bone500),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.bone200),
                     ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.bone200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.forest700, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: isDark ? AppColors.darkSurface : AppColors.bone50,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
@@ -239,7 +251,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
               // Consolidated Filter Pills (FIX 1 & FIX 3)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.only(left: 16.0, right: 24.0, top: 8.0, bottom: 8.0),
                 child: Row(
                   children: [
                     _buildFilterChip(
@@ -414,7 +426,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                           elevation: 0,
                                         ),
-                                        child: const Text('Joined ✓', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        child: Text(AppLocalizations.of(context).joinedBadgeLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
                                       )
                                     // FIX 3: Not yet joined — show join button, mark joined on tap
                                     : ElevatedButton(
@@ -460,7 +472,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
+                      color: isDark ? AppColors.darkSurface : AppColors.bone50,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: softGreen, width: 2),
                     ),
@@ -521,7 +533,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
+                      color: isDark ? AppColors.darkSurface : AppColors.bone50,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: softGreen, width: 2),
                     ),
@@ -614,67 +626,28 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     }).toList();
 
                     if (allDocs.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.people, size: 60, color: AppColors.forest900),
-                            const SizedBox(height: 20),
-                            Text(
-                              AppLocalizations.of(context).beTheFirstToShare,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              AppLocalizations.of(context).communityWaiting,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: AppColors.bone500, fontSize: 14),
-                            ),
-                            const SizedBox(height: 24),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'General')));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.forest900,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                              child: Text(AppLocalizations.of(context).startADiscussion, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            ),
-                          ],
+                      return EmptyState(
+                        icon: Icons.people,
+                        title: AppLocalizations.of(context).beTheFirstToShare,
+                        subtitle: AppLocalizations.of(context).communityWaiting,
+                        buttonLabel: AppLocalizations.of(context).startADiscussion,
+                        onButtonTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'General')),
                         ),
                       );
                     }
 
                     if (filteredDocs.isEmpty) {
                       if (_feedMode == 'mine' && !_isSearching) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.eco_outlined, size: 60, color: AppColors.forest900),
-                              const SizedBox(height: 20),
-                              Text(AppLocalizations.of(context).noCommunityPostsYet, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, color: AppColors.bone500)),
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'General')));
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.forest900,
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: Text(AppLocalizations.of(context).createPost, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              ),
-                            ],
+                        return EmptyState(
+                          icon: Icons.eco_outlined,
+                          title: AppLocalizations.of(context).noCommunityPostsYet,
+                          subtitle: '',
+                          buttonLabel: AppLocalizations.of(context).createPost,
+                          onButtonTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const CreatePostScreen(initialCategory: 'General')),
                           ),
                         );
                       }
@@ -767,19 +740,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ),
         );
       },
-      child: Container(
+      child: AppCard(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -804,13 +766,32 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      authorName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 15,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            authorName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 15,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (data['authorCity'] != null && data['authorCity'].toString().isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Icon(Icons.location_on, size: 11, color: AppColors.bone400),
+                          const SizedBox(width: 2),
+                          Text(
+                            data['authorCity'].toString(),
+                            style: TextStyle(
+                              color: AppColors.bone400,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -827,8 +808,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 icon: Icon(Icons.more_horiz, color: AppColors.bone500),
                 onPressed: () {
                   showModalBottomSheet(
-                    context: context,
-                    builder: (context) => SafeArea(
+                  context: context,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                  builder: (context) => SafeArea(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -839,18 +821,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
                               Navigator.pop(context);
                               // FIX 9: Prevent self-reporting
                               if (currentUserId != null && currentUserId == authorUid) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(AppLocalizations.of(context).cannotReportOwnPost),
-                                    backgroundColor: AppColors.bone500,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
+                                showToast(context, AppLocalizations.of(context).cannotReportOwnPost, isError: true);
                                 return;
                               }
                               showModalBottomSheet(
                                 context: context,
-                                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                                 builder: (context) => SafeArea(
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
@@ -873,13 +849,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                           // Hide post locally from this reporter
                                           await _saveReportedPost(postDoc.id);
                                           if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Text(AppLocalizations.of(context).postHiddenThankYou),
-                                                backgroundColor: Colors.green,
-                                                behavior: SnackBarBehavior.floating,
-                                              ),
-                                            );
+                                            showToast(context, AppLocalizations.of(context).postHiddenThankYou, isError: false);
                                           }
                                         },
                                       )),
@@ -910,7 +880,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                           await FirebaseFirestore.instance.collection('posts').doc(postDoc.id).delete();
                                           if (context.mounted) {
                                             Navigator.pop(context);
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).postDeleted), backgroundColor: Colors.green));
+                                            showToast(context, AppLocalizations.of(context).postDeleted, isError: false);
                                           }
                                         },
                                         child: Text(AppLocalizations.of(context).delete, style: const TextStyle(color: Colors.red)),
@@ -1037,31 +1007,44 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 stream: currentUserId != null 
                     ? FirebaseFirestore.instance.collection('posts').doc(postDoc.id).collection('likes').doc(currentUserId).snapshots()
                     : const Stream.empty(),
-                builder: (context, snapshot) {
-                  final isLiked = snapshot.hasData && snapshot.data!.exists;
-                  return Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          isLiked ? Icons.favorite : Icons.favorite_border,
-                          color: isLiked ? AppColors.terracotta900 : AppColors.bone500,
-                          size: 20,
-                        ),
-                        onPressed: () async {
-                          if (currentUserId == null) return;
-                          final postRef = FirebaseFirestore.instance.collection('posts').doc(postDoc.id);
-                          final likeRef = postRef.collection('likes').doc(currentUserId);
-                          if (isLiked) {
-                            await likeRef.delete();
-                            await postRef.update({'likesCount': FieldValue.increment(-1)});
-                          } else {
-                            await likeRef.set({'likedAt': FieldValue.serverTimestamp()});
-                            await postRef.update({'likesCount': FieldValue.increment(1)});
-                          }
-                        },
-                      ),
-                      Text('$likesCount', style: TextStyle(color: AppColors.bone500, fontWeight: FontWeight.bold))
-                    ],
+                builder: (context, likeSnapshot) {
+                  final isLiked = likeSnapshot.hasData && likeSnapshot.data!.exists;
+                  // Use a nested stream for the post document to get a fresh likesCount
+                  // that stays in sync with the liked state.
+                  return StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance.collection('posts').doc(postDoc.id).snapshots(),
+                    builder: (context, postSnapshot) {
+                      int displayCount = likesCount;
+                      if (postSnapshot.hasData && postSnapshot.data!.exists) {
+                        displayCount = (postSnapshot.data!.data() as Map<String, dynamic>?)?['likesCount'] ?? 0;
+                      }
+                      // Ensure consistency: if liked, count must be at least 1
+                      if (isLiked && displayCount < 1) displayCount = 1;
+                      return Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              isLiked ? Icons.favorite : Icons.favorite_border,
+                              color: isLiked ? AppColors.terracotta900 : AppColors.bone500,
+                              size: 20,
+                            ),
+                            onPressed: () async {
+                              if (currentUserId == null) return;
+                              final postRef = FirebaseFirestore.instance.collection('posts').doc(postDoc.id);
+                              final likeRef = postRef.collection('likes').doc(currentUserId);
+                              if (isLiked) {
+                                await likeRef.delete();
+                                await postRef.update({'likesCount': FieldValue.increment(-1)});
+                              } else {
+                                await likeRef.set({'likedAt': FieldValue.serverTimestamp()});
+                                await postRef.update({'likesCount': FieldValue.increment(1)});
+                              }
+                            },
+                          ),
+                          Text('$displayCount', style: TextStyle(color: AppColors.bone500, fontWeight: FontWeight.bold))
+                        ],
+                      );
+                    },
                   );
                 },
               ),

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
+import '../services/calendar_service.dart';
 import '../models/task_model.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AddTaskScreen extends StatefulWidget {
   final Task? task;
@@ -114,6 +119,26 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         await _firestoreService.updateTask(task);
       } else {
         await _firestoreService.addTask(task);
+        try {
+          final eventId = await CalendarService.createEvent(
+            title: task.taskType,
+            description: '${task.plantName} - ${task.taskType}',
+            date: task.dueDate,
+          );
+          if (eventId != null) {
+            final uid = _firestoreService.currentUserId;
+            if (uid != null) {
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(uid)
+                  .collection('tasks')
+                  .doc(task.id)
+                  .update({'calendarEventId': eventId});
+            }
+          }
+        } catch (e) {
+          debugPrint('Warning: could not create calendar event: $e');
+        }
       }
 
       // Notification failure must never crash the save flow
@@ -125,24 +150,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.task != null ? l.taskUpdatedSuccessfully : l.taskAddedSuccessfully),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showToast(context, widget.task != null ? l.taskUpdatedSuccessfully : l.taskAddedSuccessfully, isError: false);
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).somethingWentWrong),
-            backgroundColor: AppColors.bone500,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showToast(context, AppLocalizations.of(context).somethingWentWrong, isError: true);
       }
     } finally {
       if (mounted) {
@@ -164,42 +177,41 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
+    return DateFormat('MMM d, yyyy').format(date);
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final Color primaryColor = Theme.of(context).primaryColor;
-    final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.bone50,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.chevron_back, size: 20, color: AppColors.forest700),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.task != null ? l.editTask : l.addTask,
+          style: GoogleFonts.outfit(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        widget.task != null ? l.editTask : l.addTask,
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 48),
-                ],
-              ),
-              const SizedBox(height: 32),
 
               Text(l.plantNameLabel, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
@@ -214,14 +226,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     : null,
                 builder: (context, snapshot) {
                   final isDark = Theme.of(context).brightness == Brightness.dark;
-                  final fillColor = isDark ? AppColors.darkSurface : AppColors.white;
                   final inputDecoration = InputDecoration(
                     filled: true,
-                    fillColor: fillColor,
+                    fillColor: AppColors.bone100,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                   );
 
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -229,7 +240,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       initialValue: null,
                       items: const [],
                       onChanged: null,
-                      decoration: inputDecoration.copyWith(hintText: '...', hintStyle: const TextStyle(color: AppColors.bone300)),
+                      decoration: inputDecoration.copyWith(
+                        hintText: '...',
+                        hintStyle: GoogleFonts.outfit(color: AppColors.bone300),
+                      ),
                     );
                   }
 
@@ -241,7 +255,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       onChanged: null,
                       decoration: inputDecoration.copyWith(
                         hintText: AppLocalizations.of(context).addAPlantFirst,
-                        hintStyle: const TextStyle(color: AppColors.bone300),
+                        hintStyle: GoogleFonts.outfit(color: AppColors.bone300),
                       ),
                     );
                   }
@@ -253,7 +267,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     final displayName = commonName.isNotEmpty ? commonName : name;
                     return DropdownMenuItem<String>(
                       value: name,
-                      child: Text(displayName, overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        displayName,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.outfit(
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+                        ),
+                      ),
                     );
                   }).toList();
 
@@ -281,9 +301,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         }
                       });
                     },
+                    style: GoogleFonts.outfit(
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+                    ),
                     decoration: inputDecoration.copyWith(
                       hintText: l.plantNameHint,
-                      hintStyle: const TextStyle(color: AppColors.bone300),
+                      hintStyle: GoogleFonts.outfit(color: AppColors.bone300),
                     ),
                   );
                 },
@@ -314,14 +337,20 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
+                    color: isDark ? AppColors.darkSurface : AppColors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                    border: Border.all(color: isDark ? AppColors.darkBorderDefault : AppColors.bone200),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(_formatDate(_selectedDate), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
+                      Text(
+                        _formatDate(_selectedDate),
+                        style: GoogleFonts.outfit(
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+                          fontSize: 16,
+                        ),
+                      ),
                       const Icon(Icons.calendar_today, color: AppColors.bone500, size: 20),
                     ],
                   ),
@@ -333,6 +362,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               const SizedBox(height: 8),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(right: 24),
                 child: Row(
                   children: [
                     _buildRepeatTypeChip(l.doesNotRepeat, 'none'),
@@ -356,33 +386,37 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               TextField(
                 controller: _notesController,
                 maxLines: 4,
+                style: GoogleFonts.outfit(
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+                ),
                 decoration: InputDecoration(
                   hintText: l.notesHint,
                   hintStyle: const TextStyle(color: AppColors.bone300),
                   filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
+                  fillColor: AppColors.bone100,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 48),
 
               SizedBox(
-                height: 54,
+                height: 52,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveTask,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    backgroundColor: AppColors.forest700,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
                   child: _isLoading
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : Text(
                           widget.task != null ? l.updateTask : l.saveTask,
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                 ),
               ),
@@ -395,6 +429,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Widget _buildTaskTypeChip(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bool isSelected = _selectedTaskType == value;
     return GestureDetector(
       onTap: () => setState(() {
@@ -404,27 +439,42 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
+          color: isSelected ? AppColors.forest700 : (isDark ? AppColors.darkSurface : AppColors.white),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
+          border: Border.all(color: isSelected ? AppColors.forest700 : (isDark ? AppColors.darkBorderDefault : AppColors.bone200)),
         ),
-        child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 14)),
+        child: Text(
+          label,
+          style: GoogleFonts.outfit(
+            color: isSelected ? Colors.white : (isDark ? AppColors.darkTextPrimary : AppColors.forest900),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 14,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildRepeatTypeChip(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bool isSelected = _repeatType == value;
     return GestureDetector(
       onTap: () => setState(() => _repeatType = value),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
+          color: isSelected ? AppColors.forest700 : (isDark ? AppColors.darkSurface : AppColors.white),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
+          border: Border.all(color: isSelected ? AppColors.forest700 : (isDark ? AppColors.darkBorderDefault : AppColors.bone200)),
         ),
-        child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
+        child: Text(
+          label,
+          style: GoogleFonts.outfit(
+            color: isSelected ? Colors.white : (isDark ? AppColors.darkTextPrimary : AppColors.forest900),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }

@@ -1,12 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/gemini_service.dart';
 import 'identify_result_screen.dart';
 import '../services/onboarding_service.dart';
 import 'onboarding_overlay_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class IdentifyScreen extends StatefulWidget {
   const IdentifyScreen({super.key});
@@ -16,8 +19,6 @@ class IdentifyScreen extends StatefulWidget {
 }
 
 class _IdentifyScreenState extends State<IdentifyScreen> {
-  static const Color _darkGreen = AppColors.forest900;
-
   File? _selectedImage;
   bool _isAnalyzing = false;
   final ImagePicker _picker = ImagePicker();
@@ -78,13 +79,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${AppLocalizations.of(context).couldNotAccessImagePrefix}$e'),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showToast(context, '${AppLocalizations.of(context).couldNotAccessImagePrefix}$e', isError: true);
       }
     }
   }
@@ -112,13 +107,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).analysisFailed),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showToast(context, AppLocalizations.of(context).analysisFailed, isError: true);
       }
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
@@ -129,236 +118,189 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              // ── Top 60%: image area ───────────────────────────────────────
-              Expanded(
-                flex: 6,
-                child: _selectedImage == null
-                    ? _buildEmptyImageArea()
-                    : _buildSelectedImageArea(),
-              ),
-
-              // ── Bottom 40%: control panel ─────────────────────────────────
-              Expanded(
-                flex: 4,
-                child: _buildControlPanel(),
-              ),
-            ],
-          ),
-          
-          // × Close button – top left (FIX 3)
-          if (_selectedImage == null)
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Empty state (no image selected)
-  // ─────────────────────────────────────────────────────────────────────────
-  Widget _buildEmptyImageArea() {
     final l = AppLocalizations.of(context);
-    return Container(
-      width: double.infinity,
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: SafeArea(
-        bottom: false,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.camera_alt_outlined,
-                  size: 64,
-                  color: _darkGreen,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l.analyzeYourPlant,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: _darkGreen,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                
-                // Primary CTA (Take a photo)
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: () => _pickImage(ImageSource.camera),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.forest700,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(26),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Take a photo',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                // Secondary CTA (Choose from your photos)
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: OutlinedButton(
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.forest700, width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(26),
-                      ),
-                    ),
-                    child: const Text(
-                      'Choose from your photos',
-                      style: TextStyle(
-                        color: AppColors.forest700,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.bone50,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.chevron_back, size: 20, color: AppColors.forest700),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          l.identifyPlant,
+          style: GoogleFonts.outfit(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
           ),
+        ),
+        centerTitle: false,
+        actions: _selectedImage != null
+            ? [
+                IconButton(
+                  icon: const Icon(CupertinoIcons.trash, size: 20, color: AppColors.terracotta700),
+                  onPressed: _clearImage,
+                )
+              ]
+            : null,
+      ),
+      body: SafeArea(
+        child: _selectedImage == null
+            ? _buildEmptyState()
+            : Column(
+                children: [
+                  Expanded(
+                    flex: 6,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.file(
+                          _selectedImage!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    flex: 4,
+                    child: _buildControlPanel(),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    final l = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              CupertinoIcons.camera,
+              size: 56,
+              color: AppColors.forest200,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l.analyzeYourPlant,
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.forest800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Take a picture or select an existing photo of your plant.",
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: AppColors.bone400,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () => _pickImage(ImageSource.camera),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.forest700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                ),
+                child: Text(
+                  l.takePhoto,
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton(
+                onPressed: () => _pickImage(ImageSource.gallery),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.forest700),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                ),
+                child: Text(
+                  l.chooseFromGallery,
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.forest700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Image selected state
-  // ─────────────────────────────────────────────────────────────────────────
-  Widget _buildSelectedImageArea() {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.zero,
-          child: Image.file(
-            _selectedImage!,
-            fit: BoxFit.cover,
-          ),
-        ),
-        // Clear button – top left
-        SafeArea(
-          bottom: false,
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: GestureDetector(
-                onTap: _clearImage,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.close,
-                    size: 20,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Control panel (bottom 40%)
-  // ─────────────────────────────────────────────────────────────────────────
   Widget _buildControlPanel() {
     final bool hasImage = _selectedImage != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: isDark ? AppColors.darkSurface : AppColors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 12,
-            offset: Offset(0, -3),
+            color: Color(0x0A224A1E),
+            blurRadius: 8,
+            offset: Offset(0, -2),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Drag handle pill
             Center(
               child: Container(
                 width: 40,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                  color: AppColors.bone200,
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
             const Spacer(),
-
-            // Analyze button
             SizedBox(
-              height: 56,
+              height: 52,
               child: _buildAnalyzeButton(hasImage),
             ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -367,18 +309,20 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
 
   Widget _buildAnalyzeButton(bool hasImage) {
     final l = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (!hasImage) {
       return Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+          color: isDark ? AppColors.darkSurfaceElevated : AppColors.bone100,
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Center(
           child: Text(
             l.selectPhotoToAnalyze,
-            style: const TextStyle(
-              color: AppColors.bone500,
-              fontSize: 16,
+            style: GoogleFonts.outfit(
+              color: AppColors.bone400,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -386,36 +330,24 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
       );
     }
 
-    // Active / loading state
     return ElevatedButton(
       onPressed: _isAnalyzing ? null : _analyzeImage,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.forest900,
-        disabledBackgroundColor: AppColors.forest900,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        backgroundColor: AppColors.forest700,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         elevation: 0,
       ),
       child: _isAnalyzing
-          ? Row(
+          ? const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     color: Colors.white,
-                    strokeWidth: 2.5,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  l.analyzingLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    strokeWidth: 2,
                   ),
                 ),
               ],
@@ -426,11 +358,11 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
                 const SizedBox(width: 10),
                 Text(
-                  l.analyzeWithFlora,
-                  style: const TextStyle(
+                  l.analyzeWithVerdoro,
+                  style: GoogleFonts.outfit(
                     color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],

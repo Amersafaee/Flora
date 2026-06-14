@@ -1,6 +1,6 @@
 // ignore_for_file: avoid_print
 import 'package:flutter_test/flutter_test.dart';
-import 'package:digital_conservatory/services/gemini_service.dart';
+import 'package:verdoro/services/gemini_service.dart';
 
 void main() {
   group('Gemini Service Tests', () {
@@ -18,10 +18,10 @@ void main() {
       expect(service.modelName, isNotEmpty);
     });
 
-    test('Integration: askFlora with a simple message', () async {
+    test('Integration: askVerdoro with a simple message', () async {
       final service = GeminiService();
-      final response = await service.askFlora([], 'Reply with exactly the word PONG and nothing else');
-      print('Flora response: $response');
+      final response = await service.askVerdoro([], 'Reply with exactly the word PONG and nothing else');
+      print('Verdoro response: $response');
       expect(response, isNotEmpty);
       expect(response.toLowerCase(), contains('pong'));
     }, tags: ['integration']);

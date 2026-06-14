@@ -7,16 +7,17 @@ class BadgesService {
   final FirestoreService _firestoreService = FirestoreService();
 
   Future<void> checkAndAwardBadges(String userId) async {
+    if (userId.isEmpty) return;
     final int plantsCount = await _firestoreService.getTotalPlantsCount();
     final int tasksCount = await _firestoreService.getCompletedTasksCount();
     final int journalsCount = await _firestoreService.getTotalJournalEntriesCount();
 
-    // Check if user has used Flora Chat (we check a flag on the user document if it exists)
-    bool usedFloraChat = false;
+    // Check if user has used Verdoro Chat (we check a flag on the user document if it exists)
+    bool usedVerdoroChat = false;
     try {
       final userDoc = await _db.collection('users').doc(userId).get();
       if (userDoc.exists) {
-        usedFloraChat = userDoc.data()?['usedFloraChat'] == true;
+        usedVerdoroChat = userDoc.data()?['usedVerdoroChat'] == true;
       }
     } catch (_) {}
 
@@ -64,11 +65,11 @@ class BadgesService {
         'badgeDescription': 'Logged your first growth entry.',
       });
     }
-    if (usedFloraChat) {
+    if (usedVerdoroChat) {
       potentialBadges.add({
-        'badgeId': 'flora_friend',
-        'badgeName': 'Flora Friend',
-        'badgeDescription': 'Had your first conversation with Flora.',
+        'badgeId': 'verdoro_friend',
+        'badgeName': 'Verdoro Friend',
+        'badgeDescription': 'Had your first conversation with Verdoro.',
       });
     }
 
@@ -103,6 +104,7 @@ class BadgesService {
   }
 
   Stream<QuerySnapshot> getUserBadges(String userId) {
+    if (userId.isEmpty) return const Stream.empty();
     return _db.collection('users').doc(userId).collection('badges').snapshots();
   }
 

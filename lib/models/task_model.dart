@@ -12,6 +12,7 @@ class Task {
   final int repeatDays;
   final bool climateAdjusted;
   final String climateNote;
+  final String? calendarEventId;
 
   Task({
     required this.id,
@@ -25,6 +26,7 @@ class Task {
     this.repeatDays = 0,
     this.climateAdjusted = false,
     this.climateNote = '',
+    this.calendarEventId,
   });
 
   Map<String, dynamic> toMap() {
@@ -40,6 +42,7 @@ class Task {
       'repeatDays': repeatDays,
       'climateAdjusted': climateAdjusted,
       'climateNote': climateNote,
+      if (calendarEventId != null) 'calendarEventId': calendarEventId,
     };
   }
 
@@ -58,6 +61,7 @@ class Task {
       repeatDays: (map['repeatDays'] as num?)?.toInt() ?? 0,
       climateAdjusted: map['climateAdjusted'] == true,
       climateNote: map['climateNote']?.toString() ?? '',
+      calendarEventId: map['calendarEventId']?.toString(),
     );
   }
 }

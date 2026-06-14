@@ -1,11 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final String initialCategory;
@@ -50,9 +53,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final body = _bodyController.text.trim();
 
     if (title.isEmpty || body.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.titleBodyRequired), backgroundColor: Colors.red),
-      );
+      showToast(context, l.titleBodyRequired, isError: true);
       return;
     }
 
@@ -65,6 +66,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       // Resolve author name: Firestore fullName → Firestore displayName → Auth displayName → email prefix
       String resolvedAuthorName = '';
       String resolvedAuthorPhotoUrl = '';
+      String resolvedAuthorCity = '';
       try {
         final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
@@ -75,6 +77,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           }
           // FIX 5: Use Firestore profilePhotoUrl as the source of truth for post author photo
           resolvedAuthorPhotoUrl = (d?['profilePhotoUrl'] as String? ?? '').trim();
+          resolvedAuthorCity = (d?['city'] as String? ?? '').trim();
         }
       } catch (_) {}
       if (resolvedAuthorName.isEmpty) resolvedAuthorName = (user.displayName ?? '').trim();
@@ -86,6 +89,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         'authorUid': user.uid,
         'authorName': resolvedAuthorName,
         'authorPhotoUrl': resolvedAuthorPhotoUrl,
+        if (resolvedAuthorCity.isNotEmpty) 'authorCity': resolvedAuthorCity,
         'title': title,
         'body': body,
         'category': _selectedCategory,
@@ -107,15 +111,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).postSharedSuccessfully), backgroundColor: Colors.green),
-      );
+      showToast(context, AppLocalizations.of(context).postSharedSuccessfully, isError: false);
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${AppLocalizations.of(context).failedToSharePostPrefix}$e'), backgroundColor: Colors.red),
-      );
+      showToast(context, '${AppLocalizations.of(context).failedToSharePostPrefix}$e', isError: true);
       setState(() => _isSaving = false);
     }
   }
@@ -134,17 +134,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final categories = ['General', 'Question', 'Tips', 'Showcase', 'Experience'];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      resizeToAvoidBottomInset: true,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.bone50,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+          icon: const Icon(CupertinoIcons.chevron_back, size: 20, color: AppColors.forest700),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l.newPost,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
+          style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.w600, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.forest900),
         ),
         centerTitle: true,
         actions: [

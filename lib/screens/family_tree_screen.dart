@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'create_listing_screen.dart';
 import '../theme/app_theme.dart';
 
@@ -150,7 +151,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                           if (context.mounted) Navigator.pop(context);
                         },
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.forest900),
+                      backgroundColor: AppColors.forest700),
                   child: Text(l.save,
                       style: const TextStyle(color: Colors.white)),
                 ),
@@ -228,8 +229,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                     showModalBottomSheet(
                       context: context,
                       shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(20))),
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                       builder: (sheetContext) {
                         final ls =
                             AppLocalizations.of(sheetContext);
@@ -272,7 +272,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                                   style:
                                       ElevatedButton.styleFrom(
                                     backgroundColor:
-                                        AppColors.forest900,
+                                        AppColors.forest700,
                                     padding:
                                         const EdgeInsets.symmetric(
                                             vertical: 16),
@@ -314,7 +314,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.forest900),
+                  backgroundColor: AppColors.forest700),
               child: Text(l.save,
                   style: const TextStyle(color: Colors.white)),
             ),
@@ -340,7 +340,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
         backgroundColor: backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textColor),
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(

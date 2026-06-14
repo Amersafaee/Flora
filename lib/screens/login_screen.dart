@@ -1,11 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'signup_screen.dart';
 import '../services/auth_service.dart';
 import '../main.dart';
 import '../theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../utils/toast_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -100,22 +101,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.terracotta900,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 4,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    showToast(context, message, isError: true);
   }
 
   Future<void> _signInWithGoogle() async {
     final l = AppLocalizations.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
     setState(() => _isLoading = true);
     try {
       final result = await _authService.signInWithGoogle();
@@ -129,9 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
           (route) => false,
         );
       } else if (result != 'cancelled') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.googleSignInFailed), backgroundColor: colorScheme.error),
-        );
+        showToast(context, l.googleSignInFailed, isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -204,10 +192,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
+                  fillColor: isDark ? AppColors.darkSurfaceElevated : AppColors.bone100,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -224,14 +212,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+                  fillColor: isDark ? AppColors.darkSurfaceElevated : AppColors.bone100,
                   suffixIcon: IconButton(
                     icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppColors.bone500),
                     onPressed: _isLoading ? null : () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 40),
@@ -324,7 +312,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                     child: Text(
                       l.createAnAccount,
-                      style: const TextStyle(color: AppColors.terracotta900, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: AppColors.forest700, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],

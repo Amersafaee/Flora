@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
 import '../services/gemini_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'flora_chats_list_screen.dart';
+import 'verdoro_chats_list_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class AddGrowthEntryScreen extends StatefulWidget {
   final String plantName;
@@ -74,18 +76,15 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
         'notes': _notesController.text.trim(),
         'imageUrl': imageUrl,
         'timestamp': FieldValue.serverTimestamp(),
+        'photoUrl': imageUrl,
+        'date': FieldValue.serverTimestamp(),
+        'note': _notesController.text.trim(),
       };
 
       await _firestoreService.addGrowthEntry(widget.plantId, entry);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).journalEntrySaved),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showToast(context, AppLocalizations.of(context).journalEntrySaved, isError: false);
       }
 
       if (imageUrl.isNotEmpty) {
@@ -104,7 +103,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
             await showModalBottomSheet(
               context: context,
               isScrollControlled: true,
-              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
               builder: (sheetContext) => SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -112,7 +111,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(l2.floraNoticedSomething, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(l2.verdoroNoticedSomething, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 16),
                       Wrap(
                         spacing: 8,
@@ -127,14 +126,14 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                       ElevatedButton(
                         onPressed: () {
                           Navigator.pop(sheetContext);
-                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()));
+                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const VerdoroChatsListScreen()));
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.forest900,
+                          backgroundColor: AppColors.forest700,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: Text(l2.askFloraAboutThis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: Text(l2.askVerdoroAboutThis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton(
@@ -164,13 +163,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).somethingWentWrong),
-            backgroundColor: AppColors.bone500,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showToast(context, AppLocalizations.of(context).somethingWentWrong, isError: true);
       }
     } finally {
       if (mounted) {
@@ -202,7 +195,7 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                     Row(
                       children: [
                         IconButton(
-                          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+                          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
                           onPressed: () => Navigator.pop(context),
                         ),
                         Expanded(
@@ -218,13 +211,13 @@ class _AddGrowthEntryScreenState extends State<AddGrowthEntryScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Ask Flora Button
+                    // Ask Verdoro Button
                     OutlinedButton.icon(
                       onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const FloraChatsListScreen()));
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const VerdoroChatsListScreen()));
                       },
                       icon: const Icon(Icons.psychology, color: AppColors.forest900),
-                      label: Text(l.notSureAskFlora, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
+                      label: Text(l.notSureAskVerdoro, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         side: const BorderSide(color: AppColors.forest900, width: 1.5),

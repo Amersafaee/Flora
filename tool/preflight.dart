@@ -88,23 +88,23 @@ Future<void> main() async {
     fail('Could not read firestore.rules: $e');
   }
 
-  // 3. Check that flora_context_service.dart does NOT use orderBy combined with where on the same query
+  // 3. Check that verdoro_context_service.dart does NOT use orderBy combined with where on the same query
   try {
-    final contextFile = File('lib/services/flora_context_service.dart');
+    final contextFile = File('lib/services/verdoro_context_service.dart');
     final contextLines = await contextFile.readAsLines();
     bool found = false;
     for (int i = 0; i < contextLines.length; i++) {
       final line = contextLines[i];
       if (line.contains('.where(') && line.contains('.orderBy(')) {
-        fail('orderBy+where combination found in FloraContextService line ${i + 1}');
+        fail('orderBy+where combination found in VerdoroContextService line ${i + 1}');
         found = true;
       }
     }
     if (!found) {
-      pass('No orderBy+where combinations in FloraContextService');
+      pass('No orderBy+where combinations in VerdoroContextService');
     }
   } catch (e) {
-    fail('Could not read flora_context_service.dart: $e');
+    fail('Could not read verdoro_context_service.dart: $e');
   }
 
   // 4. Check that task_model.dart fromMap uses safe parsing for repeatDays
@@ -409,7 +409,7 @@ Future<void> main() async {
     if (identifyResultContent.contains('_extractHealthStatus')) {
       pass('Identify result screen extracts health status');
     } else {
-      fail('Identify result does not extract health status — add to collection will always show Healthy regardless of Flora\'s diagnosis');
+      fail('Identify result does not extract health status - add to collection will always show Healthy regardless of Verdoro\'s diagnosis');
     }
   } catch (e) {
     fail('Could not read identify_result_screen.dart: $e');
@@ -452,14 +452,14 @@ Future<void> main() async {
     fail('Could not read blog_detail_screen.dart: $e');
   }
 
-  // ── LOGIC CHECK 24 — Swap chat does not contain Ask Flora button ────────
+  // ── LOGIC CHECK 24 — Swap chat does not contain Ask Verdoro button ────────
   try {
     final swapChatFile = File('lib/screens/swap_chat_screen.dart');
     final swapChatContent = await swapChatFile.readAsString();
-    if (!swapChatContent.contains('askFlora') && !swapChatContent.contains('Ask Flora')) {
-      pass('Swap chat does not contain inappropriate Flora AI button');
+    if (!swapChatContent.contains('askVerdoro') && !swapChatContent.contains('Ask Verdoro')) {
+      pass('Swap chat does not contain inappropriate Verdoro AI button');
     } else {
-      fail('Swap chat contains Flora AI button — inappropriate for peer-to-peer trade chat');
+      fail('Swap chat contains Verdoro AI button — inappropriate for peer-to-peer trade chat');
     }
   } catch (e) {
     fail('Could not read swap_chat_screen.dart: $e');
@@ -478,16 +478,93 @@ Future<void> main() async {
     fail('Could not read signup_screen.dart: $e');
   }
 
+  // ── LOGIC CHECK 26 — No Dart file has weather URL with hardcoded ?key= ──
+  try {
+    final libDir = Directory('lib');
+    bool foundInlineKey = false;
+    if (libDir.existsSync()) {
+      final files = libDir
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart'));
+      for (final file in files) {
+        final lines = file.readAsLinesSync();
+        for (int i = 0; i < lines.length; i++) {
+          // Flag any line that contains the weather domain AND a literal ?key= value
+          // (i.e. the key is embedded in the URL string rather than interpolated from .env)
+          final line = lines[i];
+          if (line.contains('weather.googleapis.com') &&
+              RegExp(r'\?key=AIza').hasMatch(line)) {
+            fail('Hardcoded weather API key in URL at ${file.path}:${i + 1}');
+            foundInlineKey = true;
+          }
+        }
+      }
+    }
+    if (!foundInlineKey) {
+      pass('No Dart file contains a hardcoded weather API key in the URL');
+    }
+  } catch (e) {
+    fail('Could not check for hardcoded weather API key in URLs: $e');
+  }
+
+  // ── LOGIC CHECK 27 — WEATHER_CALENDAR key exists in .env ────────────────
+  try {
+    final envFile = File('.env');
+    if (!envFile.existsSync()) {
+      fail('.env file not found (cannot check WEATHER_CALENDAR)');
+    } else {
+      final envContent = await envFile.readAsString();
+      final keyMatch = RegExp(r'WEATHER_CALENDAR=(.+)').firstMatch(envContent);
+      if (keyMatch == null) {
+        fail('WEATHER_CALENDAR not found in .env');
+      } else {
+        final key = keyMatch.group(1)!.trim();
+        if (key.isEmpty || key == 'YOUR_KEY_HERE' || key == 'PASTE_YOUR_KEY_HERE') {
+          fail('WEATHER_CALENDAR is missing or placeholder in .env');
+        } else {
+          pass('WEATHER_CALENDAR key is configured in .env');
+        }
+      }
+    }
+  } catch (e) {
+    fail('Could not read .env for WEATHER_CALENDAR: $e');
+  }
+
+  // ── LOGIC CHECK 28 — Weather service uses GET + query params (not POST+JSON) ─
+  try {
+    final weatherServiceFile = File('lib/services/weather_service.dart');
+    if (!weatherServiceFile.existsSync()) {
+      fail('weather_service.dart not found');
+    } else {
+      final content = await weatherServiceFile.readAsString();
+      final usesGetQueryParams = content.contains('location.latitude') &&
+          content.contains('location.longitude');
+      final usesPostBody = content.contains('http.post') &&
+          content.contains("'location'") &&
+          content.contains('latitude');
+      if (usesPostBody) {
+        fail('weather_service.dart still uses POST+JSON body — must use GET with location.latitude/location.longitude query params');
+      } else if (usesGetQueryParams) {
+        pass('Weather service uses GET with location.latitude/location.longitude query params');
+      } else {
+        fail('weather_service.dart does not contain location.latitude/location.longitude — GET query param format not confirmed');
+      }
+    }
+  } catch (e) {
+    fail('Could not check weather_service.dart for GET format: $e');
+  }
+
   print('');
   print('═══════════════════════════════════════════════════════════════════');
-  print('  PREFLIGHT SUMMARY — 25 checks total');
+  print('  PREFLIGHT SUMMARY — 28 checks total');
   print('  ✅ $checksPassed passed   ❌ $checksFailed failed');
   print('═══════════════════════════════════════════════════════════════════');
   if (allPassed) {
-    print('🟢 ALL 25 CHECKS PASSED — Safe to build and install APK');
+    print('🟢 ALL 28 CHECKS PASSED — Safe to build and install APK');
     exit(0);
   } else {
-    print('🔴 $checksFailed of 25 CHECKS FAILED — Fix issues above before installing APK');
+    print('🔴 $checksFailed of 28 CHECKS FAILED — Fix issues above before installing APK');
     exit(1);
   }
 }

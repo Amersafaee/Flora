@@ -12,16 +12,21 @@ class CareIntelligenceService {
     required String category,
     required int baseIntervalDays,
     required DateTime lastWateredDate,
-    required String zoneUid,
     required String userUid,
   }) async {
+    if (userUid.isEmpty || plantId.isEmpty) {
+      return {
+        'nextDate': lastWateredDate.add(Duration(days: baseIntervalDays)),
+        'reasoning': 'Based on your plant\'s standard needs.',
+        'urgency': 'Scheduled',
+        'adjustedInterval': baseIntervalDays,
+      };
+    }
     // 1. Load last 5 humidity readings
     final readingsQuery = await _db
         .collection('users')
         .doc(userUid)
-        .collection('zones')
-        .doc(zoneUid)
-        .collection('readings')
+        .collection('climate_readings')
         .where('type', isEqualTo: 'humidity')
         .orderBy('timestamp', descending: true)
         .limit(5)
@@ -122,6 +127,7 @@ class CareIntelligenceService {
   /// non-deceased plants, informed by their actual task history.
   /// Returns a formatted string with DAY 1 … DAY 7 sections.
   Future<String> generateWeeklyCarePlan(String userUid) async {
+    if (userUid.isEmpty) return '';
     // 1. Load all non-deceased plants
     final plantsSnap = await _db
         .collection('users')

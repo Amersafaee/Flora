@@ -1,5 +1,5 @@
-import 'package:digital_conservatory/data/plant_providers.dart';
-import 'package:digital_conservatory/data/species_providers.dart';
+import 'package:verdoro/data/plant_providers.dart';
+import 'package:verdoro/data/species_providers.dart';
 
 class MockData {
   // 5‑7 mock plant documents

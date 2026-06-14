@@ -26,6 +26,7 @@ class AppColors {
   static const bone900 = Color(0xFF2A2925);
   static const bone700 = Color(0xFF5B5953);
   static const bone500 = Color(0xFF8B8982);
+  static const bone400 = Color(0xFFA5A39B);
   static const bone300 = Color(0xFFBFBDB5);
   static const bone200 = Color(0xFFD8D6CE);
   static const bone100 = Color(0xFFE8E6DE);
@@ -63,6 +64,32 @@ class AppColors {
   static const success = Color(0xFF4F8B5C);
   static const error   = Color(0xFFC24E47);
   static const warning = Color(0xFFC8893A);
+  // Amber alias for health-score coloring (50-79 range)
+  static const amber   = Color(0xFFE8A020);
+
+  // Slate blue (used for Smart Care Plan card)
+  static const slateBlue500 = Color(0xFF4A6FA5);
+  static const slateBlue900 = Color(0xFF1A2A40);
+
+  // ── Dark-mode card separation ───────────────────────────────────────────
+  /// Elevated card surface – visually lifts off darkCanvas (#0E1411).
+  static const darkCardSurface = Color(0xFF1A1C19);
+  /// 1 px hairline border for card edges (white @ ~6 %).
+  static final darkCardBorder = Colors.white.withValues(alpha: 0.06);
+
+  // ── Dark stat-tile tints (deep desaturated) ─────────────────────────────
+  static const darkForestTint     = Color(0xFF162E1C);   // forest-900-ish
+  static const darkTerracottaTint = Color(0xFF2E1A12);   // terracotta-900-ish
+  static const darkSlateBlueTint  = Color(0xFF152030);   // slateBlue-900-ish
+
+  // ── Dark chip styling ───────────────────────────────────────────────────
+  static const darkChipSurface = darkCardSurface;
+
+  // Shared Switch styling
+  static const switchActiveTrack = forest700;
+  static const switchInactiveTrack = bone400;
+  static const switchThumb = white;
+  static const switchTrackOutline = WidgetStatePropertyAll<Color>(Colors.transparent);
 
   // ── Backward-compat aliases from tokens.dart ─────────────────────────────
   // These map old token names to the new design system values.
@@ -144,6 +171,14 @@ class AppShadows {
 
 
 class AppTheme {
+  static const List<String> _fontFallbacks = [
+    'NotoSansArabic',
+    'NotoSansJP',
+    'NotoSansKR',
+    'NotoSansSC',
+    'NotoColorEmoji',
+  ];
+
   static TextTheme _buildTextTheme(Color primaryText, Color secondaryText) {
     return TextTheme(
       displayLarge: GoogleFonts.notoSerif(fontSize: 40, height: 48/40, fontWeight: FontWeight.w600, letterSpacing: -0.02 * 40, color: primaryText),
@@ -161,7 +196,7 @@ class AppTheme {
       labelLarge: GoogleFonts.plusJakartaSans(fontSize: 15, height: 22/15, fontWeight: FontWeight.w600, color: primaryText),
       labelMedium: GoogleFonts.plusJakartaSans(fontSize: 12, height: 16/12, fontWeight: FontWeight.w500, letterSpacing: 0.005 * 12, color: secondaryText),
       labelSmall: GoogleFonts.plusJakartaSans(fontSize: 11, height: 14/11, fontWeight: FontWeight.w600, letterSpacing: 0.08 * 11, color: secondaryText),
-    );
+    ).apply(fontFamilyFallback: _fontFallbacks);
   }
 
   static ThemeData get light {
@@ -247,6 +282,42 @@ class AppTheme {
       ),
       dividerTheme: const DividerThemeData(color: AppColors.bone100, thickness: 1, space: 1),
       iconTheme: const IconThemeData(color: AppColors.forest700),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.bone50,
+        surfaceTintColor: Colors.transparent,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        headerBackgroundColor: AppColors.bone50,
+        headerForegroundColor: AppColors.forest700,
+        headerHelpStyle: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w400, color: AppColors.bone700),
+        headerHeadlineStyle: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.w600, color: AppColors.forest700),
+        weekdayStyle: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.bone500),
+        dayForegroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.white;
+          if (states.contains(WidgetState.disabled)) return AppColors.bone300;
+          return AppColors.bone900;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.forest700;
+          return Colors.transparent;
+        }),
+        todayForegroundColor: const WidgetStatePropertyAll<Color>(AppColors.forest700),
+        todayBackgroundColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+        todayBorder: const BorderSide(color: AppColors.forest700),
+        yearForegroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.white;
+          if (states.contains(WidgetState.disabled)) return AppColors.bone300;
+          return AppColors.bone900;
+        }),
+        yearBackgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.forest700;
+          return Colors.transparent;
+        }),
+        cancelButtonStyle: TextButton.styleFrom(foregroundColor: AppColors.forest700),
+        confirmButtonStyle: TextButton.styleFrom(foregroundColor: AppColors.forest700),
+        dayStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w400),
+        yearStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w400),
+      ),
     );
   }
 
@@ -257,7 +328,7 @@ class AppTheme {
       brightness: Brightness.dark,
       primaryColor: AppColors.darkForestPrimary,
       scaffoldBackgroundColor: AppColors.darkCanvas,
-      cardColor: AppColors.darkSurface,
+      cardColor: AppColors.darkCardSurface,
       textTheme: textTheme,
       colorScheme: ColorScheme.dark(
         primary: AppColors.darkForestPrimary,
@@ -333,6 +404,42 @@ class AppTheme {
       ),
       dividerTheme: const DividerThemeData(color: AppColors.darkBorderSubtle, thickness: 1, space: 1),
       iconTheme: const IconThemeData(color: AppColors.darkForestPrimary),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.darkSurface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        headerBackgroundColor: AppColors.darkSurface,
+        headerForegroundColor: AppColors.darkForestPrimary,
+        headerHelpStyle: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w400, color: AppColors.darkTextSecondary),
+        headerHeadlineStyle: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.w600, color: AppColors.darkForestPrimary),
+        weekdayStyle: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.darkTextTertiary),
+        dayForegroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.darkCanvas;
+          if (states.contains(WidgetState.disabled)) return AppColors.darkTextDisabled;
+          return AppColors.darkTextPrimary;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.darkForestPrimary;
+          return Colors.transparent;
+        }),
+        todayForegroundColor: const WidgetStatePropertyAll<Color>(AppColors.darkForestPrimary),
+        todayBackgroundColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+        todayBorder: const BorderSide(color: AppColors.darkForestPrimary),
+        yearForegroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.darkCanvas;
+          if (states.contains(WidgetState.disabled)) return AppColors.darkTextDisabled;
+          return AppColors.darkTextPrimary;
+        }),
+        yearBackgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.darkForestPrimary;
+          return Colors.transparent;
+        }),
+        cancelButtonStyle: TextButton.styleFrom(foregroundColor: AppColors.darkForestPrimary),
+        confirmButtonStyle: TextButton.styleFrom(foregroundColor: AppColors.darkForestPrimary),
+        dayStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w400),
+        yearStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w400),
+      ),
     );
   }
 }

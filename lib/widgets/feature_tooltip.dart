@@ -100,7 +100,7 @@ class _FeatureTooltipState extends State<FeatureTooltip> {
                         if (mounted) setState(() => _shouldShow = false);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.forest900,
+                        backgroundColor: AppColors.forest700,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

@@ -15,7 +15,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get garden => 'Ogród';
 
   @override
-  String get flora => 'Flora';
+  String get verdoro => 'Flora';
 
   @override
   String get discover => 'Odkryj';
@@ -206,7 +206,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get addToCollection => 'Dodaj do kolekcji';
 
   @override
-  String get askFlora => 'Zapytaj Florę';
+  String get askVerdoro => 'Zapytaj Florę';
 
   @override
   String get careTips => 'Porady pielęgnacyjne';
@@ -263,13 +263,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get tasksCompleted => 'ukończone zadania';
 
   @override
-  String get askFloraAnything => 'Zapytaj Florę o wszystko';
+  String get askVerdoroAnything => 'Zapytaj Florę o wszystko';
 
   @override
   String get typeAMessage => 'Wpisz wiadomość';
 
   @override
-  String get floraIsThinking => 'Flora myśli';
+  String get verdoroIsThinking => 'Flora myśli';
 
   @override
   String get newChat => 'Nowy czat';
@@ -293,7 +293,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chooseFromGallery => 'Wybierz z galerii';
 
   @override
-  String get analyzeWithFlora => 'Przeanalizuj z Florą';
+  String get analyzeWithVerdoro => 'Przeanalizuj z Florą';
 
   @override
   String get identifying => 'Identyfikowanie';
@@ -305,7 +305,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get analyzeAnother => 'Przeanalizuj inną';
 
   @override
-  String get continueWithFlora => 'Kontynuuj z Florą';
+  String get continueWithVerdoro => 'Kontynuuj z Florą';
 
   @override
   String get healthStatus => 'Stan zdrowia';
@@ -645,10 +645,10 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get memorialGardenEmpty =>
-      'Brak roślin w ogrodzie pamięci — każda roślina najpierw przeżywa tu pełne życie 🌿';
+      'Brak roślin w ogrodzie pamięci — każda roślina najpierw przeżywa tu pełne życie';
 
   @override
-  String get joinedLabel => 'Dołączył';
+  String get joinedBadgeLabel => 'Dołączył';
 
   @override
   String get passedLabel => 'Odeszła';
@@ -814,10 +814,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Podziel się swoją podróżą, wymieniaj sadzonki z lokalnymi miłośnikami roślin i uzyskaj porady ekspertów od tysięcy roślinnych rodziców.';
 
   @override
-  String get letsGrowSomething => 'Wyhodujmy coś 🌱';
+  String get letsGrowSomething => 'Wyhodujmy coś';
 
   @override
-  String get gotItLetsGo => 'Rozumiem, chodźmy! 🌿';
+  String get gotItLetsGo => 'Rozumiem, chodźmy!';
 
   @override
   String get plantNameLabel => 'Nazwa rośliny';
@@ -933,7 +933,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get addJournalEntry => 'Dodaj wpis w dzienniku';
 
   @override
-  String get notSureAskFlora => 'Nie wiesz, co napisać? Zapytaj Florę 🌿';
+  String get notSureAskVerdoro => 'Nie wiesz, co napisać? Zapytaj Florę';
 
   @override
   String get journalEntrySaved => 'Wpis w dzienniku zapisany';
@@ -969,7 +969,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get notesPlantHint => 'Opisz, jak wygląda dziś twoja roślina...';
 
   @override
-  String get floraNoticedSomething => 'Flora coś zauważyła 🌿';
+  String get verdoroNoticedSomething => 'Flora coś zauważyła';
 
   @override
   String get aiCarePlan => 'Plan pielęgnacji AI';
@@ -1065,7 +1065,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get minRead => 'min czytania';
 
   @override
-  String get askFloraAboutTopic => 'Zapytaj Florę o ten temat 🌿';
+  String get askVerdoroAboutTopic => 'Zapytaj Florę o ten temat';
 
   @override
   String get quickCare => 'Szybka pielęgnacja';
@@ -1127,7 +1127,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get aiPlantConsultant => 'Konsultant roślin AI';
 
   @override
-  String get pleaseLogInToUseFlora => 'Zaloguj się, aby korzystać z Flory.';
+  String get pleaseLogInToUseVerdoro => 'Zaloguj się, aby korzystać z Flory.';
 
   @override
   String get startFirstConversation =>
@@ -1403,7 +1403,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get measuringFiveSeconds => 'Pomiar przez 5 sekund...';
 
   @override
-  String get saveToPlant => 'Zapisz do rośliny 🌿';
+  String get saveToPlant => 'Zapisz do rośliny';
 
   @override
   String get saveLightReading => 'Zapisz odczyt światła';
@@ -1441,7 +1441,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get selectDate => 'Wybierz datę';
 
   @override
-  String get generateCarePlanAction => 'Generuj plan pielęgnacji 🌿';
+  String get generateCarePlanAction => 'Generuj plan pielęgnacji';
 
   @override
   String get yourCarePlan => 'Twój plan pielęgnacji';
@@ -1457,7 +1457,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get copyToClipboard => 'Kopiuj do schowka';
 
   @override
-  String get copiedToClipboard => 'Skopiowano do schowka 📋';
+  String get copiedToClipboard => 'Skopiowano do schowka';
 
   @override
   String get pleaseSelectDates => 'Wybierz daty rozpoczęcia i zakończenia.';
@@ -1481,7 +1481,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get closeReport => 'Zamknij raport';
 
   @override
-  String get generatedByFlora => 'Generowane przez Florę w każdą niedzielę';
+  String get generatedByVerdoro => 'Generowane przez Florę w każdą niedzielę';
 
   @override
   String get didYouKnow => 'Czy wiesz, że?';
@@ -1490,7 +1490,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get careGuidelines => 'Wytyczne dotyczące pielęgnacji';
 
   @override
-  String get askFloraAboutThisPlant => 'Zapytaj Florę o tę roślinę';
+  String get askVerdoroAboutThisPlant => 'Zapytaj Florę o tę roślinę';
 
   @override
   String get lightLabel => 'Światło';
@@ -1527,7 +1527,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Jak często ta roślina potrzebuje pielęgnacji? Automatycznie dodamy to do twojego kalendarza.';
 
   @override
-  String get askFloraForAdvice => 'Poproś Florę o radę 🌿';
+  String get askVerdoroForAdvice => 'Poproś Florę o radę';
 
   @override
   String get saveCareSchedule => 'Zapisz harmonogram pielęgnacji';
@@ -1537,7 +1537,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get careScheduleSaved =>
-      'Harmonogram pielęgnacji zapisany — zadania dodane do kalendarza 🌿';
+      'Harmonogram pielęgnacji zapisany — zadania dodane do kalendarza';
 
   @override
   String get everyDay => 'Codziennie';
@@ -1561,7 +1561,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get pleaseSignInToContinue => 'Zaloguj się, aby kontynuować z Florą.';
 
   @override
-  String get couldNotOpenFloraPrefix => 'Nie można otworzyć Flory: ';
+  String get couldNotOpenVerdoroPrefix => 'Nie można otworzyć Flory: ';
 
   @override
   String get listingsByLocation => 'Ogłoszenia według lokalizacji';
@@ -1669,7 +1669,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get propagationHint => 'np. Rozmnażanie #1';
 
   @override
-  String get listCuttingForSwap => 'Wystawić tę sadzonkę na wymianę? 🔄';
+  String get listCuttingForSwap => 'Wystawić tę sadzonkę na wymianę?';
 
   @override
   String get listForSwap => 'Wystaw na wymianę';
@@ -1745,7 +1745,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get comments => 'Komentarze';
 
   @override
-  String get floraAiExpertAnswer => 'ODPOWIEDŹ EKSPERTA AI FLORA';
+  String get verdoroAiExpertAnswer => 'ODPOWIEDŹ EKSPERTA AI FLORA';
 
   @override
   String get noCommentsYet => 'Brak komentarzy. Bądź pierwszy, odpowiadając!';
@@ -1852,10 +1852,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get checkProgress => 'Sprawdź postęp';
 
   @override
-  String get askTheCommunity => 'Zapytaj społeczność 🌿';
+  String get askTheCommunity => 'Zapytaj społeczność';
 
   @override
-  String get recoveryComplete => 'Pełny powrót do zdrowia! 🎉';
+  String get recoveryComplete => 'Pełny powrót do zdrowia!';
 
   @override
   String get beforeLabel => 'Przed';
@@ -1873,7 +1873,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String recoveryMessage(String plantName, String diagnosis) {
-    return 'Twoja $plantName walczyła z $diagnosis i wygrała. To twoja zasługa. 🌿';
+    return 'Twoja $plantName walczyła z $diagnosis i wygrała. To twoja zasługa.';
   }
 
   @override
@@ -1914,7 +1914,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get noPostsAboutYourPlants =>
-      'Brak jeszcze postów społeczności na temat twoich roślin. Bądź pierwszy, który się podzieli! 🌿';
+      'Brak jeszcze postów społeczności na temat twoich roślin. Bądź pierwszy, który się podzieli!';
 
   @override
   String get noPostsFoundForSearch =>
@@ -2016,7 +2016,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String syncedTasksToCalendar(int count) {
-    return 'Zsynchronizowano $count zadań z kalendarzem 📅';
+    return 'Zsynchronizowano $count zadań z kalendarzem';
   }
 
   @override
@@ -2053,13 +2053,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get clearChatHistory => 'Wyczyść historię czatu';
 
   @override
-  String get aboutFlora => 'O Florze';
+  String get aboutVerdoro => 'O Florze';
 
   @override
-  String get floraIsReviewingYourPlants => 'Flora przegląda twoje rośliny…';
+  String get verdoroIsReviewingYourPlants => 'Flora przegląda twoje rośliny…';
 
   @override
-  String get hiIAmFlora => 'Cześć, jestem Flora';
+  String get hiIAmVerdoro => 'Cześć, jestem Flora';
 
   @override
   String get yourPersonalPlantCareAssistant =>
@@ -2079,7 +2079,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get howToRepotPlant => 'Jak przesadzić roślinę?';
 
   @override
-  String get floraKnowsPlantsDesc =>
+  String get verdoroKnowsPlantsDesc =>
       'Flora zna całą twoją kolekcję roślin i wykorzystuje tę wiedzę, aby udzielać spersonalizowanych porad.';
 
   @override
@@ -2229,7 +2229,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lastHealthAssessment => 'OSTATNIA OCENA ZDROWIA';
 
   @override
-  String get newGrowthDetected => 'Wykryto nowy wzrost! 🌱';
+  String get newGrowthDetected => 'Wykryto nowy wzrost!';
 
   @override
   String get issuesDetected => 'Wykryto problemy';
@@ -2279,7 +2279,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String propagatedFrom(String name) {
-    return '🌱 Rozmnożone z $name';
+    return 'Rozmnożone z $name';
   }
 
   @override
@@ -2321,7 +2321,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String citySetTo(String city) {
-    return 'Ustawiono miasto na $city 🌤️';
+    return 'Ustawiono miasto na $city ️';
   }
 
   @override
@@ -2343,10 +2343,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get markAllAsRead => 'Oznacz wszystkie jako przeczytane';
 
   @override
-  String get noNewNotifications => 'Brak nowych powiadomień 🌿';
+  String get noNewNotifications => 'Brak nowych powiadomień';
 
   @override
-  String get welcomeToFlora => 'Witaj w Florze';
+  String get welcomeToVerdoro => 'Witaj w Florze';
 
   @override
   String get joinFloraStartJourney =>
@@ -2397,7 +2397,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Przekroczono limit czasu połączenia. Sprawdź połączenie internetowe i spróbuj ponownie.';
 
   @override
-  String get welcomeToFloraSnackbar => '🌱 Witaj w Florze! Twój ogród czeka.';
+  String get welcomeToVerdoroSnackbar => 'Witaj w Florze! Twój ogród czeka.';
 
   @override
   String get noInternetCheckNetwork =>
@@ -2503,7 +2503,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get careTasksToggle => 'Zadania pielęgnacyjne';
 
   @override
-  String get floraChatMessages => 'Wiadomości czatu Flora';
+  String get verdoroChatMessages => 'Wiadomości czatu Flora';
 
   @override
   String get swapMarketMessages => 'Wiadomości giełdy wymiany';
@@ -2577,7 +2577,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get listingPostedSuccessfully =>
-      'Oferta została pomyślnie opublikowana! 🌱';
+      'Oferta została pomyślnie opublikowana!';
 
   @override
   String failedToPostListing(String error) {
@@ -2737,7 +2737,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Dodaj zdjęcie, notatkę lub wysokość, aby zapisać.';
 
   @override
-  String get growthEntryAdded => '📝 Dodano wpis wzrostu!';
+  String get growthEntryAdded => 'Dodano wpis wzrostu!';
 
   @override
   String failedToSavePrefix(String error) {
@@ -2915,7 +2915,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String farewellToPlant(String plantName) {
-    return 'Pożegnanie z $plantName 🕊️';
+    return 'Pożegnanie z $plantName ️';
   }
 
   @override
@@ -2974,13 +2974,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get scientificNameOptional => 'Nazwa naukowa (opcjonalnie)';
 
   @override
-  String get askFloraShort => 'Zapytaj Florę...';
+  String get askVerdoroShort => 'Zapytaj Florę...';
 
   @override
   String get logCare => 'Zarejestruj pielęgnację';
 
   @override
-  String get askFloraCTA => 'Zapytaj Florę';
+  String get askVerdoroCTA => 'Zapytaj Florę';
 
   @override
   String get whatShouldICareForToday => 'Czym powinienem się dzisiaj zająć?';
@@ -3010,7 +3010,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Your AI plant companion. Ask anything about your plants — care advice, diagnosis, or just plant chat.';
 
   @override
-  String get tourIdentifyTitle => 'Identify & Analyse';
+  String get tourIdentifyTitle => 'Identify & Analyze';
 
   @override
   String get tourIdentifyBody =>
@@ -3072,4 +3072,54 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get usesYourIpAddress => 'Używa Twojego adresu IP';
+
+  @override
+  String get askVerdoroAboutThis => 'Ask Verdoro about this';
+
+  @override
+  String get plantNameFieldHint => 'e.g. Monstera';
+
+  @override
+  String get recoveringStatus => 'Recovering';
+
+  @override
+  String ofCounterLabel(String current, String total) {
+    return '$current of $total';
+  }
+
+  @override
+  String get couldNotGenerateCarePlan => 'Could not generate care plan';
+
+  @override
+  String get thisWeekLabel => 'This Week';
+
+  @override
+  String get addFirstPlantForPersonalizedPlan =>
+      'Add your first plant to get a personalized plan';
+
+  @override
+  String get showingCachedPlanRefreshHint =>
+      'Showing cached plan. Pull to refresh.';
+
+  @override
+  String get aiGeneratedForPlantsThisWeek =>
+      'AI generated for your plants this week';
+
+  @override
+  String get restDayNoTasksNeeded => 'Rest day. No tasks needed.';
+
+  @override
+  String get unknownPlantFallback => 'Unknown Plant';
+
+  @override
+  String get chartMaxLabel => 'Max';
+
+  @override
+  String get chartMinLabel => 'Min';
+
+  @override
+  String get joinedLabel => 'Joined';
+
+  @override
+  String get verdoroIsAnalyzingPlants => 'Verdoro is analyzing your plants...';
 }

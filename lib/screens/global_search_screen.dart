@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'plant_detail_screen.dart';
@@ -119,7 +120,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textColor),
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
           onPressed: () => Navigator.pop(context),
         ),
         title: TextField(

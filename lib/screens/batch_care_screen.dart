@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/task_model.dart';
 import '../services/firestore_service.dart';
 import '../services/care_intelligence_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/care_type_style.dart';
 
 class BatchCareScreen extends StatefulWidget {
   final List<Task> tasks;
@@ -48,7 +50,6 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
             category: 'General',
             baseIntervalDays: baseInterval,
             lastWateredDate: DateTime.now(),
-            zoneUid: 'main_zone',
             userUid: uid,
           );
           
@@ -94,7 +95,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
           elevation: 0,
           iconTheme: const IconThemeData(color: AppColors.bone900),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.bone900),
+            icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -135,7 +136,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.forest900,
+                  backgroundColor: AppColors.forest700,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -151,20 +152,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
     final currentTask = widget.tasks[_currentIndex];
     final progress = (_currentIndex) / widget.tasks.length;
 
-    Color chipColor;
-    switch (currentTask.taskType) {
-      case 'Watering':
-        chipColor = Colors.green;
-        break;
-      case 'Fertilizing':
-        chipColor = AppColors.terracotta900;
-        break;
-      case 'Repotting':
-        chipColor = Colors.blue;
-        break;
-      default:
-        chipColor = AppColors.bone500;
-    }
+    final style = careTypeStyle(currentTask.taskType);
 
     String careTip;
     switch (currentTask.taskType) {
@@ -189,7 +177,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.bone900),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.bone900),
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -212,7 +200,7 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text('${_currentIndex + 1} of ${widget.tasks.length}', style: const TextStyle(color: AppColors.bone500, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(l.ofCounterLabel((_currentIndex + 1).toString(), widget.tasks.length.toString()), style: const TextStyle(color: AppColors.bone500, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             // Task Card
             Expanded(
@@ -261,13 +249,13 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: chipColor.withValues(alpha: 0.1),
+                                  color: style.tileColor,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  currentTask.taskType,
+                                  _getLocalizedTaskType(currentTask.taskType, l),
                                   style: TextStyle(
-                                    color: chipColor,
+                                    color: style.iconColor,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -282,7 +270,6 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
                                 careTip,
                                 style: const TextStyle(
                                   color: AppColors.forest900,
-                                  fontStyle: FontStyle.italic,
                                   fontSize: 16,
                                 ),
                               ),
@@ -339,20 +326,34 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    AppLocalizations.of(context).swipeToSkip,
-                    style: const TextStyle(
-                      color: AppColors.bone500,
-                      fontSize: 13,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(CupertinoIcons.xmark, size: 14, color: AppColors.bone500),
+                      const SizedBox(width: 4),
+                      Text(
+                        AppLocalizations.of(context).skip,
+                        style: const TextStyle(
+                          color: AppColors.bone500,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    AppLocalizations.of(context).swipeToComplete,
-                    style: const TextStyle(
-                      color: AppColors.forest600,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context).completed,
+                        style: const TextStyle(
+                          color: AppColors.forest600,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(CupertinoIcons.check_mark, size: 14, color: AppColors.forest600),
+                    ],
                   ),
                 ],
               ),
@@ -380,5 +381,18 @@ class _BatchCareScreenState extends State<BatchCareScreen> {
         ],
       ),
     );
+  }
+
+  String _getLocalizedTaskType(String taskType, AppLocalizations l) {
+    switch (taskType.toLowerCase()) {
+      case 'watering': return l.watering;
+      case 'fertilizing': return l.fertilizing;
+      case 'repotting': return l.repotting;
+      case 'pruning': return l.pruning;
+      case 'misting': return l.misting;
+      case 'inspecting': return l.inspecting;
+      case 'treating': return l.treating;
+      default: return taskType;
+    }
   }
 }

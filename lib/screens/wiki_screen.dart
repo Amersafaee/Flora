@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'global_search_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'wiki_plant_detail_screen.dart';
 import 'blog_detail_screen.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/shared/app_card.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class WikiScreen extends StatefulWidget {
@@ -40,8 +42,8 @@ class _WikiScreenState extends State<WikiScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color backgroundColor = isDark ? AppColors.darkBackground : AppColors.bone50;
 
     // Map from internal English key → localized display label
     final filterLabels = {
@@ -115,32 +117,32 @@ class _WikiScreenState extends State<WikiScreen> {
               // Search Bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (val) {
-                      setState(() {
-                        _searchQuery = val;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: l.searchByNameSpeciesTrait,
-                      hintStyle: const TextStyle(color: AppColors.bone500),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.bone500),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (val) {
+                    setState(() {
+                      _searchQuery = val;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: l.searchByNameSpeciesTrait,
+                    hintStyle: const TextStyle(color: AppColors.bone500),
+                    prefixIcon: const Icon(Icons.search, color: AppColors.bone500),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.bone200),
                     ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.bone200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.forest700, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: isDark ? AppColors.darkSurface : AppColors.bone50,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
@@ -334,8 +336,8 @@ class _WikiScreenState extends State<WikiScreen> {
         textColor = Colors.white;
         border = Border.all(color: Colors.transparent);
       } else {
-        backgroundColor = AppColors.darkSurface;
-        textColor = AppColors.darkTextSecondary;
+        backgroundColor = AppColors.darkSurfaceElevated;
+        textColor = AppColors.bone400;
         border = Border.all(color: AppColors.darkBorderDefault, width: 1);
       }
     } else {
@@ -344,8 +346,8 @@ class _WikiScreenState extends State<WikiScreen> {
         textColor = Colors.white;
         border = Border.all(color: Colors.transparent);
       } else {
-        backgroundColor = Colors.transparent;
-        textColor = AppColors.bone500;
+        backgroundColor = AppColors.bone100;
+        textColor = AppColors.bone400;
         border = Border.all(color: AppColors.bone200, width: 1);
       }
     }
@@ -359,7 +361,7 @@ class _WikiScreenState extends State<WikiScreen> {
           });
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
             color: backgroundColor,
             border: border,
@@ -401,20 +403,11 @@ class _WikiScreenState extends State<WikiScreen> {
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => WikiPlantDetailScreen(plantData: plantData)));
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
+      child: AppCard(
+        padding: EdgeInsets.zero,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image (FIX 3)
@@ -422,35 +415,53 @@ class _WikiScreenState extends State<WikiScreen> {
                 ? Container(
                     height: 200,
                     width: double.infinity,
-                    color: AppColors.forest100,
+                    color: isDark ? AppColors.darkSurfaceElevated : AppColors.forest100,
                     child: Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 200,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        height: 180,
-                        color: isDark ? AppColors.darkForestSubtle : AppColors.forest50,
-                        child: const Center(
-                          child: Icon(Icons.local_florist, size: 48, color: AppColors.forest300),
+                        height: 200,
+                        width: double.infinity,
+                        color: isDark ? AppColors.darkSurfaceElevated : AppColors.bone50,
+                        child: Center(
+                          child: Icon(
+                            CupertinoIcons.leaf_arrow_circlepath,
+                            size: 32,
+                            color: isDark ? AppColors.darkForestPrimary.withValues(alpha: 0.3) : AppColors.forest700.withValues(alpha: 0.2),
+                          ),
                         ),
                       ),
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Container(
-                          height: 180,
-                          color: isDark ? AppColors.darkForestSubtle : AppColors.forest50,
-                          child: const Center(
-                            child: Icon(Icons.local_florist, size: 48, color: AppColors.forest300),
+                          height: 200,
+                          width: double.infinity,
+                          color: isDark ? AppColors.darkSurfaceElevated : AppColors.bone50,
+                          child: Center(
+                            child: Icon(
+                              CupertinoIcons.leaf_arrow_circlepath,
+                              size: 32,
+                              color: isDark ? AppColors.darkForestPrimary.withValues(alpha: 0.3) : AppColors.forest700.withValues(alpha: 0.2),
+                            ),
                           ),
                         );
                       },
                     ),
                   )
                 : Container(
-                    height: 180,
+                    height: 200,
                     width: double.infinity,
-                    color: isDark ? AppColors.darkForestSubtle : AppColors.forest50,
-                    child: const Center(
-                      child: Icon(Icons.local_florist, size: 48, color: AppColors.forest300),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkSurfaceElevated : AppColors.bone50,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        CupertinoIcons.leaf_arrow_circlepath,
+                        size: 32,
+                        color: isDark ? AppColors.darkForestPrimary.withValues(alpha: 0.3) : AppColors.forest700.withValues(alpha: 0.2),
+                      ),
                     ),
                   ),
 
@@ -539,16 +550,17 @@ class _WikiScreenState extends State<WikiScreen> {
             ),
           ],
         ),
+        ),
       ),
     );
   }
 
   Widget _buildTagChip(String tag) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.forest100,
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.bone100,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         tag,
@@ -579,63 +591,72 @@ class _WikiScreenState extends State<WikiScreen> {
           MaterialPageRoute(builder: (_) => BlogDetailScreen(blogData: blogData)),
         );
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+      child: AppCard(
+        padding: EdgeInsets.zero,
+        child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (imageUrl.isNotEmpty)
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.network(
-                  imageUrl,
+                child: Container(
                   height: 160,
                   width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceElevated : AppColors.forest100,
+                  child: Image.network(
+                    imageUrl,
                     height: 160,
                     width: double.infinity,
-                    color: AppColors.forest100,
-                    child: const Center(
-                      child: Icon(Icons.article_outlined, color: AppColors.forest300, size: 48),
-                    ),
-                  ),
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
                       height: 160,
                       width: double.infinity,
-                      color: AppColors.forest100,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.forest700,
-                          strokeWidth: 2,
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceElevated : AppColors.bone50,
+                      child: Center(
+                        child: Icon(
+                          CupertinoIcons.leaf_arrow_circlepath,
+                          size: 32,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkForestPrimary.withValues(alpha: 0.3)
+                              : AppColors.forest700.withValues(alpha: 0.2),
                         ),
                       ),
-                    );
-                  },
+                    ),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 160,
+                        width: double.infinity,
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceElevated : AppColors.bone50,
+                        child: Center(
+                          child: Icon(
+                            CupertinoIcons.leaf_arrow_circlepath,
+                            size: 32,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkForestPrimary.withValues(alpha: 0.3)
+                                : AppColors.forest700.withValues(alpha: 0.2),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               )
             else
               Container(
                 height: 160,
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: AppColors.forest100,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: const Center(
-                  child: Icon(Icons.article_outlined, color: AppColors.forest300, size: 48),
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceElevated : AppColors.bone50,
+                child: Center(
+                  child: Icon(
+                    CupertinoIcons.leaf_arrow_circlepath,
+                    size: 32,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkForestPrimary.withValues(alpha: 0.3)
+                        : AppColors.forest700.withValues(alpha: 0.2),
+                  ),
                 ),
               ),
             Padding(
@@ -647,10 +668,10 @@ class _WikiScreenState extends State<WikiScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                         decoration: BoxDecoration(
-                          color: AppColors.forest100,
-                          borderRadius: BorderRadius.circular(6),
+                          color: AppColors.bone100,
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           category,
@@ -670,10 +691,11 @@ class _WikiScreenState extends State<WikiScreen> {
                   const SizedBox(height: 12),
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'serif',
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.forest900,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -691,6 +713,7 @@ class _WikiScreenState extends State<WikiScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

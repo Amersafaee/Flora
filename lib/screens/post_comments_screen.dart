@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class PostCommentsScreen extends StatefulWidget {
   final String postId;
@@ -41,7 +44,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
     if (text.isEmpty) return;
 
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null || widget.postId.isEmpty) return;
 
     setState(() => _isSending = true);
 
@@ -83,9 +86,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
     } catch (e) {
       if (mounted) {
         final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.failedToPostComment), backgroundColor: Colors.red),
-        );
+        showToast(context, l.failedToPostComment, isError: true);
       }
     } finally {
       if (mounted) {
@@ -118,7 +119,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         final lSheet = AppLocalizations.of(context);
         return Container(
@@ -183,21 +184,11 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                                 },
                               );
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Saved to $plantName journal 🌿'),
-                                    backgroundColor: AppColors.forest700,
-                                  ),
-                                );
+                                showToast(context, 'Saved to $plantName journal ??', isError: false);
                               }
                             } catch (e) {
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(lSheet.failedToSaveToJournal),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
+                                showToast(context, lSheet.failedToSaveToJournal, isError: true);
                               }
                             }
                           },
@@ -226,18 +217,28 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
     final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppColors.darkBackground : AppColors.bone50;
+
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Text(l.comments, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 1,
-        shadowColor: Colors.black12,
+        title: Text(l.comments, style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.w600, color: isDark ? AppColors.darkTextPrimary : AppColors.forest900)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.chevron_back, size: 20, color: AppColors.forest700),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Column(
         children: [
           // Post preview
           StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance.collection('posts').doc(widget.postId).snapshots(),
+            stream: widget.postId.isNotEmpty
+                ? FirebaseFirestore.instance.collection('posts').doc(widget.postId).snapshots()
+                : const Stream<DocumentSnapshot>.empty(),
             builder: (context, snapshot) {
               if (!snapshot.hasData || !snapshot.data!.exists) {
                 return Container(
@@ -279,12 +280,14 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
           // Comments list
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('posts')
-                  .doc(widget.postId)
-                  .collection('comments')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
+              stream: widget.postId.isNotEmpty
+                  ? FirebaseFirestore.instance
+                      .collection('posts')
+                      .doc(widget.postId)
+                      .collection('comments')
+                      .orderBy('timestamp', descending: true)
+                      .snapshots()
+                  : const Stream<QuerySnapshot>.empty(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(child: Text(l.failedToLoadComments));
@@ -313,7 +316,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (data['isFloraAnswer'] == true)
+                            if (data['isVerdoroAnswer'] == true)
                               const CircleAvatar(
                                 radius: 16,
                                 backgroundColor: AppColors.forest900,
@@ -336,9 +339,9 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Container(
-                                padding: EdgeInsets.all(data['isFloraAnswer'] == true ? 12.0 : 0),
+                                padding: EdgeInsets.all(data['isVerdoroAnswer'] == true ? 12.0 : 0),
                                 decoration: BoxDecoration(
-                                  color: data['isFloraAnswer'] == true ? AppColors.forest100 : Colors.transparent,
+                                  color: data['isVerdoroAnswer'] == true ? AppColors.forest100 : Colors.transparent,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Column(
@@ -346,11 +349,11 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                                   children: [
                                     Row(
                                       children: [
-                                        if (data['isFloraAnswer'] == true) ...[
+                                        if (data['isVerdoroAnswer'] == true) ...[
                                           const Icon(Icons.eco, color: AppColors.forest900, size: 12),
                                           const SizedBox(width: 4),
                                           Text(
-                                            l.floraAiExpertAnswer,
+                                            l.verdoroAiExpertAnswer,
                                             style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold, fontSize: 11),
                                           ),
                                           const Spacer(),
@@ -372,7 +375,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                                       data['text'] ?? '',
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: data['isFloraAnswer'] == true ? AppColors.forest900 : null,
+                                        color: data['isVerdoroAnswer'] == true ? AppColors.forest900 : null,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -453,7 +456,7 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
               bottom: 12 + MediaQuery.of(context).padding.bottom,
             ),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
+              color: isDark ? AppColors.darkSurface : Colors.white,
               boxShadow: [
                 BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, -2)),
               ],
@@ -466,12 +469,21 @@ class _PostCommentsScreenState extends State<PostCommentsScreen> {
                     focusNode: _commentFocusNode,
                     decoration: InputDecoration(
                       hintText: l.addAComment,
+                      hintStyle: const TextStyle(color: AppColors.bone500),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
+                        borderSide: const BorderSide(color: AppColors.bone200),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: const BorderSide(color: AppColors.bone200),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: const BorderSide(color: AppColors.forest700, width: 2),
                       ),
                       filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      fillColor: isDark ? AppColors.darkBackground : AppColors.bone50,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
                   ),

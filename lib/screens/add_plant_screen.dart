@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
@@ -9,13 +9,17 @@ import '../services/storage_service.dart';
 import '../services/badges_service.dart';
 import '../models/plant_model.dart';
 import '../models/task_model.dart';
-import 'flora_screen.dart';
+import 'verdoro_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/care_type_style.dart';
+import '../utils/toast_utils.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AddPlantScreen extends StatefulWidget {
   final String? initialPlantName;
   final String? initialCommonName;
-  /// Scientific name — pre-fills the same field as [initialCommonName].
+  /// Scientific name � pre-fills the same field as [initialCommonName].
   /// When both are supplied, [initialScientificName] takes precedence.
   final String? initialScientificName;
   final String? initialCategory;
@@ -46,7 +50,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _commonNameController;
 
-  // Internal Firestore values — must stay English
+  // Internal Firestore values � must stay English
   String _selectedCategory = 'Tropical';
   String _selectedHealthStatus = 'Healthy';
 
@@ -89,8 +93,6 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     if (widget.initialWateringDays != null && widget.initialWateringDays!.isNotEmpty) {
       _initialWateringDays = widget.initialWateringDays!;
     }
-
-    _nameController.addListener(() => setState(() {}));
   }
 
   @override
@@ -135,6 +137,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         commonName: _commonNameController.text.trim(),
         category: _selectedCategory,
         zone: '',
+        zoneId: null,
         imageUrl: imageUrl,
         healthStatus: _selectedHealthStatus,
         dateAdded: DateTime.now(),
@@ -142,7 +145,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
       await _firestoreService.addPlant(plant);
 
-      // Award badges for plant milestones — fire and forget, never blocks the UI
+      // Award badges for plant milestones � fire and forget, never blocks the UI
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
         BadgesService().checkAndAwardBadges(uid).catchError((_) {});
@@ -154,13 +157,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     } catch (e) {
       if (mounted) {
         final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l.somethingWentWrong} ${l.pleaseTryAgain}'),
-            backgroundColor: AppColors.bone500,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showToast(context, '${l.somethingWentWrong} ${l.pleaseTryAgain}', isError: true);
       }
     } finally {
       if (mounted) {
@@ -173,7 +170,6 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
-    final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
 
     // Localized display labels for category (Firestore value stays English)
     final List<Map<String, String>> categories = [
@@ -185,8 +181,28 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
       {'value': 'Other', 'label': 'Other'},
     ];
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.bone50,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.chevron_back, size: 20, color: AppColors.forest700),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          l.addPlant,
+          style: GoogleFonts.outfit(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -198,37 +214,13 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Header
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              l.addPlant,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 48),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-
                     // Image Picker
                     GestureDetector(
                       onTap: () async {
                         final ImageSource? source = await showModalBottomSheet<ImageSource>(
                           context: context,
                           shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                           ),
                           builder: (ctx) => SafeArea(
                             child: Column(
@@ -263,6 +255,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                         );
                         if (source == null) return;
                         final picked = await _picker.pickImage(source: source);
+                        if (!mounted) return;
                         if (picked != null) {
                           setState(() {
                             _imageFile = File(picked.path);
@@ -273,7 +266,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                       child: Container(
                         height: 200,
                         decoration: BoxDecoration(
-                          color: AppColors.forest100,
+                          color: isDark ? AppColors.darkSurfaceElevated : AppColors.forest100,
                           borderRadius: BorderRadius.circular(16),
                           image: _imageFile != null
                               ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
@@ -300,19 +293,29 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),                    // First field: Name
-                    const Text("Name", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(l.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _nameController,
+                      style: GoogleFonts.outfit(
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+                      ),
+                      onChanged: (value) {
+                        if (_showNameError && value.trim().isNotEmpty) {
+                          setState(() {
+                            _showNameError = false;
+                          });
+                        }
+                      },
                       decoration: InputDecoration(
-                        hintText: "what you call this plant, common name/nickname",
+                        hintText: l.plantNameFieldHint,
                         hintStyle: const TextStyle(color: AppColors.bone300),
                         filled: true,
-                        fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
+                        fillColor: AppColors.bone100,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                       ),
                     ),
                     if (_showNameError)
@@ -327,15 +330,18 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     const SizedBox(height: 8),
                     TextField(
                       controller: _commonNameController,
+                      style: GoogleFonts.outfit(
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+                      ),
                       decoration: InputDecoration(
                         hintText: AppLocalizations.of(context).scientificNameOptional,
                         hintStyle: const TextStyle(color: AppColors.bone300),
                         filled: true,
-                        fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.white,
+                        fillColor: AppColors.bone100,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone300)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest900, width: 2)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -368,9 +374,9 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     const SizedBox(height: 20),
 
                     // Health Status
-                    const Text(
-                      'Health Status',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Text(
+                      l.healthStatus,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -385,11 +391,11 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                           value: _selectedHealthStatus,
                           isExpanded: true,
                           icon: const Icon(Icons.keyboard_arrow_down),
-                          items: const [
-                            DropdownMenuItem(value: 'Healthy',         child: Text('Healthy')),
-                            DropdownMenuItem(value: 'Needs Attention', child: Text('Needs Attention')),
-                            DropdownMenuItem(value: 'Critical',        child: Text('Critical')),
-                            DropdownMenuItem(value: 'Recovering',      child: Text('Recovering')),
+                          items: [
+                            DropdownMenuItem(value: 'Healthy',         child: Text(l.healthy)),
+                            DropdownMenuItem(value: 'Needs Attention', child: Text(l.needsAttention)),
+                            DropdownMenuItem(value: 'Critical',        child: Text(l.critical)),
+                            DropdownMenuItem(value: 'Recovering',      child: Text(l.recoveringStatus)),
                           ],
                           onChanged: (newValue) {
                             setState(() { if (newValue != null) _selectedHealthStatus = newValue; });
@@ -402,13 +408,13 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     // Save Button
                     SizedBox(
                       width: double.infinity,
-                      height: 54,
+                      height: 52,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _savePlant,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.forest700,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           elevation: 0,
                         ),
                         child: _isLoading
@@ -416,9 +422,9 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                                 width: 24, height: 24,
                                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                               )
-                            : const Text(
-                                "Save plant",
-                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            : Text(
+                                l.savePlant,
+                                style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                       ),
                     ),
@@ -485,7 +491,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                       ),
                     ),
                     Text(
-                      'Set up care for $plantName 🌿',
+                      'Set up care for $plantName ??',
                       style: const TextStyle(fontFamily: 'serif', fontSize: 24, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
@@ -497,15 +503,15 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    _buildCareRow(l.watering, Icons.water_drop, Colors.blue, wateringVal, options, (val) {
+                    _buildCareRow(l.watering, careTypeStyle('watering'), wateringVal, options, (val) {
                       setSheetState(() => wateringVal = val!);
                     }),
                     const SizedBox(height: 16),
-                    _buildCareRow(l.fertilizing, Icons.science, Colors.green, fertilizingVal, options, (val) {
+                    _buildCareRow(l.fertilizing, careTypeStyle('fertilizing'), fertilizingVal, options, (val) {
                       setSheetState(() => fertilizingVal = val!);
                     }),
                     const SizedBox(height: 16),
-                    _buildCareRow(l.misting, Icons.air, Colors.cyan, mistingVal, options, (val) {
+                    _buildCareRow(l.misting, careTypeStyle('misting'), mistingVal, options, (val) {
                       setSheetState(() => mistingVal = val!);
                     }),
 
@@ -517,7 +523,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                         if (uid == null) return;
                         final pName = _nameController.text.trim().isEmpty ? 'your plant' : _nameController.text.trim();
                         final db = FirebaseFirestore.instance;
-                        final chatsRef = db.collection('users').doc(uid).collection('flora_chats');
+                        final chatsRef = db.collection('users').doc(uid).collection('verdoro_chats');
                         final docRef = await chatsRef.add({
                           'title': 'Care advice for $pName',
                           'createdAt': FieldValue.serverTimestamp(),
@@ -537,10 +543,10 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                         });
                         if (!context.mounted) return;
                         Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => FloraScreen(conversationId: conversationId)));
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => VerdoroScreen(conversationId: conversationId)));
                       },
                       icon: const Icon(Icons.psychology, color: AppColors.forest900),
-                      label: Text(l.askFloraForAdvice, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
+                      label: Text(l.askVerdoroForAdvice, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: const BorderSide(color: AppColors.forest900),
@@ -582,37 +588,162 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     );
   }
 
-  Widget _buildCareRow(String title, IconData icon, Color color, String value, List<String> options, ValueChanged<String?> onChanged) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkSurface : Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+  /// Returns the localised display label for a frequency option key.
+  String _freqLabel(BuildContext ctx, String opt) {
+    final l = AppLocalizations.of(ctx);
+    switch (opt) {
+      case 'Every day':    return l.everyDay;
+      case 'Every 2 days': return l.every2Days;
+      case 'Every 3 days': return l.every3Days;
+      case 'Weekly':       return l.weekly;
+      case 'Every 2 weeks': return l.everyTwoWeeks;
+      case 'Monthly':      return l.monthly;
+      case 'Skip':         return l.skip;
+      default:             return opt;
+    }
+  }
+
+  /// Shows a custom bottom-sheet picker for frequency options.
+  /// [currentValue] is the currently-selected option key.
+  /// [options] is the full list of option keys.
+  /// [onPicked] is called with the newly-selected key; the sheet pops itself.
+  void _showFrequencyPicker(
+    BuildContext sheetContext,
+    String currentValue,
+    List<String> options,
+    ValueChanged<String> onPicked,
+  ) {
+    showModalBottomSheet<void>(
+      context: sheetContext,
+      backgroundColor: AppColors.bone50,
+      barrierColor: Colors.black54,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (pickerCtx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.bone300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...options.map((opt) {
+                final isSelected = opt == currentValue;
+                return ListTile(
+                  title: Text(
+                    _freqLabel(pickerCtx, opt),
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected ? AppColors.forest700 : null,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(CupertinoIcons.checkmark, color: AppColors.forest700, size: 18)
+                      : null,
+                  onTap: () {
+                    Navigator.pop(pickerCtx);
+                    onPicked(opt);
+                  },
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              items: options.map((opt) => DropdownMenuItem(value: opt, child: Text(opt))).toList(),
-              onChanged: onChanged,
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
+  Widget _buildCareRow(
+    String title,
+    CareTypeStyle style,
+    String value,
+    List<String> options,
+    ValueChanged<String?> onChanged,
+  ) {
+    return InkWell(
+      onTap: () => _showFrequencyPicker(
+        context,
+        value,
+        options,
+        (picked) => onChanged(picked),
+      ),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: style.tileColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(style.icon, color: style.iconColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+            Text(
+              _freqLabel(context, value),
+              style: const TextStyle(
+                color: AppColors.forest700,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              CupertinoIcons.chevron_forward,
+              color: AppColors.forest700,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  int _parseCareOffset(String? careFrequency, int defaultDays) {
+    if (careFrequency == null || careFrequency.isEmpty) return defaultDays;
+    final normalized = careFrequency.toLowerCase();
+    if (normalized.contains('daily') || normalized.contains('every day')) {
+      return 1;
+    }
+    if (normalized.contains('every 2')) {
+      return 2;
+    }
+    if (normalized.contains('every 3')) {
+      return 3;
+    }
+    if (normalized.contains('weekly') || normalized.contains('every week') || normalized.contains('every 7')) {
+      return 7;
+    }
+    if (normalized.contains('every 10')) {
+      return 10;
+    }
+    if (normalized.contains('every 14') || normalized.contains('biweekly') || normalized.contains('fortnightly')) {
+      return 14;
+    }
+    if (normalized.contains('monthly') || normalized.contains('every month') || normalized.contains('every 30')) {
+      return 30;
+    }
+    return defaultDays;
+  }
+
   Future<void> _saveSchedules(String plantName, String plantId, String watering, String fertilizing, String misting) async {
+    // Capture context-dependent values BEFORE any await so they remain valid
+    // even if the widget is disposed while Firestore writes are in flight.
     final l = AppLocalizations.of(context);
     final now = DateTime.now();
 
@@ -631,35 +762,31 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     if (watering != 'Skip') {
       await _firestoreService.addTask(Task(
         id: '', plantId: plantId, plantName: plantName, taskType: 'Watering',
-        dueDate: now.add(const Duration(days: 1)), isCompleted: false, notes: '',
+        dueDate: now.add(Duration(days: _parseCareOffset(watering, 1))), isCompleted: false, notes: '',
         repeatType: getRepeatType(watering),
       ));
     }
+    if (!mounted) return;
 
     if (fertilizing != 'Skip') {
       await _firestoreService.addTask(Task(
         id: '', plantId: plantId, plantName: plantName, taskType: 'Fertilizing',
-        dueDate: now.add(const Duration(days: 14)), isCompleted: false, notes: '',
+        dueDate: now.add(Duration(days: _parseCareOffset(fertilizing, 14))), isCompleted: false, notes: '',
         repeatType: getRepeatType(fertilizing),
       ));
     }
+    if (!mounted) return;
 
     if (misting != 'Skip') {
       await _firestoreService.addTask(Task(
         id: '', plantId: plantId, plantName: plantName, taskType: 'Misting',
-        dueDate: now.add(const Duration(days: 3)), isCompleted: false, notes: '',
+        dueDate: now.add(Duration(days: _parseCareOffset(misting, 3))), isCompleted: false, notes: '',
         repeatType: getRepeatType(misting),
       ));
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l.careScheduleSaved),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showToast(context, l.careScheduleSaved, isError: false);
       Navigator.pop(context);
       Navigator.pop(context);
     }

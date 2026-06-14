@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:camera/camera.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class LightMeterScreen extends StatefulWidget {
   const LightMeterScreen({super.key});
@@ -18,7 +20,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
   bool _isMeasuring = false;
   bool _isDark = false;
   double _luxValue = 0;
-  // Internal level key — resolved to l10n string at build time
+  // Internal level key â€” resolved to l10n string at build time
   String _lightLevelKey = 'tapMeasureToStart';
   String _lightDescKey = 'pointCameraAtLight';
   Color _levelColor = AppColors.bone500;
@@ -175,7 +177,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+                      icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
                       onPressed: () => Navigator.pop(context),
                     ),
                     Expanded(
@@ -359,7 +361,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         final uid = FirebaseAuth.instance.currentUser?.uid;
         if (uid == null) return const SizedBox();
@@ -416,12 +418,7 @@ class _LightMeterScreenState extends State<LightMeterScreen> {
                                 'lastLightReadingDate': FieldValue.serverTimestamp(),
                               });
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('${l.lightReadingSavedToPrefix}${data['name']} 🌿'),
-                                  backgroundColor: AppColors.forest900,
-                                ),
-                              );
+                              showToast(context, '${l.lightReadingSavedToPrefix}${data['name']} ðŸŒ¿', isError: false);
                             },
                           );
                         },

@@ -2,12 +2,15 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'add_plant_screen.dart';
-import 'flora_screen.dart';
+import 'verdoro_screen.dart';
 import 'wiki_plant_detail_screen.dart';
 import '../theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../utils/toast_utils.dart';
+import '../widgets/shared/analysis_card_view.dart';
 
 class IdentifyResultScreen extends StatefulWidget {
   final File imageFile;
@@ -24,38 +27,10 @@ class IdentifyResultScreen extends StatefulWidget {
 }
 
 class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
-  bool _isOpeningFlora = false;
+  bool _isOpeningVerdoro = false;
 
-  // ── Health score extraction ───────────────────────────────────────────────
-  static final RegExp _scorePattern = RegExp(
-    r'(?:health\s+score[:\s]+|score[:\s]+)?(\d{1,3})\s*(?:\/\s*100|out\s+of\s+100)',
-    caseSensitive: false,
-  );
+  // -- Section parsers -------------------------------------------------------
 
-  int? _extractHealthScore() {
-    final match = _scorePattern.firstMatch(widget.analysisResult);
-    if (match != null) {
-      final value = int.tryParse(match.group(1) ?? '');
-      if (value != null && value >= 0 && value <= 100) return value;
-    }
-    return null;
-  }
-
-  Color _scoreColor(int score) {
-    if (score >= 70) return AppColors.forest500;
-    if (score >= 40) return const Color(0xFFC8893A);
-    return AppColors.errorLight;
-  }
-
-  String _scoreLabel(int score, AppLocalizations l) {
-    if (score > 70) return l.healthy;
-    if (score >= 40) return l.needsAttention;
-    return l.critical;
-  }
-
-  // ── Section parsers ───────────────────────────────────────────────────────
-
-  /// Splits the raw AI blob into named sections using known label anchors.
   Map<String, String> _parseSections() {
     final raw = widget.analysisResult;
     final labels = [
@@ -75,7 +50,6 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
       if (labelIdx == -1) continue;
 
       final contentStart = labelIdx + label.length;
-      // Find where the next label begins (or end of string)
       int contentEnd = raw.length;
       for (int j = i + 1; j < labels.length; j++) {
         final nextIdx = raw.toLowerCase().indexOf(labels[j].toLowerCase(), contentStart);
@@ -112,7 +86,6 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
   }
 
   String? _extractCommonName() {
-    // First try the parsed "Plant identified" section
     final sections = _parseSections();
     if (sections.containsKey('Plant identified')) {
       final val = sections['Plant identified']!.split('\n').first.trim();
@@ -147,7 +120,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
         return cat;
       }
     }
-    return null;
+    return 'Other';
   }
 
   String _extractHealthStatus() {
@@ -184,29 +157,24 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
     return '7';
   }
 
-  Future<void> _openFloraWithPlantContext() async {
-    if (_isOpeningFlora) return;
+  Future<void> _openVerdoroWithPlantContext() async {
+    if (_isOpeningVerdoro) return;
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       if (mounted) {
         final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l.pleaseSignInToContinue),
-            backgroundColor: AppColors.terracotta900,
-          ),
-        );
+        showToast(context, l.pleaseSignInToContinue, isError: true);
       }
       return;
     }
 
-    setState(() => _isOpeningFlora = true);
+    setState(() => _isOpeningVerdoro = true);
 
     try {
       final plantName = _extractPlantName();
       final db = FirebaseFirestore.instance;
-      final chatsRef = db.collection('users').doc(uid).collection('flora_chats');
+      final chatsRef = db.collection('users').doc(uid).collection('verdoro_chats');
 
       final docRef = await chatsRef.add({
         'title': 'About $plantName',
@@ -226,25 +194,25 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
       });
 
       final snippet = widget.analysisResult.length > 600
-          ? '${widget.analysisResult.substring(0, 597)}…'
+          ? '${widget.analysisResult.substring(0, 597)}�'
           : widget.analysisResult;
 
-      final floraIntro =
-          'Great news — I have already analyzed your photo! 🌿\n\n'
+      final verdoroIntro =
+          'Great news � I have already analyzed your photo! ??\n\n'
           'Here is what I found:\n\n'
           '$snippet\n\n'
-          'Feel free to ask me anything else about $plantName — '
+          'Feel free to ask me anything else about $plantName � '
           'care tips, watering schedules, common issues, or anything you are curious about!';
 
       await messagesRef.add({
         'role': 'model',
-        'text': floraIntro,
+        'text': verdoroIntro,
         'imageUrl': '',
         'timestamp': FieldValue.serverTimestamp(),
       });
 
       await docRef.update({
-        'lastMessage': 'Flora has analyzed your plant',
+        'lastMessage': 'Verdoro has analyzed your plant',
         'lastMessageAt': FieldValue.serverTimestamp(),
       });
 
@@ -252,327 +220,73 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
 
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => FloraScreen(conversationId: conversationId)),
+        MaterialPageRoute(builder: (_) => VerdoroScreen(conversationId: conversationId)),
       );
     } catch (e) {
       if (mounted) {
         final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l.couldNotOpenFloraPrefix}$e'),
-            backgroundColor: AppColors.terracotta900,
-          ),
-        );
+        showToast(context, '${l.couldNotOpenVerdoroPrefix}$e', isError: true);
       }
     } finally {
-      if (mounted) setState(() => _isOpeningFlora = false);
+      if (mounted) setState(() => _isOpeningVerdoro = false);
     }
-  }
-
-  // ── Info card builder ─────────────────────────────────────────────────────
-
-  Widget _buildInfoCard({
-    required BuildContext context,
-    required String label,
-    required String body,
-    required IconData icon,
-    required Color borderColor,
-    required Color iconColor,
-    required Color bgColor,
-    bool boldBody = false,
-  }) {
-    if (body.isEmpty) return const SizedBox.shrink();
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border(left: BorderSide(color: borderColor, width: 3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: iconColor,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  body,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.5,
-                    fontWeight: boldBody ? FontWeight.bold : FontWeight.normal,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final int? healthScore = _extractHealthScore();
-    final sections = _parseSections();
 
     final commonName = _extractCommonName();
     final scientificName = _extractScientificName();
     final healthStatus = _extractHealthStatus();
 
-    // Resolved section bodies — fall back to full text if labels not found
-    final whatICanSee = sections['What I can see'] ?? '';
-    final urgentAction = sections['Most urgent action'] ?? '';
-    final careTip = sections['Care tip'] ?? '';
-    final hasSections = whatICanSee.isNotEmpty || urgentAction.isNotEmpty || careTip.isNotEmpty;
-
-    final Color statusColor = healthScore != null ? _scoreColor(healthScore) : AppColors.forest500;
-
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.bone50,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.chevron_back, size: 20, color: AppColors.forest700),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          l.plantAnalysis,
+          style: GoogleFonts.outfit(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+          ),
+        ),
+        centerTitle: false,
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            // ── App bar ──────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppColors.forest900),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        l.plantAnalysis,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.forest900),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 48),
-                ],
-              ),
-            ),
-
-            // ── Scrollable content ───────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Plant image
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: SizedBox(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
                         height: 220,
+                        width: double.infinity,
+                        color: isDark ? AppColors.darkSurfaceElevated : AppColors.forest100,
                         child: Image.file(widget.imageFile, fit: BoxFit.cover, width: double.infinity),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // ── Main analysis card ────────────────────────────────
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 20, offset: const Offset(0, 6))],
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // ── HERO SECTION ─────────────────────────────
-                          if (healthScore != null)
-                            Container(
-                              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    statusColor.withValues(alpha: 0.15),
-                                    statusColor.withValues(alpha: 0.0),
-                                  ],
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Score row
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      Text(
-                                        '$healthScore',
-                                        style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 72,
-                                          fontWeight: FontWeight.bold,
-                                          color: statusColor,
-                                          height: 1.0,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '/100',
-                                        style: TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w500,
-                                          color: statusColor.withValues(alpha: 0.6),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  // Status pill badge
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: statusColor,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      _scoreLabel(healthScore, l),
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                          // ── PLANT IDENTITY SECTION ───────────────────
-                          if (commonName != null || scientificName != null) ...[
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-                              child: Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: isDark ? AppColors.darkSurfaceElevated : AppColors.forest50,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'PLANT IDENTIFIED',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        color: isDark ? AppColors.darkTextTertiary : AppColors.bone500,
-                                        letterSpacing: 1.0,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    if (commonName != null)
-                                      Text(
-                                        commonName,
-                                        style: GoogleFonts.notoSerif(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold,
-                                          color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
-                                        ),
-                                      ),
-                                    if (scientificName != null) ...[
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        scientificName,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontStyle: FontStyle.italic,
-                                          color: isDark ? AppColors.darkTextSecondary : AppColors.bone500,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ] else
-                            const SizedBox(height: 4),
-
-                          // ── THREE INFO CARDS ─────────────────────────
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                            child: Column(
-                              children: [
-                                // Card 1 — What I can see
-                                _buildInfoCard(
-                                  context: context,
-                                  label: 'WHAT I CAN SEE',
-                                  body: whatICanSee,
-                                  icon: Icons.visibility_outlined,
-                                  borderColor: AppColors.forest400,
-                                  iconColor: AppColors.forest600,
-                                  bgColor: isDark ? AppColors.darkSurfaceElevated : AppColors.forest50,
-                                ),
-
-                                // Card 2 — Most urgent action
-                                _buildInfoCard(
-                                  context: context,
-                                  label: 'MOST URGENT ACTION',
-                                  body: urgentAction,
-                                  icon: Icons.priority_high,
-                                  borderColor: AppColors.terracotta500,
-                                  iconColor: AppColors.terracotta700,
-                                  bgColor: isDark ? AppColors.darkTerracottaSubtle : AppColors.terracotta100,
-                                  boldBody: true,
-                                ),
-
-                                // Card 3 — Care tip
-                                _buildInfoCard(
-                                  context: context,
-                                  label: 'CARE TIP',
-                                  body: careTip,
-                                  icon: Icons.lightbulb_outline,
-                                  borderColor: const Color(0xFF7BA5D4),
-                                  iconColor: const Color(0xFF4A7AB5),
-                                  bgColor: isDark ? AppColors.darkSurfaceElevated : const Color(0xFFEAF2FF),
-                                ),
-
-                                // Fallback: if AI didn't use our section labels, show full text
-                                if (!hasSections) ...[
-                                  Text(
-                                    widget.analysisResult,
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                      height: 1.6,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    // Main analysis card
+                    AnalysisCardView(rawText: widget.analysisResult),
                     const SizedBox(height: 16),
 
-                    // Wiki care guide link (if matching species found)
+                    // Wiki care guide link
                     FutureBuilder<QuerySnapshot>(
                       future: FirebaseFirestore.instance.collection('species').get(),
                       builder: (context, snapshot) {
@@ -604,9 +318,15 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).cardColor,
+                                color: isDark ? AppColors.darkSurface : AppColors.white,
                                 borderRadius: BorderRadius.circular(16),
-                                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4))],
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x0A224A1E),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
                               ),
                               child: Row(
                                 children: [
@@ -619,10 +339,10 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                   Expanded(
                                     child: Text(
                                       l.readFullCareGuide,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                      style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 15, color: isDark ? AppColors.darkTextPrimary : AppColors.forest900),
                                     ),
                                   ),
-                                  const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.bone500),
+                                  const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.bone400),
                                 ],
                               ),
                             ),
@@ -632,35 +352,36 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                     ),
                     const SizedBox(height: 4),
 
-                    // PRIMARY: Continue with Flora
+                    // Continue with Verdoro button
                     SizedBox(
                       width: double.infinity,
-                      height: 54,
+                      height: 52,
                       child: ElevatedButton(
-                        onPressed: _isOpeningFlora ? null : _openFloraWithPlantContext,
+                        onPressed: _isOpeningVerdoro ? null : _openVerdoroWithPlantContext,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.forest700,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           elevation: 0,
                         ),
-                        child: _isOpeningFlora
+                        child: _isOpeningVerdoro
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                               )
-                            : const Text(
-                                'Continue with Flora',
-                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            : Text(
+                                'Continue with Verdoro',
+                                style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                               ),
                       ),
                     ),
                     const SizedBox(height: 12),
 
-                    // SECONDARY: Add to my garden
+                    // Add to my garden button
                     SizedBox(
                       width: double.infinity,
-                      height: 54,
+                      height: 52,
                       child: OutlinedButton(
                         onPressed: () {
                           final plantName = _extractPlantName();
@@ -683,24 +404,24 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                           );
                         },
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.forest700, width: 1.5),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                          side: const BorderSide(color: AppColors.forest700),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Add to my garden',
-                          style: TextStyle(color: AppColors.forest700, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: GoogleFonts.outfit(color: AppColors.forest700, fontSize: 15, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
 
-                    // TERTIARY: Analyse another plant
+                    // Analyze another plant button
                     Center(
                       child: TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text(
-                          'Analyse another plant',
-                          style: TextStyle(
+                        child: Text(
+                          'Analyze another plant',
+                          style: GoogleFonts.outfit(
                             color: AppColors.forest600,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,

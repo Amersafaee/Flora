@@ -14,7 +14,7 @@
 // we test the Dart-level logic only, not the plugin internals.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:digital_conservatory/models/task_model.dart';
+import 'package:verdoro/models/task_model.dart';
 
 // ── Pure logic extracted from NotificationService for testability ────────────
 

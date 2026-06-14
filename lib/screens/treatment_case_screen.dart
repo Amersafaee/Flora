@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart' as import_share;
 
 import '../models/treatment_case_model.dart';
@@ -207,7 +208,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
               ],
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.forest900,
+                  backgroundColor: AppColors.forest700,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -306,7 +307,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -546,7 +547,7 @@ class _TreatmentCaseScreenState extends State<TreatmentCaseScreen> {
                     else
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.forest900,
+                          backgroundColor: AppColors.forest700,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -758,14 +759,14 @@ class _RecoveryCelebrationDialogState extends State<_RecoveryCelebrationDialog>
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.forest900,
+                    backgroundColor: AppColors.forest700,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: () {
                     // ignore: deprecated_member_use
                     import_share.Share.share(
-                        'My ${widget.plantName} just recovered from ${widget.diagnosis} at Digital Conservatory! 🌿 #PlantCare #DigitalConservatory');
+                        'My ${widget.plantName} just recovered from ${widget.diagnosis} at Verdoro! 🌿 #PlantCare #Verdoro');
                   },
                 ),
               ),

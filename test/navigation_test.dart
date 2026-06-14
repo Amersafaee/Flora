@@ -5,7 +5,7 @@
 // The 5 tabs are:
 //   Tab 0: Home       → HomeScreen
 //   Tab 1: Garden     → AllPlantsScreen
-//   Tab 2: Flora      → FloraChatsListScreen
+//   Tab 2: Verdoro    → VerdoroChatsListScreen
 //   Tab 3: Identify   → IdentifyScreen
 //   Tab 4: Community  → CommunityScreen
 //
@@ -17,10 +17,10 @@
 //   3. The tab count is exactly 5
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:digital_conservatory/screens/all_plants_screen.dart';
-import 'package:digital_conservatory/screens/identify_screen.dart';
-import 'package:digital_conservatory/screens/community_screen.dart';
-import 'package:digital_conservatory/screens/flora_chats_list_screen.dart';
+import 'package:verdoro/screens/all_plants_screen.dart';
+import 'package:verdoro/screens/identify_screen.dart';
+import 'package:verdoro/screens/community_screen.dart';
+import 'package:verdoro/screens/verdoro_chats_list_screen.dart';
 import 'package:flutter/material.dart';
 
 // ── Pure mapping that mirrors MainTabScreen._buildScreen ─────────────────────
@@ -36,7 +36,7 @@ Widget _buildScreen(int index) {
     case 1:
       return const AllPlantsScreen();
     case 2:
-      return const FloraChatsListScreen();
+      return const VerdoroChatsListScreen();
     case 3:
       return const IdentifyScreen();
     case 4:
@@ -61,7 +61,7 @@ const _kHardcodedIdentifyLabel = 'Identify';
 const _kExpectedLabels = [
   'Home',       // navHome
   'Garden',     // garden
-  'Flora',      // flora
+  'Verdoro',    // verdoro
   'Identify',   // hardcoded string literal in main.dart line 240
   'Community',  // community
 ];
@@ -96,9 +96,9 @@ void main() {
       expect(widget, isA<AllPlantsScreen>());
     });
 
-    test('Tab 2 maps to FloraChatsListScreen', () {
+    test('Tab 2 maps to VerdoroChatsListScreen', () {
       final widget = _buildScreen(2);
-      expect(widget, isA<FloraChatsListScreen>());
+      expect(widget, isA<VerdoroChatsListScreen>());
     });
 
     test('Tab 3 maps to IdentifyScreen', () {
@@ -134,10 +134,10 @@ void main() {
           reason: 'Each tab label must be unique');
     });
 
-    test('Tab labels match expected order: Home, Garden, Flora, Identify, Community', () {
+    test('Tab labels match expected order: Home, Garden, Verdoro, Identify, Community', () {
       expect(_kExpectedLabels[0], 'Home');
       expect(_kExpectedLabels[1], 'Garden');
-      expect(_kExpectedLabels[2], 'Flora');
+      expect(_kExpectedLabels[2], 'Verdoro');
       expect(_kExpectedLabels[3], 'Identify');
       expect(_kExpectedLabels[4], 'Community');
     });

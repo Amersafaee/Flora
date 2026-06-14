@@ -9,6 +9,7 @@ class WeeklyReportService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   Future<Map<String, dynamic>> generateWeeklyReport(String userUid) async {
+    if (userUid.isEmpty) return {};
     final now = DateTime.now();
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
 
@@ -86,35 +87,30 @@ class WeeklyReportService {
     }
 
     // Climate Readings
-    // Get default zone
     double avgTemperature = 0;
     double avgHumidity = 0;
-    final zonesQuery = await _db.collection('users').doc(userUid).collection('zones').limit(1).get();
-    if (zonesQuery.docs.isNotEmpty) {
-      final zoneId = zonesQuery.docs.first.id;
-      final tempQuery = await _db.collection('users').doc(userUid).collection('zones').doc(zoneId).collection('readings')
-          .where('type', isEqualTo: 'temperature')
-          .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
-          .get();
-      if (tempQuery.docs.isNotEmpty) {
-        double sumTemp = 0;
-        for (var doc in tempQuery.docs) {
-          sumTemp += (doc.data()['value'] as num).toDouble();
-        }
-        avgTemperature = sumTemp / tempQuery.docs.length;
+    final tempQuery = await _db.collection('users').doc(userUid).collection('climate_readings')
+        .where('type', isEqualTo: 'temperature')
+        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
+        .get();
+    if (tempQuery.docs.isNotEmpty) {
+      double sumTemp = 0;
+      for (var doc in tempQuery.docs) {
+        sumTemp += (doc.data()['value'] as num).toDouble();
       }
+      avgTemperature = sumTemp / tempQuery.docs.length;
+    }
 
-      final humQuery = await _db.collection('users').doc(userUid).collection('zones').doc(zoneId).collection('readings')
-          .where('type', isEqualTo: 'humidity')
-          .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
-          .get();
-      if (humQuery.docs.isNotEmpty) {
-        double sumHum = 0;
-        for (var doc in humQuery.docs) {
-          sumHum += (doc.data()['value'] as num).toDouble();
-        }
-        avgHumidity = sumHum / humQuery.docs.length;
+    final humQuery = await _db.collection('users').doc(userUid).collection('climate_readings')
+        .where('type', isEqualTo: 'humidity')
+        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
+        .get();
+    if (humQuery.docs.isNotEmpty) {
+      double sumHum = 0;
+      for (var doc in humQuery.docs) {
+        sumHum += (doc.data()['value'] as num).toDouble();
       }
+      avgHumidity = sumHum / humQuery.docs.length;
     }
 
     // Headline

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -26,12 +27,17 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
   int _totalTasks = 0;
   bool _hasDisease = false;
   bool _diseaseResolved = false;
-  // Internal value — resolved to localized string in build()
   String _diseaseStatusKey = 'cleanRecord';
 
   String _summaryText = '';
   bool _isGeneratingSummary = true;
   List<Map<String, dynamic>> _timeline = [];
+  
+  String get _plantName => widget.plant.name;
+  String get _plantSpecies => widget.plant.commonName;
+  String _ownerName = 'The Owner';
+  int get _plantHealthScore => widget.plant.healthScore;
+  final String _careScheduleSummary = 'Regular Care';
 
   @override
   void initState() {
@@ -45,7 +51,13 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
     final plantId = widget.plant.id;
 
     try {
-      // 1. Waterings and Tasks
+      final userDoc = await db.collection('users').doc(uid).get();
+      if (mounted && userDoc.exists) {
+        setState(() {
+          _ownerName = userDoc.data()?['displayName'] ?? userDoc.data()?['fullName'] ?? 'Unknown';
+        });
+      }
+
       final tasksQuery = await db
           .collection('users')
           .doc(uid)
@@ -59,14 +71,13 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
         final data = doc.data();
         if (data['isCompleted'] == true) {
           completed++;
-          if (data['type'] == 'Watering') completedWaterings++;
+          if (data['taskType'] == 'Watering' || data['type'] == 'Watering') completedWaterings++;
         }
       }
       _totalTasks = tasksQuery.docs.length;
       _totalCompletedTasks = completed;
       _totalWaterings = completedWaterings;
 
-      // 2. Growth entries and timeline
       final growthQuery = await db
           .collection('users')
           .doc(uid)
@@ -87,7 +98,6 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
         };
       }).toList();
 
-      // 3. Treatment Cases
       final casesQuery = await db
           .collection('users')
           .doc(uid)
@@ -109,7 +119,6 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
         _diseaseStatusKey = allResolved ? 'recovered' : 'activeIssue';
       }
 
-      // Generate Summary
       final gemini = GeminiService();
       final summary = await gemini.generatePlantPassportSummary(
         widget.plant.name,
@@ -151,14 +160,17 @@ class _PlantPassportScreenState extends State<PlantPassportScreen> {
     final text = '''
 Digital Conservatory Plant Passport
 
-Plant: ${widget.plant.name}
-Health Score: ${widget.plant.healthScore}
+Plant: $_plantName
+Species: $_plantSpecies
+Owner: $_ownerName
+Health Score: $_plantHealthScore
+Care Schedule: $_careScheduleSummary
 Care Consistency: $consistency%
 
+Summary:
 $_summaryText
 ''';
-    // ignore: deprecated_member_use
-    await Share.share(text);
+    await SharePlus.instance.share(ShareParams(text: text));
   }
 
   @override
@@ -187,7 +199,7 @@ $_summaryText
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.bone900),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.bone900),
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -251,7 +263,7 @@ $_summaryText
                   const SizedBox(height: 16),
 
                   Text(
-                    widget.plant.name,
+                    _plantName,
                     style: const TextStyle(
                       fontFamily: 'serif',
                       fontSize: 24,
@@ -261,8 +273,30 @@ $_summaryText
                   ),
 
                   Text(
-                    widget.plant.commonName.isNotEmpty ? widget.plant.commonName : l.unknownSpecies,
+                    _plantSpecies.isNotEmpty ? _plantSpecies : l.unknownSpecies,
                     style: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.bone500),
+                  ),
+
+                  const SizedBox(height: 8),
+                  Text(
+                    'Owner: $_ownerName',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.bone700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Text(
+                      'Schedule: $_careScheduleSummary',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.bone500,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 16),
@@ -287,8 +321,8 @@ $_summaryText
                             context: context,
                             icon: Icons.favorite,
                             label: l.healthScore,
-                            value: widget.plant.healthScore.toString(),
-                            valueColor: _getScoreColor(widget.plant.healthScore),
+                            value: _plantHealthScore.toString(),
+                            valueColor: _getScoreColor(_plantHealthScore),
                           ),
                         ),
                       ],
@@ -489,15 +523,15 @@ $_summaryText
                     context,
                     MaterialPageRoute(
                       builder: (context) => CreateListingScreen(
-                        initialPlantName: widget.plant.name,
+                        initialPlantName: _plantName,
                         initialDescription: _summaryText,
-                        initialHealthScore: widget.plant.healthScore,
+                        initialHealthScore: _plantHealthScore,
                       ),
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.forest900,
+                  backgroundColor: AppColors.forest700,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

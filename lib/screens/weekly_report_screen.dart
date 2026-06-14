@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../services/weekly_report_service.dart';
 import '../theme/app_theme.dart';
@@ -36,7 +37,7 @@ class WeeklyReportScreen extends StatelessWidget {
               Align(
                 alignment: Alignment.topLeft,
                 child: IconButton(
-                  icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+                  icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -165,7 +166,7 @@ class WeeklyReportScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Your home averaged ${(reportData['avgTemperature'] as double).toStringAsFixed(1)}° and ${(reportData['avgHumidity'] as double).toStringAsFixed(0)}% humidity this week',
+                          'Your home averaged ${(reportData['avgTemperature'] as double).toStringAsFixed(1)}� and ${(reportData['avgHumidity'] as double).toStringAsFixed(0)}% humidity this week',
                           style: const TextStyle(color: AppColors.bone500, fontSize: 13),
                         ),
                       ),
@@ -183,7 +184,7 @@ class WeeklyReportScreen extends StatelessWidget {
                     if (context.mounted) Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.forest900,
+                    backgroundColor: AppColors.forest700,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -193,7 +194,7 @@ class WeeklyReportScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                l.generatedByFlora,
+                l.generatedByVerdoro,
                 style: const TextStyle(color: AppColors.bone500, fontSize: 11, fontStyle: FontStyle.italic),
               ),
               const SizedBox(height: 16),

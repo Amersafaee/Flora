@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +9,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'plant_detail_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class SwapChatScreen extends StatefulWidget {
   final String conversationId;
@@ -35,6 +36,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
   }
 
   Future<void> _loadConversationDetails() async {
+    if (widget.conversationId.isEmpty) return;
     try {
       final doc = await FirebaseFirestore.instance
           .collection('swap_conversations')
@@ -53,7 +55,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
 
   Future<void> _sendMessage({String? text, String? imageUrl, String? messageType}) async {
     final msgText = text ?? _msgController.text.trim();
-    if (msgText.isEmpty && imageUrl == null) return;
+    if ((msgText.isEmpty && imageUrl == null) || widget.conversationId.isEmpty) return;
 
     if (text == null) _msgController.clear();
 
@@ -100,9 +102,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
       await _sendMessage(text: '', imageUrl: url, messageType: 'image');
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${AppLocalizations.of(context).failedToSendImagePrefix}$e')),
-        );
+        showToast(context, '${AppLocalizations.of(context).failedToSendImagePrefix}$e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -115,12 +115,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context).locationPermissionRequired),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          showToast(context, AppLocalizations.of(context).locationPermissionRequired, isError: false);
         }
         return;
       }
@@ -137,9 +132,7 @@ class _SwapChatScreenState extends State<SwapChatScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${AppLocalizations.of(context).couldNotGetLocationPrefix}$e')),
-        );
+        showToast(context, '${AppLocalizations.of(context).couldNotGetLocationPrefix}$e', isError: false);
       }
     }
   }

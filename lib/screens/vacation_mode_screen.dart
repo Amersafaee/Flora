@@ -1,15 +1,21 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 import '../models/task_model.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
+import '../widgets/shared/app_card.dart';
+import '../widgets/shared/primary_button.dart';
+import '../widgets/shared/section_header.dart';
 
 class VacationModeScreen extends StatefulWidget {
   const VacationModeScreen({super.key});
@@ -112,7 +118,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: AppColors.forest900,
+              primary: AppColors.forest700,
               onPrimary: Colors.white,
               onSurface: AppColors.bone900,
             ),
@@ -142,9 +148,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
     if (uid == null) return;
 
     if (_startDate == null || _endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.pleaseSelectDates), backgroundColor: Colors.red),
-      );
+      showToast(context, l.pleaseSelectDates, isError: true);
       return;
     }
 
@@ -222,7 +226,7 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
 
     buffer.writeln();
     buffer.writeln('Emergency contact: $userEmail');
-    buffer.writeln('- Sent from Digital Conservatory');
+    buffer.writeln('- Sent from Verdoro');
 
     setState(() {
       _generatedPlanController.text = buffer.toString();
@@ -241,22 +245,29 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    const Color primaryColor = AppColors.forest900;
-    final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-    const Color terracotta = AppColors.terracotta900;
-    final Color textColor = Theme.of(context).colorScheme.onSurface;
-    const Color lightGreen = AppColors.forest100;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final Color backgroundColor = isDark ? AppColors.darkBackground : AppColors.bone50;
+    final Color textColor = isDark ? AppColors.darkTextPrimary : AppColors.forest900;
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textColor),
+          icon: const Icon(CupertinoIcons.chevron_back, size: 20, color: AppColors.forest700),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(l.vacationMode, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 20)),
+        title: Text(
+          l.vacationMode,
+          style: GoogleFonts.outfit(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -266,11 +277,15 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 16),
-              const Icon(Icons.wb_sunny, size: 64, color: terracotta),
+              const Icon(Icons.wb_sunny, size: 64, color: AppColors.terracotta500),
               const SizedBox(height: 16),
               Text(
                 l.goingSomewhere,
-                style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'serif'),
+                style: GoogleFonts.outfit(
+                  color: textColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -281,55 +296,76 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
               const SizedBox(height: 32),
 
               // Enable Toggle Card
-              Container(
+              AppCard(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: _isEnabled ? lightGreen : Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
-                ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(l.enableVacationMode, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(
+                            l.enableVacationMode,
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(l.pausesAllNotifications, style: const TextStyle(color: AppColors.bone500, fontSize: 13)),
+                          Text(
+                            l.pausesAllNotifications,
+                            style: const TextStyle(color: AppColors.bone500, fontSize: 13),
+                          ),
                         ],
                       ),
                     ),
-                    Switch(value: _isEnabled, onChanged: _toggleVacationMode, activeThumbColor: primaryColor),
+                    Switch(
+                      value: _isEnabled,
+                      onChanged: _toggleVacationMode,
+                      activeTrackColor: AppColors.switchActiveTrack,
+                      activeThumbColor: AppColors.switchThumb,
+                      inactiveTrackColor: AppColors.switchInactiveTrack,
+                      inactiveThumbColor: AppColors.switchThumb,
+                      trackOutlineColor: AppColors.switchTrackOutline,
+                    ),
                   ],
                 ),
               ),
 
               if (_isEnabled) ...[
                 const SizedBox(height: 24),
-                Container(
+                AppCard(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
-                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l.yourTrip, style: const TextStyle(color: AppColors.bone500, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                      SectionHeader(l.yourTrip),
                       const SizedBox(height: 16),
                       // Start Date
                       Row(
                         children: [
                           const Icon(Icons.calendar_today, color: AppColors.bone500, size: 20),
                           const SizedBox(width: 12),
-                          Expanded(child: Text(l.startDate, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15))),
+                          Expanded(
+                            child: Text(
+                              l.startDate,
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
                           GestureDetector(
                             onTap: () => _selectDate(context, true),
                             child: Text(
                               _startDate != null ? DateFormat('MMM d, yyyy').format(_startDate!) : l.selectDate,
-                              style: TextStyle(color: _startDate != null ? primaryColor : AppColors.bone500, fontWeight: FontWeight.w600, fontSize: 15),
+                              style: TextStyle(
+                                color: _startDate != null ? AppColors.forest700 : AppColors.bone500,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                         ],
@@ -340,75 +376,90 @@ class _VacationModeScreenState extends State<VacationModeScreen> {
                         children: [
                           const Icon(Icons.event, color: AppColors.bone500, size: 20),
                           const SizedBox(width: 12),
-                          Expanded(child: Text(l.endDate, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15))),
+                          Expanded(
+                            child: Text(
+                              l.endDate,
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
                           GestureDetector(
                             onTap: () => _selectDate(context, false),
                             child: Text(
                               _endDate != null ? DateFormat('MMM d, yyyy').format(_endDate!) : l.selectDate,
-                              style: TextStyle(color: _endDate != null ? primaryColor : AppColors.bone500, fontWeight: FontWeight.w600, fontSize: 15),
+                              style: TextStyle(
+                                color: _endDate != null ? AppColors.forest700 : AppColors.bone500,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 24),
                       // Generate Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isGenerating ? null : _generateCarePlan,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 0,
-                          ),
-                          child: _isGenerating
-                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : Text(l.generateCarePlanAction, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                        ),
+                      PrimaryButton(
+                        label: l.generateCarePlanAction,
+                        onPressed: _generateCarePlan,
+                        isLoading: _isGenerating,
                       ),
+                      
                       if (_generatedPlanController.text.isNotEmpty) ...[
                         const SizedBox(height: 20),
-                        TextField(
-                          controller: _generatedPlanController,
-                          maxLines: 12,
-                          decoration: InputDecoration(
-                            labelText: l.yourCarePlan,
-                            labelStyle: const TextStyle(color: primaryColor),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: primaryColor, width: 2),
-                            ),
-                            contentPadding: const EdgeInsets.all(16),
-                            hintText: l.editCarePlanHint,
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.darkSurface : AppColors.bone50,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          style: const TextStyle(fontSize: 13, height: 1.5),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.yourCarePlan,
+                                style: const TextStyle(
+                                  color: AppColors.forest700,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              SelectableText(
+                                _generatedPlanController.text,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  height: 1.5,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.share, color: Colors.white),
-                            label: Text(l.shareEmoji, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                            onPressed: () {
-                              final text = _generatedPlanController.text.trim();
-                              if (text.isNotEmpty) {
-                                SharePlus.instance.share(ShareParams(text: text, subject: 'Plant Care Plan from Digital Conservatory'));
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              elevation: 0,
-                            ),
-                          ),
+                        PrimaryButton(
+                          label: l.shareEmoji,
+                          onPressed: () {
+                            final text = _generatedPlanController.text.trim();
+                            if (text.isNotEmpty) {
+                              SharePlus.instance.share(ShareParams(text: text, subject: 'Plant Care Plan from Verdoro'));
+                            }
+                          },
                         ),
                         const SizedBox(height: 8),
                         TextButton.icon(
-                          icon: const Icon(Icons.copy, size: 18),
-                          label: Text(l.copyToClipboard),
+                          icon: const Icon(Icons.copy, size: 18, color: AppColors.forest700),
+                          label: Text(l.copyToClipboard, style: const TextStyle(color: AppColors.forest700)),
                           onPressed: () async {
                             final messenger = ScaffoldMessenger.of(context);
                             await Clipboard.setData(ClipboardData(text: _generatedPlanController.text));

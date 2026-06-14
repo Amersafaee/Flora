@@ -1,8 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import '../services/badges_service.dart';
 import '../theme/app_theme.dart';
 
@@ -83,7 +84,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
         backgroundColor: backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textColor),
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -138,15 +139,20 @@ class _BadgesScreenState extends State<BadgesScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
+                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkCardSurface : AppColors.bone50,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    border: Theme.of(context).brightness == Brightness.dark
+                        ? Border.all(color: AppColors.darkCardBorder, width: 1)
+                        : null,
+                    boxShadow: Theme.of(context).brightness == Brightness.dark
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                   ),
                   child: Column(
                     children: [
@@ -237,15 +243,20 @@ class _BadgesScreenState extends State<BadgesScreen> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkCardSurface : AppColors.bone50,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: AppColors.darkCardBorder, width: 1)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? null
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -269,7 +280,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkCardSurface : AppColors.bone50,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(

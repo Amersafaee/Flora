@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +9,8 @@ import '../models/treatment_case_model.dart';
 import 'package:flutter/foundation.dart';
 import '../utils/task_utils.dart';
 import 'weather_service.dart';
+import 'location_service.dart';
+import 'calendar_service.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -20,6 +23,21 @@ class FirestoreService {
     final uid = currentUserId;
     if (uid == null) return;
     await _db.collection('users').doc(uid).set(profile.toMap(), SetOptions(merge: true));
+    unawaited(() async {
+      final city = await LocationService.getCityName();
+      if (city != null) {
+        await _db.collection('users').doc(uid).update({'city': city});
+      }
+    }());
+  }
+
+  Future<void> updateUserCity() async {
+    final uid = currentUserId;
+    if (uid == null) return;
+    final city = await LocationService.getCityName();
+    if (city != null) {
+      await _db.collection('users').doc(uid).update({'city': city});
+    }
   }
 
   Stream<UserProfile?> getUserProfile() {
@@ -41,7 +59,7 @@ class FirestoreService {
     final plantId = plant.id.isEmpty ? docRef.id : plant.id;
     final newPlant = Plant(
       id: plantId, name: plant.name, commonName: plant.commonName,
-      category: plant.category, zone: plant.zone, imageUrl: plant.imageUrl,
+      category: plant.category, imageUrl: plant.imageUrl,
       healthStatus: plant.healthStatus, dateAdded: plant.dateAdded, healthScore: plant.healthScore,
       location: plant.location,
     );
@@ -76,9 +94,9 @@ class FirestoreService {
 
   Future<void> deletePlant(String plantId) async {
     final uid = currentUserId;
-    if (uid == null) return;
+    if (uid == null || plantId.isEmpty) return;
     final plantRef = _db.collection('users').doc(uid).collection('plants').doc(plantId);
-    final growthSnap = await plantRef.collection('growth').get();
+    final growthSnap = await plantRef.collection('growth_entries').get();
     for (var doc in growthSnap.docs) {
       await doc.reference.delete();
     }
@@ -87,7 +105,7 @@ class FirestoreService {
 
   Future<void> updatePlant(Plant plant) async {
     final uid = currentUserId;
-    if (uid == null) return;
+    if (uid == null || plant.id.isEmpty) return;
     await _db.collection('users').doc(uid).collection('plants').doc(plant.id).update(plant.toMap());
   }
 
@@ -185,13 +203,27 @@ class FirestoreService {
 
   Future<void> deleteTask(String taskId) async {
     final uid = currentUserId;
-    if (uid == null) return;
+    if (uid == null || taskId.isEmpty) return;
+    
+    try {
+      final taskRef = _db.collection('users').doc(uid).collection('tasks').doc(taskId);
+      final taskDoc = await taskRef.get();
+      if (taskDoc.exists) {
+        final calendarEventId = taskDoc.data()?['calendarEventId'] as String?;
+        if (calendarEventId != null && calendarEventId.isNotEmpty) {
+          await CalendarService.deleteEvent(calendarEventId);
+        }
+      }
+    } catch (e) {
+      debugPrint('Warning: could not retrieve/delete calendar event in deleteTask: $e');
+    }
+
     await _db.collection('users').doc(uid).collection('tasks').doc(taskId).delete();
   }
 
   Stream<List<Task>> getTasksForPlant(String plantId) {
     final uid = currentUserId;
-    if (uid == null) return Stream.value([]);
+    if (uid == null || plantId.isEmpty) return Stream.value([]);
     return _db.collection('users').doc(uid).collection('tasks')
         .where('plantId', isEqualTo: plantId)
         .orderBy('dueDate')
@@ -201,10 +233,31 @@ class FirestoreService {
 
   Future<void> markTaskCompleted(String taskId) async {
     final uid = currentUserId;
-    if (uid == null) return;
+    if (uid == null || taskId.isEmpty) return;
 
     final taskRef = _db.collection('users').doc(uid).collection('tasks').doc(taskId);
     final taskDoc = await taskRef.get();
+
+    if (taskDoc.exists) {
+      final calendarEventId = taskDoc.data()?['calendarEventId'] as String?;
+      if (calendarEventId != null && calendarEventId.isNotEmpty) {
+        try {
+          await CalendarService.deleteEvent(calendarEventId);
+        } catch (e) {
+          debugPrint('Warning: could not delete calendar event in markTaskCompleted: $e');
+        }
+      }
+
+      // FIX 2: Save task history copy
+      final data = taskDoc.data()!;
+      await _db.collection('users').doc(uid).collection('task_history').add({
+        'plantId': data['plantId'] ?? '',
+        'plantName': data['plantName'] ?? '',
+        'taskType': data['taskType'] ?? '',
+        'completedAt': Timestamp.now(),
+        'originalDueDate': data['dueDate'],
+      });
+    }
 
     await taskRef.update({'isCompleted': true});
     await updateCareStreak();
@@ -228,7 +281,7 @@ class FirestoreService {
     if (data['taskType'] == 'Watering') {
       final now = DateTime.now();
       final sevenDaysAgo = now.subtract(const Duration(days: 7));
-      final readingsSnap = await _db.collection('users').doc(uid).collection('zones').doc('main_zone').collection('readings')
+      final readingsSnap = await _db.collection('users').doc(uid).collection('climate_readings')
         .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
         .get();
 
@@ -321,16 +374,33 @@ class FirestoreService {
   // --- Growth Entries ---
   Future<void> addGrowthEntry(String plantId, Map<String, dynamic> entry) async {
     final uid = currentUserId;
-    if (uid == null) return;
-    await _db.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth').add(entry);
+    if (uid == null || plantId.isEmpty) return;
+    final enrichedEntry = {
+      ...entry,
+      'photoUrl': entry['photoUrl'] ?? entry['imageUrl'] ?? '',
+      'date': entry['date'] ?? entry['timestamp'] ?? FieldValue.serverTimestamp(),
+      'note': entry['note'] ?? entry['notes'] ?? '',
+    };
+    await _db.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth_entries').add(enrichedEntry);
   }
 
   Stream<List<Map<String, dynamic>>> getGrowthEntries(String plantId) {
     final uid = currentUserId;
-    if (uid == null) return Stream.value([]);
-    return _db.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth')
-        .orderBy('timestamp', descending: true).snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    if (uid == null || plantId.isEmpty) return Stream.value([]);
+    return _db.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth_entries')
+        .orderBy('date', descending: true).snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+          final data = doc.data();
+          return {
+            ...data,
+            'imageUrl': data['imageUrl'] ?? data['photoUrl'] ?? '',
+            'photoUrl': data['photoUrl'] ?? data['imageUrl'] ?? '',
+            'timestamp': data['timestamp'] ?? data['date'],
+            'date': data['date'] ?? data['timestamp'],
+            'notes': data['notes'] ?? data['note'] ?? '',
+            'note': data['note'] ?? data['notes'] ?? '',
+          };
+        }).toList());
   }
 
   Future<int> getTotalPlantsCount() async {
@@ -353,7 +423,7 @@ class FirestoreService {
     int count = 0;
     final plants = await _db.collection('users').doc(uid).collection('plants').get();
     for (var plant in plants.docs) {
-      final entries = await plant.reference.collection('growth').count().get();
+      final entries = await plant.reference.collection('growth_entries').count().get();
       count += entries.count ?? 0;
     }
     return count;
@@ -381,16 +451,17 @@ class FirestoreService {
       final plantId = plantDoc.id;
       final plantName = plantData['name'] ?? 'Unknown';
       
-      final growthSnap = await _db.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth')
-          .orderBy('timestamp', descending: true).limit(1).get();
+      final growthSnap = await _db.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth_entries')
+          .orderBy('date', descending: true).limit(1).get();
       
       bool needsInspection = false;
       if (growthSnap.docs.isEmpty) {
         needsInspection = true;
       } else {
         final lastGrowth = growthSnap.docs.first.data();
-        if (lastGrowth['timestamp'] != null) {
-          final timestamp = lastGrowth['timestamp'] as Timestamp;
+        final dateVal = lastGrowth['date'] ?? lastGrowth['timestamp'];
+        if (dateVal != null) {
+          final timestamp = dateVal as Timestamp;
           final diff = DateTime.now().difference(timestamp.toDate()).inDays;
           if (diff > 21) {
             needsInspection = true;
@@ -415,7 +486,7 @@ class FirestoreService {
             'taskType': 'Inspection',
             'dueDate': Timestamp.fromDate(DateTime.now()),
             'isCompleted': false,
-            'notes': 'No growth journal entry in 21+ days — Flora recommends a check-in',
+            'notes': 'No growth journal entry in 21+ days — Verdoro recommends a check-in',
             'repeatType': 'none',
             'repeatDays': 0,
           });
@@ -1148,7 +1219,7 @@ class FirestoreService {
 
   Future<void> saveHealthAssessment(String plantId, Map<String, dynamic> assessmentData) async {
     final uid = currentUserId;
-    if (uid == null) return;
+    if (uid == null || plantId.isEmpty) return;
     final condition = assessmentData['condition']?.toString() ?? 'Healthy';
     final String healthStatus;
     switch (condition) {
@@ -1174,7 +1245,7 @@ class FirestoreService {
 
   Future<String> createTreatmentCase(TreatmentCase treatmentCase) async {
     final uid = currentUserId;
-    if (uid == null) return '';
+    if (uid == null || treatmentCase.plantId.isEmpty) return '';
     final docRef = _db.collection('users').doc(uid).collection('treatment_cases').doc();
     final caseWithId = TreatmentCase(
       id: docRef.id, plantId: treatmentCase.plantId, plantName: treatmentCase.plantName,
@@ -1190,7 +1261,7 @@ class FirestoreService {
 
   Stream<List<TreatmentCase>> getTreatmentCases(String plantId) {
     final uid = currentUserId;
-    if (uid == null) return Stream.value([]);
+    if (uid == null || plantId.isEmpty) return Stream.value([]);
     return _db.collection('users').doc(uid).collection('treatment_cases')
         .where('plantId', isEqualTo: plantId)
         .snapshots().map((snap) {
@@ -1202,7 +1273,7 @@ class FirestoreService {
 
   Future<void> updateTreatmentCaseProgress({required String caseId, required String progressNote, required String photoUrl, required String newStatus}) async {
     final uid = currentUserId;
-    if (uid == null) return;
+    if (uid == null || caseId.isEmpty) return;
     await _db.collection('users').doc(uid).collection('treatment_cases').doc(caseId).update({
       'progressNotes': FieldValue.arrayUnion([progressNote]),
       'latestPhotoUrl': photoUrl,
@@ -1212,7 +1283,7 @@ class FirestoreService {
 
   Future<void> resolveTreatmentCase(String caseId) async {
     final uid = currentUserId;
-    if (uid == null) return;
+    if (uid == null || caseId.isEmpty) return;
     await _db.collection('users').doc(uid).collection('treatment_cases').doc(caseId).update({
       'status': 'Resolved',
       'resolvedDate': FieldValue.serverTimestamp(),
@@ -1221,6 +1292,7 @@ class FirestoreService {
 
   Future<int> computeAndSaveHealthScore(String userUid, String plantId) async {
     int score = 100;
+    if (userUid.isEmpty || plantId.isEmpty) return score;
     final plantDoc = await _db.collection('users').doc(userUid).collection('plants').doc(plantId).get();
     if (!plantDoc.exists) return score;
     final plantData = plantDoc.data()!;
@@ -1285,9 +1357,7 @@ class FirestoreService {
       if (now.difference(lastAssessmentTs).inDays > 30) score -= 5;
     }
 
-    final zoneUid = plantData['zone']?.toString().isNotEmpty == true ? plantData['zone'] : 'main_zone';
-    
-    final tempQuery = await _db.collection('users').doc(userUid).collection('zones').doc(zoneUid).collection('readings')
+    final tempQuery = await _db.collection('users').doc(userUid).collection('climate_readings')
         .where('type', isEqualTo: 'temperature').get();
         
     var tempDocs = tempQuery.docs.toList();
@@ -1305,7 +1375,7 @@ class FirestoreService {
       if (temp < 15 || temp > 28) { score -= 5; }
     }
     
-    final humQuery = await _db.collection('users').doc(userUid).collection('zones').doc(zoneUid).collection('readings')
+    final humQuery = await _db.collection('users').doc(userUid).collection('climate_readings')
         .where('type', isEqualTo: 'humidity').get();
         
     var humDocs = humQuery.docs.toList();
@@ -1342,7 +1412,7 @@ class FirestoreService {
 
   Future<void> markPlantAsDeceased(String plantId, String memorialNote) async {
     final uid = currentUserId;
-    if (uid == null) return;
+    if (uid == null || plantId.isEmpty) return;
     await _db.collection('users').doc(uid).collection('plants').doc(plantId).update({
       'isDeceased': true,
       'deceasedDate': FieldValue.serverTimestamp(),

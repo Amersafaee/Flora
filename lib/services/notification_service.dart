@@ -153,10 +153,10 @@ class NotificationService {
     await _flutterLocalNotificationsPlugin.cancelAll();
   }
 
-  Future<void> scheduleDailyFloraInsight() async {
+  Future<void> scheduleDailyVerdoroInsight() async {
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'daily_insight_channel',
-      'Daily Flora Insights',
+      'Daily Verdoro Insights',
       channelDescription: 'Daily check-in reminders for your plants',
       importance: Importance.defaultImportance,
     );
@@ -181,7 +181,7 @@ class NotificationService {
     try {
       await _flutterLocalNotificationsPlugin.zonedSchedule(
         999,
-        'Flora has an update for you 🌿',
+        'Verdoro has an update for you 🌿',
         'Check in on your plants — your care calendar has updates waiting',
         scheduledDate,
         platformDetails,
@@ -192,7 +192,7 @@ class NotificationService {
     } catch (e) {
       await _flutterLocalNotificationsPlugin.periodicallyShow(
         999,
-        'Flora has an update for you 🌿',
+        'Verdoro has an update for you 🌿',
         'Check in on your plants — your care calendar has updates waiting',
         RepeatInterval.daily,
         platformDetails,

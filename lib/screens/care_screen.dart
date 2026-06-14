@@ -1,26 +1,31 @@
-import '../services/badges_service.dart';
-import 'add_task_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
-import 'global_search_screen.dart';
-import 'climate_screen.dart';
-import 'light_meter_screen.dart';
-import 'profile_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../models/task_model.dart';
+import '../services/badges_service.dart';
+import '../services/care_intelligence_service.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
-import '../models/task_model.dart';
-import 'care_insights_screen.dart';
-import '../services/care_intelligence_service.dart';
-import 'batch_care_screen.dart';
-import 'add_plant_screen.dart';
-import 'community_screen.dart';
-import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/user_utils.dart';
 import '../services/onboarding_service.dart';
-import 'onboarding_overlay_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/care_type_style.dart';
+import '../utils/toast_utils.dart';
+import '../utils/user_utils.dart';
+import '../widgets/shared/empty_state.dart';
+import 'add_plant_screen.dart';
+import 'add_task_screen.dart';
+import 'batch_care_screen.dart';
+import 'care_insights_screen.dart';
+import 'climate_screen.dart';
+import 'community_screen.dart';
+import 'global_search_screen.dart';
+import 'light_meter_screen.dart';
+import 'onboarding_overlay_screen.dart';
+import 'profile_screen.dart';
 
 class CareScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -128,7 +133,7 @@ class _CareScreenState extends State<CareScreen> {
       if (task.isCompleted) continue;
       final d = task.dueDate;
       final key = '${d.year}-${d.month}-${d.day}';
-      final color = _taskTypeColors(task.taskType).$2;
+      final color = careTypeStyle(task.taskType).iconColor;
       dots.putIfAbsent(key, () => []);
       if (!dots[key]!.contains(color)) dots[key]!.add(color);
     }
@@ -161,7 +166,7 @@ class _CareScreenState extends State<CareScreen> {
     if (compareDate.isBefore(compareToday)) {
       return const [AppColors.terracotta500];
     } else {
-      return const [AppColors.forest500];
+      return const [AppColors.forest700];
     }
   }
 
@@ -180,19 +185,51 @@ class _CareScreenState extends State<CareScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryColor = Theme.of(context).primaryColor;
-    final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final today = DateTime.now();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.bone50,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: Center(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => ProfileScreen(onThemeChanged: widget.onThemeChanged),
+                ));
+              },
+              child: buildUserAvatar(radius: 18),
+            ),
+          ),
+        ),
+        title: Text(
+          'Verdoro',
+          style: GoogleFonts.outfit(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+            fontWeight: FontWeight.w600,
+            fontSize: 17,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: AppColors.forest700),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GlobalSearchScreen())),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       floatingActionButton: _selectedTab == 0
           ? FloatingActionButton(
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTaskScreen()));
               },
-              backgroundColor: primaryColor,
+              backgroundColor: AppColors.forest700,
               child: const Icon(Icons.add, color: Colors.white),
             )
           : null,
@@ -200,40 +237,7 @@ class _CareScreenState extends State<CareScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(
-                        builder: (_) => ProfileScreen(onThemeChanged: widget.onThemeChanged),
-                      ));
-                    },
-                    child: buildUserAvatar(radius: 18),
-                  ),
-                  const Text(
-                    'Digital Conservatory',
-                    style: TextStyle(
-                      color: AppColors.forest900,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'serif',
-                      fontSize: 18,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.search, color: primaryColor),
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GlobalSearchScreen())),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 16),
 
             // Tabs
             Padding(
@@ -438,27 +442,14 @@ class _CareScreenState extends State<CareScreen> {
                                       },
                                     ),
                                     if (pendingTasks.isEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.calendar_today, size: 60, color: AppColors.forest900),
-                                            const SizedBox(height: 20),
-                                            Text(AppLocalizations.of(context).noCareTasksYet, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                                            const SizedBox(height: 12),
-                                            Text(AppLocalizations.of(context).addPlantForCareSchedule, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.bone500, fontSize: 14)),
-                                            const SizedBox(height: 24),
-                                            ElevatedButton(
-                                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPlantScreen())),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: AppColors.forest900,
-                                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                              ),
-                                              child: Text(AppLocalizations.of(context).addAPlant, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                            ),
-                                          ],
+                                      EmptyState(
+                                        icon: Icons.calendar_today,
+                                        title: AppLocalizations.of(context).noCareTasksYet,
+                                        subtitle: AppLocalizations.of(context).addPlantForCareSchedule,
+                                        buttonLabel: AppLocalizations.of(context).addAPlant,
+                                        onButtonTap: () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (_) => const AddPlantScreen()),
                                         ),
                                       )
                                     else ...[
@@ -522,16 +513,16 @@ class _CareScreenState extends State<CareScreen> {
                                     ...scoredTasks.map((entry) {
                                       final task = entry.key;
                                       final score = entry.value;
-                                      final colors = _taskTypeColors(task.taskType);
+                                      final style = careTypeStyle(task.taskType);
                                       final isOverdue = !task.isCompleted && task.dueDate.isBefore(DateTime(today.year, today.month, today.day));
                                       return Padding(
                                         padding: const EdgeInsets.only(bottom: 16),
                                         child: _buildTaskCard(
                                           context: context,
                                           task: task,
-                                          icon: colors.$1,
-                                          iconBgColor: colors.$2.withValues(alpha: 0.15),
-                                          iconColor: colors.$2,
+                                          icon: style.icon,
+                                          iconBgColor: style.tileColor,
+                                          iconColor: style.iconColor,
                                           title: task.taskType,
                                           subtitle: '${task.plantName}${task.notes.isNotEmpty ? ' (${task.notes})' : ''}${isOverdue ? ' • Overdue' : ''}',
                                           isOverdue: isOverdue,
@@ -587,7 +578,7 @@ class _CareScreenState extends State<CareScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Smart Care Plan',
+                                        AppLocalizations.of(context).smartCarePlan,
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
@@ -625,19 +616,6 @@ class _CareScreenState extends State<CareScreen> {
     );
   }
 
-  /// Returns the canonical (IconData, Color) pair for a given task type.
-  /// Used by both the task card builder and anywhere else that needs task colour.
-  (IconData, Color) _taskTypeColors(String taskType) {
-    final t = taskType.toLowerCase();
-    if (t.contains('water'))    return (Icons.water_drop,          const Color(0xFF2196F3)); // blue
-    if (t.contains('fertiliz')) return (Icons.science,             const Color(0xFF8BC34A)); // light green
-    if (t.contains('repot'))    return (Icons.yard,                const Color(0xFF795548)); // brown
-    if (t.contains('prun'))     return (Icons.content_cut,         const Color(0xFF4CAF50)); // green
-    if (t.contains('mist'))     return (Icons.air,                 const Color(0xFF00BCD4)); // cyan
-    if (t.contains('inspect'))  return (Icons.search,              const Color(0xFFFF9800)); // orange
-    if (t.contains('treat'))    return (Icons.medical_services,    const Color(0xFFE91E63)); // pink
-    return (Icons.check_circle_outline,                            AppColors.forest900); // app primary
-  }
 
   Widget _buildTab(String label, int index) {
     final isActive = _selectedTab == index;
@@ -670,37 +648,34 @@ class _CareScreenState extends State<CareScreen> {
     if (uid == null) {
       return Center(child: Text(AppLocalizations.of(context).notSignedIn, style: const TextStyle(color: AppColors.bone500)));
     }
-    return StreamBuilder<List<QueryDocumentSnapshot>>(
+    return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
-          .collection('tasks')
-          .where('isCompleted', isEqualTo: true)
-          .snapshots().map((snap) {
-             final docs = snap.docs.toList();
-             docs.sort((a, b) {
-               final aTs = a.data()['dueDate'] as Timestamp?;
-               final bTs = b.data()['dueDate'] as Timestamp?;
-               if (aTs == null && bTs == null) return 0;
-               if (aTs == null) return 1;
-               if (bTs == null) return -1;
-               return bTs.compareTo(aTs);
-             });
-             return docs;
-          }),
+          .collection('task_history')
+          .orderBy('completedAt', descending: true)
+          .limit(50)
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return const Center(child: Text('Something went wrong', style: TextStyle(color: AppColors.bone500)));
+          return Center(child: Text(AppLocalizations.of(context).somethingWentWrong, style: const TextStyle(color: AppColors.bone500)));
         }
-        final docs = snapshot.data ?? [];
+        final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) {
           return Center(
-            child: Text(
-              AppLocalizations.of(context).noCompletedTasksYet,
-              style: const TextStyle(color: AppColors.bone500, fontSize: 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.eco, size: 64, color: AppColors.forest200),
+                const SizedBox(height: 16),
+                Text(
+                  AppLocalizations.of(context).noCompletedTasksYet,
+                  style: GoogleFonts.outfit(color: AppColors.bone500, fontSize: 16),
+                ),
+              ],
             ),
           );
         }
@@ -709,12 +684,12 @@ class _CareScreenState extends State<CareScreen> {
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
-            final plantName = data['plantName'] as String? ?? 'Unknown Plant';
+            final plantName = data['plantName'] as String? ?? AppLocalizations.of(context).unknownPlantFallback;
             final taskType = data['taskType'] as String? ?? '';
-            DateTime? dueDate;
-            final ts = data['dueDate'];
-            if (ts is Timestamp) dueDate = ts.toDate();
-            final dateStr = dueDate != null ? DateFormat('MMM d, yyyy').format(dueDate) : '—';
+            DateTime? completedAt;
+            final ts = data['completedAt'];
+            if (ts is Timestamp) completedAt = ts.toDate();
+            final dateStr = completedAt != null ? DateFormat('MMM d, yyyy').format(completedAt) : '—';
 
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -749,25 +724,34 @@ class _CareScreenState extends State<CareScreen> {
   }
 
   Widget _buildCircleArrow(IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, shape: BoxShape.circle),
-      child: Icon(icon, size: 20, color: AppColors.bone900),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurfaceElevated : Theme.of(context).colorScheme.surfaceContainerHighest,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 20, color: isDark ? Colors.white.withValues(alpha: 0.70) : AppColors.bone900),
     );
   }
 
   Widget _buildDayColumn(String dayName, String date, {bool isToday = false, bool isSelected = false, List<Color> dotColors = const []}) {
-    final bool highlight = isToday || isSelected;
-    final Color bgColor = isToday
-        ? AppColors.forest900
-        : isSelected
-            ? const Color(0x2614301E)
-            : Colors.transparent;
-    final Color textColor = isToday ? Colors.white : Colors.black87;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Selected (today or future): forest700 filled circle, white text.
+    // Today when NOT selected: forest700 ring/border, normal text.
+    // Neither: transparent, normal text.
+    final Color bgColor = isSelected
+        ? AppColors.forest700
+        : Colors.transparent;
+    final Color textColor = isSelected
+        ? Colors.white
+        : (isDark ? Colors.white.withValues(alpha: 0.87) : Colors.black87);
+    final bool showRing = isToday && !isSelected;
+    final Color dayNameColor = isDark ? AppColors.darkTextTertiary : AppColors.bone500;
 
     return Column(
       children: [
-        Text(dayName, style: TextStyle(color: AppColors.bone500, fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(dayName, style: TextStyle(color: dayNameColor, fontSize: 12, fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
         Container(
           width: 36,
@@ -775,8 +759,8 @@ class _CareScreenState extends State<CareScreen> {
           decoration: BoxDecoration(
             color: bgColor,
             shape: BoxShape.circle,
-            border: isSelected && !isToday
-                ? Border.all(color: AppColors.forest900, width: 1.5)
+            border: showRing
+                ? Border.all(color: AppColors.forest700, width: 1.5)
                 : null,
           ),
           alignment: Alignment.center,
@@ -784,7 +768,7 @@ class _CareScreenState extends State<CareScreen> {
             date,
             style: TextStyle(
               color: textColor,
-              fontWeight: highlight ? FontWeight.bold : FontWeight.w600,
+              fontWeight: (isSelected || isToday) ? FontWeight.bold : FontWeight.w600,
               fontSize: 16,
             ),
           ),
@@ -807,22 +791,32 @@ class _CareScreenState extends State<CareScreen> {
   }
 
   Widget _buildQuickButton(BuildContext context, IconData icon, String label, VoidCallback onTap) {
-    const Color softGreen = AppColors.forest100;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color chipBg = isDark ? AppColors.darkChipSurface : AppColors.forest100;
+    final Color iconCircleBg = isDark ? AppColors.darkSurfaceElevated : Theme.of(context).cardColor;
+    final Color iconColor = isDark ? AppColors.forest400 : Theme.of(context).primaryColor;
+    final Color textColor = isDark ? AppColors.darkTextPrimary : AppColors.bone900;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        decoration: BoxDecoration(color: softGreen, borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(
+          color: chipBg,
+          borderRadius: BorderRadius.circular(20),
+          border: isDark
+              ? Border.all(color: AppColors.darkCardBorder, width: 1)
+              : null,
+        ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Theme.of(context).cardColor, shape: BoxShape.circle),
-              child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),
+              decoration: BoxDecoration(color: iconCircleBg, shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.bone900)),
+              child: Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor)),
             ),
           ],
         ),
@@ -852,10 +846,14 @@ class _CareScreenState extends State<CareScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.white,
+        color: isDark ? AppColors.darkCardSurface : AppColors.white,
         borderRadius: BorderRadius.circular(20),
-        border: customBorder,
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        border: isDark && customBorder == null
+            ? Border.all(color: AppColors.darkCardBorder, width: 1)
+            : customBorder,
+        boxShadow: isDark
+            ? null
+            : [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
@@ -972,7 +970,6 @@ class _CareScreenState extends State<CareScreen> {
                         category: plantData['category']?.toString() ?? '',
                         baseIntervalDays: baseDays,
                         lastWateredDate: DateTime.now(),
-                        zoneUid: 'main_zone',
                         userUid: uid,
                       );
                       await FirebaseFirestore.instance
@@ -983,15 +980,7 @@ class _CareScreenState extends State<CareScreen> {
                         'lastSchedulingReason': nextData['reasoning'],
                       });
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                            'Next ${task.taskType.toLowerCase()} in ${nextData['adjustedInterval']} days: ${nextData['reasoning']}',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          backgroundColor: AppColors.forest900,
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 4),
-                        ));
+                        showToast(context, 'Next ${task.taskType.toLowerCase()} in ${nextData['adjustedInterval']} days: ${nextData['reasoning']}', isError: false);
                       }
                     }
                   } catch (e) {

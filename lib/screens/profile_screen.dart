@@ -1,25 +1,31 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import '../services/firestore_service.dart';
-import '../services/auth_service.dart';
-import '../services/theme_service.dart';
-import '../services/locale_service.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
-import 'login_screen.dart';
-import 'badges_screen.dart';
-import 'vacation_mode_screen.dart';
-import 'notification_settings_screen.dart';
-// zones_screen import removed — no navigation button leads there
-import 'edit_profile_screen.dart';
-import 'collection_personality_screen.dart';
-import 'memorial_garden_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../theme/app_theme.dart';
+
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
+import '../services/locale_service.dart';
+import '../services/theme_service.dart';
 import '../services/weather_service.dart';
+import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../widgets/shared/app_card.dart';
+import '../widgets/shared/section_header.dart';
+import 'badges_screen.dart';
+import 'collection_personality_screen.dart';
+import 'edit_profile_screen.dart';
+import 'login_screen.dart';
+import 'memorial_garden_screen.dart';
+import 'notification_settings_screen.dart';
+import 'vacation_mode_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -44,20 +50,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Language display names in their own language
   static const Map<String, String> _languageNames = {
     'en': 'English',
-    'es': 'Español',
-    'fr': 'Français',
+    'es': 'EspaÃ±ol',
+    'fr': 'FranÃ§ais',
     'de': 'Deutsch',
-    'pt': 'Português',
-    'ar': 'العربية',
-    'fa': 'فارسی',
-    'ja': '日本語',
-    'ko': '한국어',
+    'pt': 'PortuguÃªs',
+    'ar': 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©',
+    'fa': 'ÙØ§Ø±Ø³ÛŒ',
+    'ja': 'æ—¥æœ¬èªž',
+    'ko': 'í•œêµ­ì–´',
     'it': 'Italiano',
     'nl': 'Nederlands',
-    'tr': 'Türkçe',
+    'tr': 'TÃ¼rkÃ§e',
     'pl': 'Polski',
     'sv': 'Svenska',
-    'hi': 'हिन्दी',
+    'hi': 'à¤¹à¤¿à¤¨à¥à¤¦à¥€',
   };
 
   @override
@@ -102,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => SafeArea(
         child: Column(
@@ -174,20 +180,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() {
           _profilePhotoUrl = downloadUrl;
-          _pickedImageFile = null; // clear local preview — network URL takes over
+          _pickedImageFile = null; // clear local preview â€” network URL takes over
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).profilePhotoUpdated),
-            backgroundColor: AppColors.forest900,
-          ),
-        );
+        showToast(context, AppLocalizations.of(context).profilePhotoUpdated, isError: false);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red),
-        );
+        showToast(context, 'Upload failed: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
@@ -214,8 +213,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color primaryColor = Theme.of(context).primaryColor;
-    final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final Color backgroundColor = isDark ? AppColors.darkBackground : AppColors.bone50;
     const Color softGreen = AppColors.forest100;
     
     final user = _auth.currentUser;
@@ -234,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+                    icon: const Icon(CupertinoIcons.chevron_back, size: 20, color: AppColors.forest700),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -243,10 +243,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Center(
                       child: Text(
                         AppLocalizations.of(context).myProfile,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
+                        style: GoogleFonts.outfit(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
                         ),
                       ),
                     ),
@@ -280,7 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 32),
               
-              // Avatar and Info — name resolved from Firestore first
+              // Avatar and Info â€” name resolved from Firestore first
               StreamBuilder<DocumentSnapshot>(
                 stream: user != null
                     ? FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots()
@@ -290,7 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (userSnap.hasData && userSnap.data!.exists) {
                     final data = userSnap.data!.data() as Map<String, dynamic>?;
                     if (data != null) {
-                      // Priority: fullName → displayName in Firestore
+                      // Priority: fullName â†’ displayName in Firestore
                       displayedName = (data['fullName'] as String? ?? '').trim();
                       if (displayedName.isEmpty) {
                         displayedName = (data['displayName'] as String? ?? '').trim();
@@ -301,7 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (displayedName.isEmpty) {
                     displayedName = (user?.displayName ?? '').trim();
                   }
-                  // Never show 'user' — fall back to email prefix
+                  // Never show 'user' â€” fall back to email prefix
                   if (displayedName.isEmpty) {
                     displayedName = email.split('@').first;
                   }
@@ -408,6 +408,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           label: AppLocalizations.of(context).plants,
                           backgroundColor: AppColors.forest100,
                           iconColor: AppColors.forest600,
+                          darkBackgroundColor: AppColors.darkForestTint,
+                          darkIconColor: AppColors.darkForestPrimary,
                         );
                       },
                     ),
@@ -423,6 +425,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           label: AppLocalizations.of(context).tasksDone,
                           backgroundColor: AppColors.terracotta100,
                           iconColor: AppColors.terracotta700,
+                          darkBackgroundColor: AppColors.darkTerracottaTint,
+                          darkIconColor: AppColors.darkTerracotta,
                         );
                       },
                     ),
@@ -438,6 +442,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           label: AppLocalizations.of(context).journalEntries,
                           backgroundColor: const Color(0xFFE8F0F8),
                           iconColor: const Color(0xFF4A6FA5),
+                          darkBackgroundColor: AppColors.darkSlateBlueTint,
+                          darkIconColor: AppColors.slateBlue500,
                         );
                       },
                     ),
@@ -447,15 +453,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 24),
               
               // Settings Title (FIX 4)
-              Text(
-                AppLocalizations.of(context).settingsHeader.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.bone500,
-                  letterSpacing: 1.5,
-                ),
-              ),
+              SectionHeader(AppLocalizations.of(context).settingsHeader),
               const SizedBox(height: 16),
               
               // Settings List
@@ -536,14 +534,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (useAuto) {
                     if (weather != null) {
                       subtitle =
-                          'Auto · ${weather.cityName} · ${weather.temperatureCelsius.toStringAsFixed(1)}°C · ${weather.humidity.toStringAsFixed(0)}% humidity';
+                          'Auto Â· ${weather.cityName} Â· ${weather.temperatureCelsius.toStringAsFixed(1)}Â°C Â· ${weather.humidity.toStringAsFixed(0)}% humidity';
                     } else {
                       subtitle = AppLocalizations.of(context).detectAutomatically;
                     }
                   } else if (city != null && city.isNotEmpty) {
                     if (weather != null) {
                       subtitle =
-                          '$city · ${weather.temperatureCelsius.toStringAsFixed(1)}°C · ${weather.humidity.toStringAsFixed(0)}% humidity';
+                          '$city Â· ${weather.temperatureCelsius.toStringAsFixed(1)}Â°C Â· ${weather.humidity.toStringAsFixed(0)}% humidity';
                     } else {
                       subtitle = city;
                     }
@@ -561,6 +559,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         context: context,
                         builder: (ctx) => StatefulBuilder(
                           builder: (ctx, setDialogState) => AlertDialog(
+                            backgroundColor: AppColors.bone50,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
                             title:
                                 Text(AppLocalizations.of(context).myCity),
                             content: Column(
@@ -672,11 +674,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           () => dialogUseAuto = false);
                                     }
                                   },
-                                  decoration: const InputDecoration(
-                                    hintText:
-                                        'e.g. London, Tokyo, New York',
-                                    prefixIcon:
-                                        Icon(Icons.location_city),
+                                  decoration: InputDecoration(
+                                    hintText: 'e.g. London, Tokyo, New York',
+                                    prefixIcon: const Icon(Icons.location_city),
+                                    filled: true,
+                                    fillColor: AppColors.bone100,
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(color: AppColors.bone200, width: 1),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(color: AppColors.forest700, width: 1.5),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -687,7 +697,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Text(AppLocalizations.of(context)
                                     .cancel),
                               ),
-                              ElevatedButton(
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.forest700,
+                                ),
                                 onPressed: () async {
                                   final nav = Navigator.of(ctx);
                                   final messenger =
@@ -735,20 +748,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       );
                     },
-                    child: Container(
+                    child: AppCard(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
                       child: Row(
                         children: [
                           Icon(
@@ -818,18 +820,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
+
               const SizedBox(height: 24),
               
               // About Title (FIX 4)
-              Text(
-                AppLocalizations.of(context).aboutHeader.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.bone500,
-                  letterSpacing: 1.5,
-                ),
-              ),
+              SectionHeader(AppLocalizations.of(context).aboutHeader),
               const SizedBox(height: 16),
               
               _buildSettingsRow(
@@ -899,19 +894,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentName = _languageNames[_currentLocaleCode] ?? _currentLocaleCode;
     return GestureDetector(
       onTap: () => _showLanguagePicker(softGreen: softGreen, primaryColor: primaryColor),
-      child: Container(
+      child: AppCard(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
         child: Row(
           children: [
             const Icon(Icons.language, color: AppColors.forest600, size: 24),
@@ -986,56 +970,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 8),
                   // Language list
-                  ...LocaleService.supportedLanguageCodes.map((code) {
-                    final name = _languageNames[code] ?? code;
-                    final isSelected = code == _currentLocaleCode;
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: isSelected ? primaryColor.withValues(alpha: 0.12) : softGreen,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          code.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected ? primaryColor : AppColors.bone500,
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: LocaleService.supportedLanguageCodes.map((code) {
+                        final name = _languageNames[code] ?? code;
+                        final isSelected = code == _currentLocaleCode;
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+                          leading: Container(
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: isSelected ? primaryColor.withValues(alpha: 0.12) : softGreen,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              code.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected ? primaryColor : AppColors.bone500,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      title: Text(
-                        name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected
-                              ? primaryColor
-                              : Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      trailing: isSelected
-                          ? Icon(Icons.check_circle, color: primaryColor)
-                          : null,
-                      onTap: () async {
-                        await LocaleService.saveLocale(code);
-                        final newLocale = Locale(code);
-                        if (widget.onLocaleChanged != null) {
-                          widget.onLocaleChanged!(newLocale);
-                        }
-                        if (mounted) {
-                          setState(() => _currentLocaleCode = code);
-                        }
-                        if (ctx.mounted) {
-                          Navigator.of(ctx).pop();
-                        }
-                      },
-                    );
-                  }),
+                          title: Text(
+                            name,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              color: isSelected
+                                  ? primaryColor
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? Icon(Icons.check_circle, color: primaryColor)
+                              : null,
+                          onTap: () async {
+                            await LocaleService.saveLocale(code);
+                            final newLocale = Locale(code);
+                            if (widget.onLocaleChanged != null) {
+                              widget.onLocaleChanged!(newLocale);
+                            }
+                            if (mounted) {
+                              setState(() => _currentLocaleCode = code);
+                            }
+                            if (ctx.mounted) {
+                              Navigator.of(ctx).pop();
+                            }
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -1051,33 +1040,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String label,
     required Color backgroundColor,
     required Color iconColor,
+    Color? darkBackgroundColor,
+    Color? darkIconColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveBg = isDark ? (darkBackgroundColor ?? AppColors.darkCardSurface) : backgroundColor;
+    final effectiveIcon = isDark ? (darkIconColor ?? AppColors.darkForestPrimary) : iconColor;
+    final countColor = isDark ? AppColors.darkTextPrimary : AppColors.bone900;
+    final labelColor = isDark ? AppColors.darkTextSecondary : AppColors.bone500;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: effectiveBg,
         borderRadius: BorderRadius.circular(12),
+        border: isDark
+            ? Border.all(color: AppColors.darkCardBorder, width: 1)
+            : null,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: iconColor, size: 24),
+          Icon(icon, color: effectiveIcon, size: 24),
           const SizedBox(height: 8),
           Text(
             count,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.bone900,
+              color: countColor,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: AppColors.bone500,
+              color: labelColor,
             ),
           ),
         ],
@@ -1098,19 +1097,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AppCard(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
         child: Row(
           children: [
             Icon(icon, color: AppColors.forest600, size: 24),
@@ -1129,7 +1117,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Switch(
                 value: toggleValue,
                 onChanged: onToggle,
-                activeThumbColor: primaryColor,
+                activeTrackColor: AppColors.switchActiveTrack,
+                activeThumbColor: AppColors.switchThumb,
+                inactiveTrackColor: AppColors.switchInactiveTrack,
+                inactiveThumbColor: AppColors.switchThumb,
+                trackOutlineColor: AppColors.switchTrackOutline,
               )
             else if (!isInfo)
               const Icon(Icons.chevron_right, color: AppColors.bone500),
@@ -1143,7 +1135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         final uid = _auth.currentUser?.uid;
         if (uid == null) return const SizedBox();

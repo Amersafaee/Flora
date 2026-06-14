@@ -27,7 +27,7 @@ class PrimaryButton extends StatelessWidget {
       child: FilledButton(
         onPressed: isLoading ? null : onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.forestGreen,
+          backgroundColor: AppColors.forest700,
           disabledBackgroundColor: AppColors.sage,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 52),

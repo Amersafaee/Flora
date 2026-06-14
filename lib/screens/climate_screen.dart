@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'global_search_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class ClimateScreen extends StatefulWidget {
   const ClimateScreen({super.key});
@@ -42,9 +44,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
     final ref = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
-        .collection('zones')
-        .doc('main_zone')
-        .collection('readings');
+        .collection('climate_readings');
 
     ref.where('type', isEqualTo: 'temperature')
        .snapshots()
@@ -91,9 +91,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
     await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
-        .collection('zones')
-        .doc('main_zone')
-        .collection('readings')
+        .collection('climate_readings')
         .doc(DateTime.now().millisecondsSinceEpoch.toString())
         .set({
       'type': type,
@@ -107,9 +105,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
       } else {
         _humController.clear();
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).readingSaved), backgroundColor: AppColors.successLight),
-      );
+      showToast(context, AppLocalizations.of(context).readingSaved, isError: false);
     }
   }
 
@@ -136,7 +132,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+                      icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     Text(
@@ -266,9 +262,9 @@ class _ClimateScreenState extends State<ClimateScreen> {
                             Column(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Max', style: TextStyle(color: AppColors.bone500, fontSize: 10)),
+                                Text(l.chartMaxLabel, style: const TextStyle(color: AppColors.bone500, fontSize: 10)),
                                 const Spacer(),
-                                Text('Min', style: TextStyle(color: AppColors.bone500, fontSize: 10)),
+                                Text(l.chartMinLabel, style: const TextStyle(color: AppColors.bone500, fontSize: 10)),
                               ],
                             ),
                             const SizedBox(width: 16),

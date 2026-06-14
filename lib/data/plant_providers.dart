@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:digital_conservatory/services/demo_config_service.dart';
+import 'package:verdoro/services/demo_config_service.dart';
 
 // Inline mock plant data for demo mode (5 items)
 final List<PlantDoc> _mockPlants = [
@@ -93,7 +93,7 @@ final userPlantsProvider = StreamProvider<List<PlantDoc>>((ref) async* {
 final plantByIdProvider =
     StreamProvider.family<PlantDoc?, String>((ref, plantId) {
   final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return const Stream.empty();
+  if (uid == null || plantId.isEmpty) return const Stream.empty();
 
   return FirebaseFirestore.instance
       .collection('users')
@@ -108,7 +108,7 @@ final plantByIdProvider =
 final growthJournalProvider =
     StreamProvider.family<List<GrowthEntry>, String>((ref, plantId) {
   final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return const Stream.empty();
+  if (uid == null || plantId.isEmpty) return const Stream.empty();
 
   return FirebaseFirestore.instance
       .collection('users')

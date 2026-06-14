@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +8,8 @@ import '../services/firestore_service.dart';
 import '../services/gemini_service.dart';
 import '../models/plant_model.dart';
 import '../theme/app_theme.dart';
+import '../utils/care_type_style.dart';
+import '../utils/toast_utils.dart';
 
 class CarePlanScreen extends StatefulWidget {
   const CarePlanScreen({super.key});
@@ -34,7 +37,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         builder: (ctx) {
           final l2 = AppLocalizations.of(ctx);
           return SafeArea(
@@ -54,7 +57,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(ctx),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.forest900),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.forest700),
                     child: Text(l2.close, style: const TextStyle(color: Colors.white)),
                   ),
                 ],
@@ -66,19 +69,10 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
     } catch (e) {
       if (!mounted) return;
       final l2 = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${l2.errorGeneratingPlanPrefix}$e')),
-      );
+      showToast(context, '${l2.errorGeneratingPlanPrefix}$e', isError: true);
     } finally {
       if (mounted) setState(() => _isGenerating = false);
     }
-  }
-
-  Color _getTaskColor(String type) {
-    if (type.toLowerCase() == 'watering') return Colors.blue;
-    if (type.toLowerCase() == 'fertilizing') return Colors.green;
-    if (type.toLowerCase() == 'repotting') return Colors.brown;
-    return AppColors.bone500;
   }
 
   @override
@@ -93,6 +87,10 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
         title: Text(l.myCarePlan),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: Column(
@@ -108,7 +106,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
                     : const Icon(Icons.auto_awesome),
                 label: Text(_isGenerating ? l.generating : l.regeneratePlan),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.forest900,
+                  backgroundColor: AppColors.forest700,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -168,7 +166,7 @@ class _CarePlanScreenState extends State<CarePlanScreen> {
                                 leading: Container(
                                   width: 12,
                                   height: 12,
-                                  decoration: BoxDecoration(shape: BoxShape.circle, color: _getTaskColor(type)),
+                                  decoration: BoxDecoration(shape: BoxShape.circle, color: careTypeStyle(type).iconColor),
                                 ),
                                 title: Text(type),
                                 trailing: Text(dateStr, style: const TextStyle(color: AppColors.bone500)),

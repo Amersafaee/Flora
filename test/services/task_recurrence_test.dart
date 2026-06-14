@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:digital_conservatory/utils/task_utils.dart';
+import 'package:verdoro/utils/task_utils.dart';
 
 void main() {
   group('Task Recurrence Tests (calculateNextDueDate)', () {

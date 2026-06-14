@@ -1,10 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'flora_screen.dart';
+import 'verdoro_screen.dart';
 import '../theme/app_theme.dart';
+import '../widgets/shared/primary_button.dart';
 
 class BlogDetailScreen extends StatelessWidget {
   final Map<String, dynamic> blogData;
@@ -14,7 +16,6 @@ class BlogDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    // FIX 5 — safe typed field access for all fields
     final title = (blogData['title'] as String? ?? 'Untitled');
     final category = (blogData['category'] as String? ?? 'General');
     final readMinutes = (blogData['readMinutes'] as num?)?.toInt() ?? 5;
@@ -22,7 +23,6 @@ class BlogDetailScreen extends StatelessWidget {
     final imageUrl = (blogData['imageUrl'] as String? ?? '').trim();
     final tags = (blogData['tags'] as List<dynamic>? ?? []).cast<String>();
     final summary = (blogData['summary'] as String? ?? '');
-
 
     // Split content into paragraphs (double-newline first, then sentence groups)
     List<String> paragraphs = _buildParagraphs(content);
@@ -35,7 +35,7 @@ class BlogDetailScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.bone50,
       body: Stack(
         children: [
           CustomScrollView(
@@ -44,7 +44,26 @@ class BlogDetailScreen extends StatelessWidget {
               SliverAppBar(
                 expandedHeight: 240,
                 pinned: true,
-                backgroundColor: AppColors.forest900,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                leading: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        CupertinoIcons.chevron_back,
+                        size: 20,
+                        color: AppColors.forest700,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ),
                 automaticallyImplyLeading: false, // Hide default back button
                 flexibleSpace: FlexibleSpaceBar(
                   background: imageUrl.isNotEmpty
@@ -52,28 +71,52 @@ class BlogDetailScreen extends StatelessWidget {
                           imageUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
-                            color: AppColors.forest100,
-                            child: const Center(
-                              child: Icon(Icons.article_outlined, color: AppColors.forest300, size: 64),
+                            width: double.infinity,
+                            height: double.infinity,
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.darkSurface : AppColors.bone50,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                CupertinoIcons.leaf_arrow_circlepath,
+                                size: 32,
+                                color: AppColors.forest700.withValues(alpha: 0.2),
+                              ),
                             ),
                           ),
                           loadingBuilder: (_, child, progress) {
                             if (progress == null) return child;
                             return Container(
-                              color: AppColors.forest100,
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  color: AppColors.forest700,
-                                  strokeWidth: 2,
+                              width: double.infinity,
+                              height: double.infinity,
+                              decoration: BoxDecoration(
+                                color: isDark ? AppColors.darkSurface : AppColors.bone50,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  CupertinoIcons.leaf_arrow_circlepath,
+                                  size: 32,
+                                  color: AppColors.forest700.withValues(alpha: 0.2),
                                 ),
                               ),
                             );
                           },
                         )
                       : Container(
-                          color: AppColors.forest100,
-                          child: const Center(
-                            child: Icon(Icons.article_outlined, color: AppColors.forest300, size: 64),
+                          width: double.infinity,
+                          height: double.infinity,
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.darkSurface : AppColors.bone50,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              CupertinoIcons.leaf_arrow_circlepath,
+                              size: 32,
+                              color: AppColors.forest700.withValues(alpha: 0.2),
+                            ),
                           ),
                         ),
                 ),
@@ -82,7 +125,7 @@ class BlogDetailScreen extends StatelessWidget {
               // Content
               SliverToBoxAdapter(
                 child: Container(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: isDark ? AppColors.darkBackground : AppColors.bone50,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
                     child: Column(
@@ -92,8 +135,8 @@ class BlogDetailScreen extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(color: AppColors.forest100, borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                              decoration: BoxDecoration(color: AppColors.bone100, borderRadius: BorderRadius.circular(20)),
                               child: Text(
                                 category,
                                 style: const TextStyle(color: AppColors.forest700, fontSize: 12, fontWeight: FontWeight.w600),
@@ -110,10 +153,16 @@ class BlogDetailScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
 
-                        // Title — Noto Serif bold 26px
+                        // Title � Noto Serif bold 26px
                         Text(
                           title,
-                          style: const TextStyle(fontFamily: 'serif', fontSize: 26, fontWeight: FontWeight.bold, height: 1.25),
+                          style: TextStyle(
+                            fontFamily: 'serif',
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            height: 1.25,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
+                          ),
                         ),
                         const SizedBox(height: 24),
 
@@ -154,23 +203,10 @@ class BlogDetailScreen extends StatelessWidget {
 
                         const SizedBox(height: 32),
 
-                        // Ask Flora CTA button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: ElevatedButton.icon(
-                            onPressed: () => _openFloraWithTopic(context, title, summary),
-                            icon: const Icon(Icons.eco, color: Colors.white),
-                            label: Text(
-                              l.askFloraAboutTopic,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.forest900,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              elevation: 0,
-                            ),
-                          ),
+                        // Ask Verdoro CTA button
+                        PrimaryButton(
+                          label: l.askVerdoroAboutTopic,
+                          onPressed: () => _openVerdoroWithTopic(context, title, summary),
                         ),
                       ],
                     ),
@@ -178,28 +214,6 @@ class BlogDetailScreen extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-          Positioned(
-            top: 16,
-            left: 16,
-            child: SafeArea(
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
           ),
         ],
       ),
@@ -234,18 +248,18 @@ class BlogDetailScreen extends StatelessWidget {
 
   Widget _buildTagChip(String tag) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: AppColors.forest100, borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(color: AppColors.bone100, borderRadius: BorderRadius.circular(20)),
       child: Text(tag, style: const TextStyle(color: AppColors.forest700, fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 
-  Future<void> _openFloraWithTopic(BuildContext context, String blogTitle, String blogSummary) async {
+  Future<void> _openVerdoroWithTopic(BuildContext context, String blogTitle, String blogSummary) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
     final db = FirebaseFirestore.instance;
-    final chatsRef = db.collection('users').doc(uid).collection('flora_chats');
+    final chatsRef = db.collection('users').doc(uid).collection('verdoro_chats');
 
     final initialText = blogSummary.isNotEmpty
         ? 'I was just reading about "$blogTitle". $blogSummary Can you tell me more about this?'
@@ -269,7 +283,7 @@ class BlogDetailScreen extends StatelessWidget {
     if (!context.mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => FloraScreen(conversationId: conversationId)),
+      MaterialPageRoute(builder: (_) => VerdoroScreen(conversationId: conversationId)),
     );
   }
 }

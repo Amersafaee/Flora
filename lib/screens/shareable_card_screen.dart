@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -66,7 +67,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -199,7 +200,7 @@ class _ShareableCardScreenState extends State<ShareableCardScreen> {
                   ElevatedButton(
                     onPressed: _shareCard,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.forest900,
+                      backgroundColor: AppColors.forest700,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

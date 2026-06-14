@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 /// A white rounded card with a soft shadow.
-/// Wrap any content in this to give it the Flora card look.
+/// Wrap any content in this to give it the Verdoro card look.
 class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -21,9 +21,12 @@ class AppCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.white,
+        color: isDark ? AppColors.darkCardSurface : AppColors.white,
         borderRadius: AppRadius.borderMd,
-        boxShadow: AppShadows.cardShadow,
+        border: isDark
+            ? Border.all(color: AppColors.darkCardBorder, width: 1)
+            : null,
+        boxShadow: isDark ? null : AppShadows.cardShadow,
       ),
       child: Material(
         color: Colors.transparent,

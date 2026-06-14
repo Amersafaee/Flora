@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -7,8 +9,25 @@ plugins {
 }
 
 android {
-    namespace = "app.flora"
+    namespace = "app.verdoro"
     compileSdk = flutter.compileSdkVersion
+
+    val keyPropertiesFile = rootProject.file("key.properties")
+    val keyProperties = Properties()
+    if (keyPropertiesFile.exists()) {
+        keyProperties.load(keyPropertiesFile.inputStream())
+    }
+
+    signingConfigs {
+        create("release") {
+            keyAlias = keyProperties["keyAlias"] as String? ?: ""
+            keyPassword = keyProperties["keyPassword"] as String? ?: ""
+            storeFile = keyProperties["storeFile"]?.let { 
+                rootProject.file("$it") 
+            }
+            storePassword = keyProperties["storePassword"] as String? ?: ""
+        }
+    }
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -21,7 +40,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.flora"
+        applicationId = "app.verdoro"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -30,7 +49,13 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

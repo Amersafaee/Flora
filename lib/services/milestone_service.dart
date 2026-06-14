@@ -6,6 +6,7 @@ class MilestoneService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   Future<void> checkMilestones(String userUid) async {
+    if (userUid.isEmpty) return;
     final plantsSnap = await _db.collection('users').doc(userUid).collection('plants').get();
     final now = DateTime.now();
 
@@ -81,6 +82,19 @@ class MilestoneService {
   }
 
   Future<Map<String, dynamic>> generateShareableCard(String userUid, Plant plant) async {
+    if (userUid.isEmpty || plant.id.isEmpty) {
+      return {
+        'plantName': plant.name,
+        'commonName': plant.commonName,
+        'category': plant.category,
+        'healthScore': plant.healthScore,
+        'daysSinceAdded': DateTime.now().difference(plant.dateAdded).inDays,
+        'totalGrowthEntries': 0,
+        'healthStatus': plant.healthStatus,
+        'tagline': 'A beautiful plant.',
+        'imageUrl': plant.imageUrl,
+      };
+    }
     final growthSnap = await _db.collection('users').doc(userUid).collection('plants').doc(plant.id).collection('growth').count().get();
     final totalEntries = growthSnap.count ?? 0;
     

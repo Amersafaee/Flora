@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/onboarding_service.dart';
 import 'login_screen.dart';
@@ -9,6 +9,7 @@ import 'welcome_tour_screen.dart';
 import '../main.dart';
 import '../theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../utils/toast_utils.dart';
 
 class SignupScreen extends StatefulWidget {
   final ValueChanged<bool>? onThemeChanged;
@@ -38,40 +39,19 @@ class _SignupScreenState extends State<SignupScreen> {
 
   void _signup() async {
     final l = AppLocalizations.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     if (name.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l.pleaseEnterFullName, style: const TextStyle(color: Colors.white)),
-          backgroundColor: colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-          elevation: 4,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      showToast(context, l.pleaseEnterFullName, isError: true);
       return;
     }
 
     if (email.isEmpty || password.isEmpty) return;
 
     if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l.passwordTooWeak, style: const TextStyle(color: Colors.white)),
-          backgroundColor: colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-          elevation: 4,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      showToast(context, l.passwordTooWeak, isError: true);
       return;
     }
 
@@ -94,17 +74,7 @@ class _SignupScreenState extends State<SignupScreen> {
         } else {
           friendlyMessage = result;
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(friendlyMessage, style: const TextStyle(color: Colors.white)),
-            backgroundColor: colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 4,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        showToast(context, friendlyMessage, isError: true);
         return;
       }
 
@@ -145,27 +115,13 @@ class _SignupScreenState extends State<SignupScreen> {
       if (mounted) {
         final l2 = AppLocalizations.of(context);
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${l2.signUpFailedPrefix}${e.toString().replaceAll('Exception: ', '')}',
-              style: const TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 4,
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        showToast(context, '${l2.signUpFailedPrefix}${e.toString().replaceAll('Exception: ', '')}', isError: true);
       }
     }
   }
 
   Future<void> _signInWithGoogle() async {
     final l = AppLocalizations.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
     setState(() => _isLoading = true);
     try {
       final result = await _authService.signInWithGoogle();
@@ -188,9 +144,7 @@ class _SignupScreenState extends State<SignupScreen> {
           (route) => false,
         );
       } else if (result != 'cancelled') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.googleSignInFailed), backgroundColor: colorScheme.error),
-        );
+        showToast(context, l.googleSignInFailed, isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -252,10 +206,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
+                  fillColor: isDark ? AppColors.darkSurfaceElevated : AppColors.bone100,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -271,10 +225,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
+                  fillColor: isDark ? AppColors.darkSurfaceElevated : AppColors.bone100,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -291,14 +245,14 @@ class _SignupScreenState extends State<SignupScreen> {
                 style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+                  fillColor: isDark ? AppColors.darkSurfaceElevated : AppColors.bone100,
                   suffixIcon: IconButton(
                     icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppColors.bone500),
                     onPressed: _isLoading ? null : () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200, width: 1)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 1.5)),
                 ),
               ),
               const SizedBox(height: 40),
@@ -389,7 +343,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             );
                           },
-                    child: Text(l.signIn, style: const TextStyle(color: AppColors.terracotta900, fontWeight: FontWeight.bold)),
+                    child: Text(l.signIn, style: const TextStyle(color: AppColors.forest700, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),

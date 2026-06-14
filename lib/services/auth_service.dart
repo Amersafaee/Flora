@@ -56,7 +56,6 @@ class AuthService {
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: [
           'email',
-          'https://www.googleapis.com/auth/calendar.events',
         ],
       );
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();

@@ -157,7 +157,10 @@ exports.identifyPlant = functions.https.onCall(async (request) => {
         throw new functions.https.HttpsError("invalid-argument", "Missing image or mode.");
     }
     try {
-        const apiKey = process.env.GEMINI_API_KEY || "AIzaSyBpT74c7F_ClMUG98n_q69daQpalJJgIQg";
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            throw new functions.https.HttpsError("failed-precondition", "GEMINI_API_KEY is not configured");
+        }
         const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
         const generativeModel = genAI.getGenerativeModel({
             model: "gemini-1.5-flash",
@@ -226,7 +229,10 @@ exports.floraChat = functions.https.onRequest(async (req, res) => {
             return data.nickname || data.commonName || "Unknown Plant";
         });
         const systemInstruction = `You are Flora, a warm, knowledgeable, and conversational AI plant care expert. You have a long memory of this conversation. Keep your answers brief, practical, and highly personalized based on our chat history. The user currently has ${plantNicknames.length} plants in their collection: ${plantNicknames.join(", ")}. Always prioritize referring to their actual plants if relevant.`;
-        const apiKey = process.env.GEMINI_API_KEY || "AIzaSyBpT74c7F_ClMUG98n_q69daQpalJJgIQg";
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            throw new Error("GEMINI_API_KEY is not configured");
+        }
         const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
         const generativeModel = genAI.getGenerativeModel({
             model: "gemini-1.5-flash",

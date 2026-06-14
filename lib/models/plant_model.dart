@@ -6,6 +6,7 @@ class Plant {
   final String commonName;
   final String category;
   final String zone;
+  final String? zoneId;
   final String imageUrl;
   final String healthStatus;
   final DateTime dateAdded;
@@ -21,7 +22,8 @@ class Plant {
     required this.name,
     required this.commonName,
     required this.category,
-    required this.zone,
+    this.zone = '',
+    this.zoneId,
     required this.imageUrl,
     required this.healthStatus,
     required this.dateAdded,
@@ -39,7 +41,6 @@ class Plant {
       'name': name,
       'commonName': commonName,
       'category': category,
-      'zone': zone,
       'imageUrl': imageUrl,
       'healthStatus': healthStatus,
       'dateAdded': dateAdded,
@@ -58,7 +59,6 @@ class Plant {
       name: (map['name'] as String?) ?? '',
       commonName: (map['commonName'] as String?) ?? '',
       category: (map['category'] as String?) ?? '',
-      zone: (map['zone'] as String?) ?? '',
       imageUrl: (map['imageUrl'] as String?) ?? '',
       healthStatus: (map['healthStatus'] as String?) ?? '',
       // Firestore can return numeric fields as double; use num? to handle both

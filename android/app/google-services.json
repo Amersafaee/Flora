@@ -9,10 +9,18 @@
       "client_info": {
         "mobilesdk_app_id": "1:731501257345:android:80238d12e8b7928a50e380",
         "android_client_info": {
-          "package_name": "app.digitalconservatory"
+          "package_name": "app.verdoro"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "731501257345-9gjbkoqnkg8m9ha92v4b1uan1qtevtm6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.verdoro",
+            "certificate_hash": "46e24f9d3be84d7d0ef9f7d6301e960f7877628b"
+          }
+        },
         {
           "client_id": "731501257345-rgdpvnq0ugm7556k9bghrqrlm1pk8fe4.apps.googleusercontent.com",
           "client_type": 3
@@ -20,7 +28,10 @@
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDC94PXNxLYGEY9vpqSs-QHXFfN3cJkmTY"
+          "current_key": "AIzaSyATXUqVDio4OnpEh527iAKnNnd2a32uZN0"
+        },
+        {
+          "current_key": "AIzaSyCovtfU9AoN9IqWGjnUoIWl9GVn19Zj5VQ"
         }
       ],
       "services": {
@@ -34,7 +45,7 @@
               "client_id": "731501257345-1i4i3qq5579m8nkdvt24khi6pbf9ch4u.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "app.digitalConservatory"
+                "bundle_id": "app.verdoro"
               }
             }
           ]
@@ -45,10 +56,18 @@
       "client_info": {
         "mobilesdk_app_id": "1:731501257345:android:6cc054a6ff3d51ac50e380",
         "android_client_info": {
-          "package_name": "com.example.flora"
+          "package_name": "app.verdoro"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "731501257345-2hei0u1o38j2novlfmci2i8qb8c20j1l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.verdoro",
+            "certificate_hash": "46e24f9d3be84d7d0ef9f7d6301e960f7877628b"
+          }
+        },
         {
           "client_id": "731501257345-rgdpvnq0ugm7556k9bghrqrlm1pk8fe4.apps.googleusercontent.com",
           "client_type": 3
@@ -56,7 +75,10 @@
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDC94PXNxLYGEY9vpqSs-QHXFfN3cJkmTY"
+          "current_key": "AIzaSyATXUqVDio4OnpEh527iAKnNnd2a32uZN0"
+        },
+        {
+          "current_key": "AIzaSyCovtfU9AoN9IqWGjnUoIWl9GVn19Zj5VQ"
         }
       ],
       "services": {
@@ -70,7 +92,7 @@
               "client_id": "731501257345-1i4i3qq5579m8nkdvt24khi6pbf9ch4u.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "app.digitalConservatory"
+                "bundle_id": "app.verdoro"
               }
             }
           ]

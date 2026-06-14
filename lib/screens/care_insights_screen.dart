@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,7 +33,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
     _loadFromCacheOrGenerate();
   }
 
-  // ── Cache helpers ────────────────────────────────────────────────
+  // -- Cache helpers ------------------------------------------------
 
   Future<String?> _readCache() async {
     final prefs = await SharedPreferences.getInstance();
@@ -55,7 +57,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
     await prefs.remove(_timestampKey);
   }
 
-  // ── Load logic ───────────────────────────────────────────────────
+  // -- Load logic ---------------------------------------------------
 
   Future<void> _loadFromCacheOrGenerate({bool forceRefresh = false}) async {
     if (!mounted) return;
@@ -115,20 +117,20 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Could not generate your care plan. Please try again.';
+          _errorMessage = AppLocalizations.of(context).couldNotGenerateCarePlan;
         });
       }
     }
   }
 
-  // ── Parse DAY sections from Gemini response ───────────────────────
+  // -- Parse DAY sections from Gemini response -----------------------
 
   List<_DaySection> _parseDaySections(String raw) {
     final sections = <_DaySection>[];
 
     // Split on "DAY N" pattern
     final dayRegex = RegExp(
-      r'DAY\s+(\d+)\s*[-–]\s*([^\n:]+):?\s*\n(.*?)(?=DAY\s+\d+|$)',
+      r'DAY\s+(\d+)\s*[-ï¿½]\s*([^\n:]+):?\s*\n(.*?)(?=DAY\s+\d+|$)',
       dotAll: true,
       caseSensitive: false,
     );
@@ -145,7 +147,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
       if (!isRestDay) {
         for (final line in body.split('\n')) {
           final trimmed = line
-              .replaceAll(RegExp(r'^[•\-\*]\s*'), '')
+              .replaceAll(RegExp(r'^[ï¿½\-\*]\s*'), '')
               .trim();
           if (trimmed.isNotEmpty) tasks.add(trimmed);
         }
@@ -163,7 +165,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
     if (sections.isEmpty && raw.isNotEmpty) {
       sections.add(_DaySection(
         dayNumber: 1,
-        dayLabel: 'This Week',
+        dayLabel: AppLocalizations.of(context).thisWeekLabel,
         tasks: raw
             .split('\n')
             .where((l) => l.trim().isNotEmpty)
@@ -175,11 +177,12 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
     return sections;
   }
 
-  // ── Build ─────────────────────────────────────────────────────────
+  // -- Build ---------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -187,12 +190,11 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: Theme.of(context).colorScheme.onSurface),
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Smart Care Plan',
+          l.smartCarePlan,
           style: GoogleFonts.notoSerif(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -207,7 +209,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                   color: isDark
                       ? AppColors.darkForestPrimary
                       : AppColors.forest700),
-              tooltip: 'Regenerate plan',
+              tooltip: l.regeneratePlan,
               onPressed: () async {
                 await _clearCache();
                 _loadFromCacheOrGenerate(forceRefresh: true);
@@ -227,7 +229,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
     );
   }
 
-  // ── States ────────────────────────────────────────────────────────
+  // -- States --------------------------------------------------------
 
   Widget _buildLoading() {
     return Center(
@@ -237,11 +239,10 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
           const CircularProgressIndicator(color: AppColors.forest700),
           const SizedBox(height: 20),
           Text(
-            'Flora is analyzing your plants…',
-            style: TextStyle(
+            AppLocalizations.of(context).verdoroIsAnalyzingPlants,
+            style: const TextStyle(
               color: AppColors.bone500,
               fontSize: 15,
-              fontStyle: FontStyle.italic,
             ),
           ),
         ],
@@ -268,12 +269,12 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
             ElevatedButton(
               onPressed: () => _loadFromCacheOrGenerate(forceRefresh: true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.forest900,
+                backgroundColor: AppColors.forest700,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
               child:
-                  const Text('Try Again', style: TextStyle(color: Colors.white)),
+                  Text(AppLocalizations.of(context).retry, style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -292,7 +293,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
                 size: 56, color: AppColors.bone300),
             const SizedBox(height: 20),
             Text(
-              'Add your first plant to get a personalized care plan',
+              AppLocalizations.of(context).addFirstPlantForPersonalizedPlan,
               textAlign: TextAlign.center,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 16,
@@ -308,6 +309,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
 
   Widget _buildPlan(bool isDark) {
     final sections = _parseDaySections(_rawPlan);
+    final l = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,16 +319,15 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
           child: Row(
             children: [
-              Icon(Icons.eco, size: 14, color: AppColors.forest500),
+              const Icon(Icons.eco, size: 14, color: AppColors.forest500),
               const SizedBox(width: 6),
               Text(
                 _fromCache
-                    ? 'Showing cached plan · tap ↻ to refresh'
-                    : 'AI-generated for your plants this week',
-                style: TextStyle(
+                    ? l.showingCachedPlanRefreshHint
+                    : l.aiGeneratedForPlantsThisWeek,
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.bone500,
-                  fontStyle: FontStyle.italic,
                 ),
               ),
             ],
@@ -349,7 +350,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
 
     final cardColor = isRestDay
         ? (isDark ? AppColors.darkSurface : const Color(0xFFF7F7F7))
-        : (isDark ? AppColors.darkSurfaceElevated : Colors.white);
+        : (isDark ? AppColors.darkSurfaceElevated : AppColors.bone50);
 
     final borderColor = isRestDay
         ? (isDark ? AppColors.darkBorderSubtle : AppColors.bone200)
@@ -395,13 +396,12 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
             if (isRestDay) ...[
               const SizedBox(height: 6),
               Text(
-                'Rest day — no tasks needed.',
+                AppLocalizations.of(context).restDayNoTasksNeeded,
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark
                       ? AppColors.darkTextTertiary
                       : AppColors.bone300,
-                  fontStyle: FontStyle.italic,
                 ),
               ),
             ] else ...[
@@ -481,7 +481,7 @@ class _CareInsightsScreenState extends State<CareInsightsScreen> {
   }
 }
 
-// ── Data class ────────────────────────────────────────────────────
+// -- Data class ----------------------------------------------------
 
 class _DaySection {
   final int dayNumber;

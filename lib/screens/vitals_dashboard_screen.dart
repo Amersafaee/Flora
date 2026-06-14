@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math' as math;
@@ -36,12 +37,17 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+          icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('plants')
+            .where('isDeceased', isNotEqualTo: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -57,85 +63,151 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
           plants.sort((a, b) => (a['healthScore'] as int).compareTo(b['healthScore'] as int));
 
           int totalScore = 0;
-          int thrivingCount = 0;
-          int needHelpCount = 0;
+          int thriving = 0;
+          int healthy = 0;
+          int recovering = 0;
+          int needsAttention = 0;
+          int sick = 0;
 
           for (var p in plants) {
             final score = p['healthScore'] as int;
             totalScore += score;
-            if (score > 70) thrivingCount++;
-            if (score < 40) needHelpCount++;
+            if (score > 80) {
+              thriving++;
+            } else if (score > 60) {
+              healthy++;
+            } else if (score > 40) {
+              recovering++;
+            } else if (score > 20) {
+              needsAttention++;
+            } else {
+              sick++;
+            }
           }
 
           final avgScore = plants.isNotEmpty ? (totalScore / plants.length).round() : 0;
           final avgColor = _getScoreColor(avgScore);
 
           return SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l.plantVitals,
-                        style: const TextStyle(
-                          fontSize: 28, fontWeight: FontWeight.bold,
-                          fontFamily: 'serif', color: AppColors.forest900,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        l.collectionHealthOverview,
-                        style: const TextStyle(fontSize: 14, color: AppColors.bone500),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Summary Card
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildStatColumn(avgScore.toString(), l.collectionHealth, avgColor),
-                        Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                        _buildStatColumn(thrivingCount.toString(), l.thriving, AppColors.forest900),
-                        Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                        _buildStatColumn(needHelpCount.toString(), l.needHelp, isDark ? AppColors.errorDark : AppColors.errorLight),
+                        Text(
+                          l.plantVitals,
+                          style: const TextStyle(
+                            fontSize: 28, fontWeight: FontWeight.bold,
+                            fontFamily: 'serif', color: AppColors.forest900,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l.collectionHealthOverview,
+                          style: const TextStyle(fontSize: 14, color: AppColors.bone500),
+                        ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Text(
-                    l.yourPlants,
-                    style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                  // Summary Card
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildStatColumn(avgScore.toString(), l.collectionHealth, avgColor),
+                          Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                          _buildStatColumn((thriving + healthy).toString(), l.thriving, AppColors.forest900),
+                          Container(width: 1, height: 40, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                          _buildStatColumn((needsAttention + sick).toString(), l.needHelp, isDark ? AppColors.errorDark : AppColors.errorLight),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
-                // Plant List
-                Expanded(
-                  child: ListView.builder(
+                  // Status Distribution Card
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Status Distribution',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Bar visualization
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: SizedBox(
+                              height: 16,
+                              child: Row(
+                                children: [
+                                  if (thriving > 0) Expanded(flex: thriving, child: Container(color: isDark ? AppColors.successDark : AppColors.successLight)),
+                                  if (healthy > 0) Expanded(flex: healthy, child: Container(color: Colors.lightGreen)),
+                                  if (recovering > 0) Expanded(flex: recovering, child: Container(color: isDark ? AppColors.warningDark : AppColors.warningLight)),
+                                  if (needsAttention > 0) Expanded(flex: needsAttention, child: Container(color: Colors.deepOrange)),
+                                  if (sick > 0) Expanded(flex: sick, child: Container(color: isDark ? AppColors.errorDark : AppColors.errorLight)),
+                                  if (plants.isEmpty) Expanded(child: Container(color: isDark ? AppColors.darkBorder : AppColors.bone200)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Status rows
+                          _buildStatusRow('Thriving (>80)', thriving, isDark ? AppColors.successDark : AppColors.successLight),
+                          _buildStatusRow('Healthy (61-80)', healthy, Colors.lightGreen),
+                          _buildStatusRow('Recovering (41-60)', recovering, isDark ? AppColors.warningDark : AppColors.warningLight),
+                          _buildStatusRow('Needs Attention (21-40)', needsAttention, Colors.deepOrange),
+                          _buildStatusRow('Sick (≤20)', sick, isDark ? AppColors.errorDark : AppColors.errorLight),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Text(
+                      l.yourPlants,
+                      style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Plant List
+                  ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     itemCount: plants.length,
                     itemBuilder: (context, index) {
                       final plant = plants[index];
@@ -232,7 +304,7 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 statusText,
-                                style: const TextStyle(fontSize: 12, color: AppColors.bone500, fontStyle: FontStyle.italic),
+                                style: const TextStyle(fontSize: 12, color: AppColors.bone500),
                               ),
                             ],
                           ),
@@ -240,11 +312,43 @@ class _VitalsDashboardScreenState extends State<VitalsDashboardScreen> {
                       );
                     },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildStatusRow(String label, int count, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        children: [
+          Container(
+            width: 12, height: 12,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.bone700,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '$count',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+            ),
+          ),
+        ],
       ),
     );
   }

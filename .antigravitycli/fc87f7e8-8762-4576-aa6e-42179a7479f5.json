@@ -1,1 +1,14 @@
-C:/Users/PC_Strong/.gemini/config/projects/fc87f7e8-8762-4576-aa6e-42179a7479f5.json
+{
+  "id": "fc87f7e8-8762-4576-aa6e-42179a7479f5",
+  "name": "C:\\Projects\\Flora_v0.1\\Flora",
+  "projectResources": {
+    "resources": [
+      {
+        "gitFolder": {
+          "folderUri": "file://C:/Projects/Flora_v0.1/Flora",
+          "allowWrite": true
+        }
+      }
+    ]
+  }
+}

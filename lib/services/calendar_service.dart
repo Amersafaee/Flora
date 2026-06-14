@@ -1,95 +1,77 @@
-import 'dart:convert';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
+import 'package:device_calendar/device_calendar.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class CalendarService {
-  static const String _calendarId = 'primary';
-  static const String _baseUrl = 'https://www.googleapis.com/calendar/v3';
+  static final DeviceCalendarPlugin _plugin = DeviceCalendarPlugin();
+  static String? _calendarId;
+  static bool _tzInitialized = false;
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [
-      'email',
-      'https://www.googleapis.com/auth/calendar.events',
-    ],
-  );
+  static Future<void> _init() async {
+    if (!_tzInitialized) {
+      tz.initializeTimeZones();
+      _tzInitialized = true;
+    }
+    if (_calendarId != null) return;
 
-  Future<String?> _getAccessToken() async {
+    final permResult = await _plugin.requestPermissions();
+    if (permResult.data != true) return;
+
+    final calendarsResult = await _plugin.retrieveCalendars();
+    final calendars = calendarsResult.data ?? [];
+
+    // Prefer a writable, non-read-only calendar
+    final writable = calendars.where((c) => c.isReadOnly == false).toList();
+    if (writable.isEmpty) return;
+
+    // Prefer the default/local calendar, otherwise take the first writable one
+    _calendarId = (writable.firstWhere(
+      (c) => c.isDefault == true,
+      orElse: () => writable.first,
+    )).id;
+  }
+
+  // Returns "calendarId::eventId" or null on failure
+  static Future<String?> createEvent({
+    required String title,
+    required DateTime date,
+    String? description,
+  }) async {
     try {
-      GoogleSignInAccount? account = _googleSignIn.currentUser;
-      account ??= await _googleSignIn.signInSilently();
-      if (account == null) return null;
+      await _init();
+      if (_calendarId == null) return null;
 
-      final auth = await account.authentication;
-      return auth.accessToken;
-    } catch (e) {
+      final local = tz.local;
+      final start = tz.TZDateTime(
+        local, date.year, date.month, date.day, 9, 0,
+      );
+      final end = start.add(const Duration(hours: 1));
+
+      final event = Event(
+        _calendarId!,
+        title: title,
+        description: description,
+        start: start,
+        end: end,
+        reminders: [Reminder(minutes: 10)],
+      );
+
+      final result = await _plugin.createOrUpdateEvent(event);
+      if (result?.data == null) return null;
+      return '$_calendarId::${result!.data}';
+    } catch (_) {
       return null;
     }
   }
 
-  Future<bool> addCareTask({
-    required String plantName,
-    required String taskType,
-    required DateTime dueDate,
-    String? notes,
-  }) async {
+  // Pass the combined "calendarId::eventId" string returned by createEvent
+  static Future<void> deleteEvent(String? combinedId) async {
+    if (combinedId == null || !combinedId.contains('::')) return;
     try {
-      final token = await _getAccessToken();
-      if (token == null) return false;
-
-      final event = {
-        'summary': '$taskType — $plantName 🌱',
-        'description': notes ?? 'Flora plant care reminder',
-        'start': {
-          'dateTime': dueDate.toUtc().toIso8601String(),
-          'timeZone': 'UTC',
-        },
-        'end': {
-          'dateTime': dueDate.add(const Duration(minutes: 30)).toUtc().toIso8601String(),
-          'timeZone': 'UTC',
-        },
-        'reminders': {
-          'useDefault': false,
-          'overrides': [
-            {'method': 'popup', 'minutes': 60},
-          ],
-        },
-        'colorId': '2',
-      };
-
-      final response = await http.post(
-        Uri.parse('$_baseUrl/calendars/$_calendarId/events'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(event),
-      ).timeout(const Duration(seconds: 10));
-
-      return response.statusCode == 200 || response.statusCode == 201;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<int> syncAllTasks({
-    required List<Map<String, dynamic>> tasks,
-  }) async {
-    int synced = 0;
-    for (final task in tasks) {
-      final plantName = task['plantName'] as String? ?? 'Plant';
-      final taskType = task['taskType'] as String? ?? 'Care';
-      final dueDate = task['dueDate'] as DateTime?;
-      if (dueDate == null) continue;
-      if (dueDate.isBefore(DateTime.now().subtract(const Duration(days: 1)))) continue;
-
-      final added = await addCareTask(
-        plantName: plantName,
-        taskType: taskType,
-        dueDate: dueDate,
-        notes: task['notes'] as String?,
-      );
-      if (added) synced++;
-    }
-    return synced;
+      final parts = combinedId.split('::');
+      final calId = parts[0];
+      final eventId = parts[1];
+      await _plugin.deleteEvent(calId, eventId);
+    } catch (_) {}
   }
 }

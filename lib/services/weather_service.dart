@@ -7,6 +7,7 @@ class WeatherData {
   final double temperatureCelsius;
   final double humidity;
   final String description;
+  final String conditionType;
   final String cityName;
   final DateTime fetchedAt;
 
@@ -14,6 +15,7 @@ class WeatherData {
     required this.temperatureCelsius,
     required this.humidity,
     required this.description,
+    required this.conditionType,
     required this.cityName,
     required this.fetchedAt,
   });
@@ -24,6 +26,7 @@ class WeatherData {
     'temperatureCelsius': temperatureCelsius,
     'humidity': humidity,
     'description': description,
+    'conditionType': conditionType,
     'cityName': cityName,
     'fetchedAt': fetchedAt.toIso8601String(),
   };
@@ -32,6 +35,7 @@ class WeatherData {
     temperatureCelsius: (map['temperatureCelsius'] as num).toDouble(),
     humidity: (map['humidity'] as num).toDouble(),
     description: map['description'] as String? ?? '',
+    conditionType: map['conditionType'] as String? ?? '',
     cityName: map['cityName'] as String? ?? '',
     fetchedAt: DateTime.parse(map['fetchedAt'] as String),
   );
@@ -141,31 +145,36 @@ class WeatherService {
 
       final location = results[0]['geometry']['location'] as Map<String, dynamic>;
       final lat = (location['lat'] as num).toDouble();
-      final lon = (location['lng'] as num).toDouble();
+      final lng = (location['lng'] as num).toDouble();
 
       // Step 2: Get weather from Google Weather API
-      final weatherUrl = Uri.parse(
-        'https://weather.googleapis.com/v1/currentConditions:lookup?key=$_apiKey',
+      // Uses GET with location as query parameters (POST+JSON body returns 404)
+      final uri = Uri.parse(
+        'https://weather.googleapis.com/v1/currentConditions:lookup'
+        '?key=$_apiKey'
+        '&location.latitude=$lat'
+        '&location.longitude=$lng',
       );
 
-      final weatherResponse = await http.post(
-        weatherUrl,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'location': {'latitude': lat, 'longitude': lon}}),
-      ).timeout(const Duration(seconds: 10));
+      final weatherResponse = await http.get(uri).timeout(const Duration(seconds: 10));
 
       if (weatherResponse.statusCode != 200) return null;
 
-      final weatherJson = jsonDecode(weatherResponse.body) as Map<String, dynamic>;
+      final data = jsonDecode(weatherResponse.body) as Map<String, dynamic>;
 
-      final tempC = (weatherJson['temperature']?['degrees'] as num?)?.toDouble() ?? 20.0;
-      final humidity = (weatherJson['relativeHumidity'] as num?)?.toDouble() ?? 50.0;
-      final description = weatherJson['weatherCondition']?['description']?['text'] as String? ?? 'Clear';
+      final tempC = (data['temperature']?['degrees'] as num?)?.toDouble() ?? 20.0;
+      final conditionText = data['weatherCondition']?['description']?['text'] as String? ?? 'Clear';
+      final conditionType = data['weatherCondition']?['type'] as String? ?? '';
+
+      // Note: currentConditions does not return humidity or windspeed.
+      // Set humidity = 0 until a separate API call is added.
+      const humidity = 0.0;
 
       final weather = WeatherData(
         temperatureCelsius: tempC,
         humidity: humidity,
-        description: description,
+        description: conditionText,
+        conditionType: conditionType,
         cityName: city,
         fetchedAt: DateTime.now(),
       );

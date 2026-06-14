@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -143,7 +144,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
   Future<void> _sharePersonality(AppLocalizations l) async {
     final title = _getTitle(l);
     final desc = _getDesc(l);
-    final text = "I'm a $title on Digital Conservatory! $desc";
+    final text = "I'm a $title on Verdoro! $desc";
     // ignore: deprecated_member_use
     await Share.share(text);
   }
@@ -176,7 +177,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
                 Align(
                   alignment: Alignment.topLeft,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -246,7 +247,7 @@ class _CollectionPersonalityScreenState extends State<CollectionPersonalityScree
               Align(
                 alignment: Alignment.topLeft,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),

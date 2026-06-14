@@ -1,11 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class CreateListingScreen extends StatefulWidget {
   final String? initialPlantName;
@@ -77,7 +80,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     final l = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -123,9 +126,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     final location = _locationController.text.trim();
 
     if (title.isEmpty || description.isEmpty || location.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.titleDescLocationRequired), backgroundColor: Colors.red),
-      );
+      showToast(context, l.titleDescLocationRequired, isError: true);
       return;
     }
 
@@ -188,15 +189,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.listingCreatedSuccessfully), backgroundColor: Colors.green),
-        );
+        showToast(context, l.listingCreatedSuccessfully, isError: false);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l.failedToSaveListingPrefix}$e'), backgroundColor: Colors.red),
-        );
+        showToast(context, '${l.failedToSaveListingPrefix}$e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -209,10 +206,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     final hasImage = _imageFile != null || _existingImageUrl.isNotEmpty;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.bone50,
       appBar: AppBar(
-        title: Text(l.listYourPlant, style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text(l.listYourPlant, style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.w600, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.forest900)),
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.chevron_back, size: 20, color: AppColors.forest700),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           _isLoading
               ? const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
@@ -307,18 +310,22 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   Widget _label(String text, BuildContext context) =>
       Text(text, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface));
 
-  Widget _field(TextEditingController controller, String hint, BuildContext context, {int maxLines = 1}) =>
-      TextField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          hintText: hint,
-          filled: true,
-          fillColor: Theme.of(context).cardColor,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone500)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3))),
-        ),
-      );
+  Widget _field(TextEditingController controller, String hint, BuildContext context, {int maxLines = 1}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: AppColors.bone500),
+        filled: true,
+        fillColor: isDark ? AppColors.darkSurface : AppColors.bone50,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.bone200)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.forest700, width: 2)),
+      ),
+    );
+  }
 
   Widget _editChip(String label) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

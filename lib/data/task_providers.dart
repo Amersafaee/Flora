@@ -63,6 +63,7 @@ Future<void> createInitialTasks({
   required String plantNickname,
   required Map<String, String> careDefaults,
 }) async {
+  if (uid.isEmpty || plantId.isEmpty) return;
   final now       = DateTime.now();
   final waterLvl  = careDefaults['water']      ?? 'medium';
   final fertilize = careDefaults['fertilizer'] ?? 'low';
@@ -101,7 +102,7 @@ Future<void> createInitialTasks({
 // ── Mark task complete + schedule next ────────────────────────────────────────
 Future<void> completeTask(CareTask task) async {
   final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return;
+  if (uid == null || task.plantId.isEmpty) return;
 
   final now    = DateTime.now();
   final col    = FirebaseFirestore.instance
@@ -133,7 +134,7 @@ Future<void> completeTask(CareTask task) async {
 // ── Snooze task ───────────────────────────────────────────────────────────────
 Future<void> snoozeTask(CareTask task, int days) async {
   final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return;
+  if (uid == null || task.plantId.isEmpty) return;
   final newDue = task.dueDate.add(Duration(days: days));
   await FirebaseFirestore.instance
       .collection('users').doc(uid)
@@ -169,7 +170,7 @@ final todayTasksProvider = StreamProvider<List<CareTask>>((ref) {
 final plantTasksProvider =
     StreamProvider.family<List<CareTask>, String>((ref, plantId) {
   final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return const Stream.empty();
+  if (uid == null || plantId.isEmpty) return const Stream.empty();
 
   return FirebaseFirestore.instance
       .collection('users').doc(uid)

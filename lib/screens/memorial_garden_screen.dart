@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import '../models/plant_model.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';

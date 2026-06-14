@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import '../widgets/shared/section_header.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -22,7 +24,7 @@ import 'home_screen.dart';
 import '../theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'add_task_screen.dart';
-import 'flora_chats_list_screen.dart';
+import 'verdoro_chats_list_screen.dart';
 
 // ignore_for_file: avoid_dynamic_calls
 
@@ -81,7 +83,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: uid != null
+      stream: uid != null && plantId.isNotEmpty
           ? FirebaseFirestore.instance
               .collection('users')
               .doc(uid)
@@ -130,7 +132,11 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+                      icon: const Icon(
+                        CupertinoIcons.chevron_back,
+                        size: 20,
+                        color: AppColors.forest700,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     Column(
@@ -159,7 +165,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                     final pName = pSnap.data!.get('name') as String? ?? 'Parent Plant';
                                     return GestureDetector(
                                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlantDetailScreen(plantId: parentId, plantName: pName))),
-                                      child: Text('🌱 Propagated from $pName', style: TextStyle(color: primaryColor, fontSize: 12, decoration: TextDecoration.underline)),
+                                      child: Text('?? Propagated from $pName', style: TextStyle(color: primaryColor, fontSize: 12, decoration: TextDecoration.underline)),
                                     );
                                   }
                                 )
@@ -167,7 +173,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                             }
                             if (childDocs.isNotEmpty) {
                               lineageWidgets.add(
-                                Text('🪴 ${childDocs.length} propagation(s) from this plant', style: TextStyle(color: AppColors.bone500, fontSize: 12)),
+                                Text('?? ${childDocs.length} propagation(s) from this plant', style: TextStyle(color: AppColors.bone500, fontSize: 12)),
                               );
                             }
                             
@@ -198,6 +204,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                           builder: (context) {
                             return SafeArea(
                               child: Column(
@@ -239,7 +246,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                     onTap: () async {
                                       Navigator.pop(context);
                                       final uid = FirebaseAuth.instance.currentUser?.uid;
-                                      if (uid != null) {
+                                      if (uid != null && plantId.isNotEmpty) {
                                         await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(plantId).update({
                                           'healthStatus': 'Unhealthy',
                                           'healthScore': 50,
@@ -276,7 +283,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                             TextButton(
                                               onPressed: () async {
                                                 final uid = FirebaseAuth.instance.currentUser?.uid;
-                                                if (uid != null) {
+                                                if (uid != null && plantId.isNotEmpty) {
                                                   await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(plantId).delete();
                                                 }
                                                 if (!context.mounted) return;
@@ -349,111 +356,88 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                         children: [
                           // Left Box (Health Score)
                           Expanded(
-                            child: (lastAssessment == null || lastAssessmentTs == null)
-                                ? Row(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).cardColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    (lastAssessment == null || lastAssessmentTs == null) ? Icons.favorite_border : Icons.favorite, 
+                                    color: (lastAssessment == null || lastAssessmentTs == null) ? AppColors.bone300 : primaryColor
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).cardColor,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(Icons.favorite_border, color: AppColors.bone300),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              AppLocalizations.of(context).healthScore,
-                                              style: TextStyle(
-                                                color: AppColors.bone500,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            GestureDetector(
-                                              onTap: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) => AddGrowthEntryScreen(
-                                                      plantName: plantData['name'] as String? ?? plantName,
-                                                      plantId: plantId,
-                                                      healthStatus: currentHealthStatus,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(
-                                                    AppLocalizations.of(context).analyzeWithFlora,
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: isDark ? AppColors.darkForestPrimary : AppColors.forest600,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Icon(
-                                                    Icons.arrow_forward,
-                                                    size: 14,
-                                                    color: isDark ? AppColors.darkForestPrimary : AppColors.forest600,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
+                                      Text(
+                                        AppLocalizations.of(context).healthScore,
+                                        style: TextStyle(
+                                          color: AppColors.bone500,
+                                          fontSize: 12,
                                         ),
                                       ),
-                                    ],
-                                  )
-                                : Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).cardColor,
-                                          shape: BoxShape.circle,
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        (lastAssessment == null || lastAssessmentTs == null) ? '--/100' : '$healthScore/100',
+                                        style: TextStyle(
+                                          color: primaryColor,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        child: Icon(Icons.favorite, color: primaryColor), // heart
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              AppLocalizations.of(context).healthScore,
-                                              style: TextStyle(
-                                                color: AppColors.bone500,
-                                                fontSize: 12,
+                                      const SizedBox(height: 2),
+                                      (lastAssessment == null || lastAssessmentTs == null) ? SizedBox(
+                                        height: 24,
+                                        child: TextButton(
+                                          style: TextButton.styleFrom(
+                                            padding: EdgeInsets.zero,
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            alignment: Alignment.centerLeft,
+                                          ),
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => AddGrowthEntryScreen(
+                                                  plantName: plantData['name'] as String? ?? plantName,
+                                                  plantId: plantId,
+                                                  healthStatus: currentHealthStatus,
+                                                ),
                                               ),
+                                            );
+                                          },
+                                          child: Text(
+                                            AppLocalizations.of(context).analyzeWithVerdoro,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: isDark ? AppColors.darkForestPrimary : AppColors.forest600,
+                                              decoration: TextDecoration.underline,
                                             ),
-                                            Text(
-                                              '$healthScore/100',
-                                              style: TextStyle(
-                                                color: primaryColor,
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            Text(
-                                              AppLocalizations.of(context).vitals,
-                                              style: TextStyle(
-                                                color: AppColors.bone500,
-                                                fontSize: 11,
-                                              ),
-                                            ),
-                                          ],
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ) : Text(
+                                        AppLocalizations.of(context).vitals,
+                                        style: TextStyle(
+                                          color: AppColors.bone500,
+                                          fontSize: 11,
                                         ),
                                       ),
                                     ],
                                   ),
+                                ),
+                              ],
+                            ),
                           ),
                           
                           // Divider
@@ -467,6 +451,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           // Right Box (Last Watered)
                           Expanded(
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(10),
@@ -488,6 +473,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                           fontSize: 12,
                                         ),
                                       ),
+                                      const SizedBox(height: 4),
                                       Text(
                                         lastWateredDate != null 
                                             ? DateFormat('MMM d').format(lastWateredDate) 
@@ -499,6 +485,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
+                                      const SizedBox(height: 2),
                                       Text(
                                         lastWateredDate != null ? AppLocalizations.of(context).completed : AppLocalizations.of(context).noHistory,
                                         style: TextStyle(
@@ -521,14 +508,14 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Primary action buttons — Log Care & Ask Flora
+              // Primary action buttons � Log Care & Ask Verdoro
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
                   children: [
                     Expanded(
                       child: SizedBox(
-                        height: 44,
+                        height: 52,
                         child: OutlinedButton(
                           onPressed: () {
                             Navigator.push(
@@ -544,31 +531,37 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.forest700),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             padding: EdgeInsets.zero,
                           ),
-                          child: Text(AppLocalizations.of(context).logCare, style: const TextStyle(color: AppColors.forest700, fontWeight: FontWeight.w600)),
+                          child: Text(
+                            AppLocalizations.of(context).logCare,
+                            style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.forest700),
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: SizedBox(
-                        height: 44,
+                        height: 52,
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const FloraChatsListScreen()),
+                              MaterialPageRoute(builder: (_) => const VerdoroChatsListScreen()),
                             );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.forest700,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             padding: EdgeInsets.zero,
                             elevation: 0,
                           ),
-                          child: Text(AppLocalizations.of(context).askFloraCTA, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                          child: Text(
+                            AppLocalizations.of(context).askVerdoroCTA,
+                            style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
+                          ),
                         ),
                       ),
                     ),
@@ -638,7 +631,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // ── Last Health Assessment Card ──────────────────────────────
+              // -- Last Health Assessment Card ------------------------------
               if (lastAssessment != null)
                 _buildAssessmentSection(
                   context: context,
@@ -647,7 +640,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   assessmentDate: lastAssessmentTs,
                 ),
 
-              // ── Health Cases Row ─────────────────────────────────────────
+              // -- Health Cases Row -----------------------------------------
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: StreamBuilder<List<TreatmentCase>>(
@@ -725,14 +718,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               // Upcoming Tasks
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Text(
-                  AppLocalizations.of(context).upcomingTasks,
-                  style: GoogleFonts.notoSerif(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
-                  ),
-                ),
+                child: SectionHeader(AppLocalizations.of(context).upcomingTasks),
               ),
               const SizedBox(height: 16),
               Padding(
@@ -786,7 +772,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   },
                 ),
               ),
-              // ── Care Guide from Wiki ─────────────────────────────────────
+              // -- Care Guide from Wiki -------------------------------------
               FutureBuilder<QuerySnapshot>(
                 future: FirebaseFirestore.instance.collection('species').get(),
                 builder: (context, snapshot) {
@@ -819,14 +805,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                         AppLocalizations.of(context).careGuideFromWiki,
-                          style: GoogleFonts.notoSerif(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
-                          ),
-                        ),
+                        SectionHeader(AppLocalizations.of(context).careGuideFromWiki),
                         const SizedBox(height: 16),
                         GestureDetector(
                           onTap: () {
@@ -882,14 +861,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               // Growth History Title
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Text(
-                  AppLocalizations.of(context).growthHistory,
-                  style: GoogleFonts.notoSerif(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
-                  ),
-                ),
+                child: SectionHeader(AppLocalizations.of(context).growthHistory),
               ),
               const SizedBox(height: 16),
               
@@ -958,7 +930,8 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkForestSubtle : AppColors.forest50,
+                    color: isDark ? AppColors.darkSurface : AppColors.bone50,
+                    boxShadow: [BoxShadow(color: const Color(0x0A224A1E), blurRadius: 8, offset: const Offset(0,2))],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   padding: const EdgeInsets.all(8),
@@ -981,14 +954,14 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
                           child: Row(
                             children: [
-                              Icon(Icons.account_tree_outlined, size: 20, color: AppColors.forest600),
+                              Icon(Icons.account_tree_outlined, size: 20, color: AppColors.forest700),
                               const SizedBox(width: 12),
                               Text(
                                 AppLocalizations.of(context).viewFamilyTree,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
                                 ),
                               ),
                               const Spacer(),
@@ -1000,7 +973,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       Divider(
                         height: 1,
                         thickness: 1,
-                        color: isDark ? AppColors.darkBorderSubtle : AppColors.bone100,
+                        color: AppColors.forest700.withValues(alpha: 0.08),
                       ),
                       // Create Time-lapse Row
                       InkWell(
@@ -1012,14 +985,14 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
                           child: Row(
                             children: [
-                              Icon(Icons.movie_creation_outlined, size: 20, color: AppColors.forest600),
+                              Icon(Icons.movie_creation_outlined, size: 20, color: AppColors.forest700),
                               const SizedBox(width: 12),
                               Text(
                                 AppLocalizations.of(context).createTimeLapse,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
                                 ),
                               ),
                               const Spacer(),
@@ -1031,7 +1004,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       Divider(
                         height: 1,
                         thickness: 1,
-                        color: isDark ? AppColors.darkBorderSubtle : AppColors.bone100,
+                        color: AppColors.forest700.withValues(alpha: 0.08),
                       ),
                       // List for Swap Row
                       InkWell(
@@ -1054,14 +1027,14 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
                           child: Row(
                             children: [
-                              Icon(Icons.swap_horiz, size: 20, color: AppColors.forest600),
+                              Icon(Icons.swap_horiz, size: 20, color: AppColors.forest700),
                               const SizedBox(width: 12),
                               Text(
                                 AppLocalizations.of(context).listForSwapEmoji,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? AppColors.darkTextPrimary : AppColors.bone900,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.forest900,
                                 ),
                               ),
                               const Spacer(),
@@ -1227,7 +1200,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     );
   }
 
-  // ── Health Assessment Card ─────────────────────────────────────────────────
+  // -- Health Assessment Card -------------------------------------------------
 
   Widget _buildAssessmentSection({
     required BuildContext context,
@@ -1476,7 +1449,7 @@ Future<void> _showMemorialDialog(BuildContext context, String plantId, String pl
 
     List<Map<String, dynamic>> photos = [];
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
+    if (uid != null && plantId.isNotEmpty) {
       final growthSnap = await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth').orderBy('timestamp').get();
       for (var doc in growthSnap.docs) {
         final data = doc.data();
@@ -1512,7 +1485,7 @@ Future<void> _showMemorialDialog(BuildContext context, String plantId, String pl
     final daysCaredFor = DateTime.now().difference(dateAdded).inDays;
     int waterings = 0;
     int growthEntries = 0;
-    if (uid != null) {
+    if (uid != null && plantId.isNotEmpty) {
       final tasks = await FirebaseFirestore.instance.collection('users').doc(uid).collection('tasks').where('plantName', isEqualTo: plantName).where('taskType', isEqualTo: 'Watering').where('isCompleted', isEqualTo: true).count().get();
       waterings = tasks.count ?? 0;
       final growths = await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(plantId).collection('growth').count().get();
@@ -1526,7 +1499,7 @@ Future<void> _showMemorialDialog(BuildContext context, String plantId, String pl
       totalGrowthEntries: growthEntries,
       memorialNote: note,
     );
-    if (uid != null) {
+    if (uid != null && plantId.isNotEmpty) {
       await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(plantId).update({'eulogy': eulogy});
     }
     if (context.mounted) {
@@ -1692,7 +1665,7 @@ class _MemorialSlideshowDialogState extends State<_MemorialSlideshowDialog> {
     final uid = FirestoreService().currentUserId;
     int waterings = 0;
     int growthEntries = 0;
-    if (uid != null) {
+    if (uid != null && widget.plantId.isNotEmpty) {
       final tasks = await FirebaseFirestore.instance.collection('users').doc(uid).collection('tasks').where('plantName', isEqualTo: widget.plantName).where('taskType', isEqualTo: 'Watering').where('isCompleted', isEqualTo: true).count().get();
       waterings = tasks.count ?? 0;
       final growths = await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(widget.plantId).collection('growth').count().get();
@@ -1706,7 +1679,7 @@ class _MemorialSlideshowDialogState extends State<_MemorialSlideshowDialog> {
       totalGrowthEntries: growthEntries,
       memorialNote: widget.note,
     );
-    if (uid != null) {
+    if (uid != null && widget.plantId.isNotEmpty) {
       await FirebaseFirestore.instance.collection('users').doc(uid).collection('plants').doc(widget.plantId).update({'eulogy': eulogy});
     }
     
@@ -1804,17 +1777,21 @@ class _MemorialSlideshowDialogState extends State<_MemorialSlideshowDialog> {
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
+                    height: 52,
                     child: ElevatedButton(
                       onPressed: _isSaving ? null : _saveAndMove,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.darkCanvas,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        backgroundColor: AppColors.forest700,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: EdgeInsets.zero,
+                        elevation: 0,
                       ),
                       child: _isSaving 
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: AppColors.darkCanvas, strokeWidth: 2))
-                        : Text(AppLocalizations.of(context).moveToMemorialGarden, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : Text(
+                            AppLocalizations.of(context).moveToMemorialGarden,
+                            style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
+                          ),
                     ),
                   ),
                 ],

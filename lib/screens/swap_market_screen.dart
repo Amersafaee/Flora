@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:digital_conservatory/l10n/app_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:verdoro/l10n/app_localizations.dart';
 import 'listing_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'create_listing_screen.dart';
 import 'swap_conversations_screen.dart';
 import '../theme/app_theme.dart';
+import '../widgets/shared/app_card.dart';
 
 class SwapMarketScreen extends StatefulWidget {
   const SwapMarketScreen({super.key});
@@ -24,7 +26,8 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final Color primaryColor = Theme.of(context).primaryColor;
-    final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color backgroundColor = isDark ? AppColors.darkBackground : AppColors.bone50;
     const Color softGreen = AppColors.forest100;
 
     // Filter chips: display label → internal Firestore filter key
@@ -48,7 +51,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+                      icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
                       onPressed: () => Navigator.pop(context),
                     ),
                     Expanded(
@@ -69,11 +72,20 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
-                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                          backgroundColor: isDark
+                              ? AppColors.darkCardSurface
+                              : AppColors.bone50,
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                           builder: (context) {
                             return Container(
                               padding: const EdgeInsets.all(20),
                               height: 400,
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppColors.darkCardSurface
+                                    : AppColors.bone50,
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -140,21 +152,27 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
               // Search Bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
-                  ),
-                  child: TextField(
-                    onChanged: (val) => setState(() => _searchQuery = val),
-                    decoration: InputDecoration(
-                      hintText: l.searchPlantsOrCuttings,
-                      hintStyle: const TextStyle(color: AppColors.bone500),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.bone500),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                child: TextField(
+                  onChanged: (val) => setState(() => _searchQuery = val),
+                  decoration: InputDecoration(
+                    hintText: l.searchPlantsOrCuttings,
+                    hintStyle: const TextStyle(color: AppColors.bone500),
+                    prefixIcon: const Icon(Icons.search, color: AppColors.bone500),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.bone200, width: 1),
                     ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.bone200, width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.forest700, width: 1.5),
+                    ),
+                    filled: true,
+                    fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.bone100,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
@@ -231,7 +249,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                           _buildListingCard(context: context, doc: doc, primaryColor: primaryColor, softGreen: softGreen, l: l),
                           const SizedBox(height: 20),
                         ],
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 120),
                       ],
                     );
                   },
@@ -319,34 +337,38 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => ListingDetailScreen(doc: doc)));
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
+      child: AppCard(
+        padding: EdgeInsets.zero,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Builder(
               builder: (context) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
-                final placeholderBg = isDark ? AppColors.darkForestSubtle : AppColors.forest50;
+                final placeholderBg = isDark ? AppColors.darkSurfaceElevated : AppColors.forest50;
                 return Container(
                   height: 180,
                   width: double.infinity,
-                  color: imageUrl.isNotEmpty ? Colors.transparent : placeholderBg,
+                  color: placeholderBg,
                   child: imageUrl.isNotEmpty
                       ? Image.network(
                           imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const Center(
-                            child: Icon(Icons.local_florist, size: 48, color: AppColors.forest300),
+                          width: double.infinity,
+                          height: 180,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            height: 180,
+                            width: double.infinity,
+                            color: placeholderBg,
+                            child: Center(
+                              child: Icon(Icons.local_florist, size: 40, color: isDark ? AppColors.darkForestPrimary.withValues(alpha: 0.4) : AppColors.forest300),
+                            ),
                           ),
                         )
-                      : const Center(
-                          child: Icon(Icons.local_florist, size: 48, color: AppColors.forest300),
+                      : Center(
+                          child: Icon(Icons.local_florist, size: 40, color: isDark ? AppColors.darkForestPrimary.withValues(alpha: 0.4) : AppColors.forest300),
                         ),
                 );
               }
@@ -417,6 +439,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
