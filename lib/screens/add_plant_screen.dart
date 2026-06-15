@@ -24,6 +24,7 @@ class AddPlantScreen extends StatefulWidget {
   final String? initialScientificName;
   final String? initialCategory;
   final String? initialHealthStatus;
+  final int? initialHealthScore;
   final File? initialImageFile;
   final String? initialImageUrl;
   final String? initialWateringDays;
@@ -36,6 +37,7 @@ class AddPlantScreen extends StatefulWidget {
     this.initialScientificName,
     this.initialCategory,
     this.initialHealthStatus,
+    this.initialHealthScore,
     this.initialImageFile,
     this.initialImageUrl,
     this.initialWateringDays,
@@ -131,17 +133,30 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         imageUrl = _initialImageUrl;
       }
 
-      final plant = Plant(
-        id: plantId,
-        name: _nameController.text.trim(),
-        commonName: _commonNameController.text.trim(),
-        category: _selectedCategory,
-        zone: '',
-        zoneId: null,
-        imageUrl: imageUrl,
-        healthStatus: _selectedHealthStatus,
-        dateAdded: DateTime.now(),
-      );
+      final plant = widget.initialHealthScore != null
+          ? Plant(
+              id: plantId,
+              name: _nameController.text.trim(),
+              commonName: _commonNameController.text.trim(),
+              category: _selectedCategory,
+              zone: '',
+              zoneId: null,
+              imageUrl: imageUrl,
+              healthStatus: _selectedHealthStatus,
+              healthScore: widget.initialHealthScore!,
+              dateAdded: DateTime.now(),
+            )
+          : Plant(
+              id: plantId,
+              name: _nameController.text.trim(),
+              commonName: _commonNameController.text.trim(),
+              category: _selectedCategory,
+              zone: '',
+              zoneId: null,
+              imageUrl: imageUrl,
+              healthStatus: _selectedHealthStatus,
+              dateAdded: DateTime.now(),
+            );
 
       await _firestoreService.addPlant(plant);
 
@@ -179,6 +194,13 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
       {'value': 'Herb', 'label': 'Herb'},
       {'value': 'Cactus', 'label': 'Cactus'},
       {'value': 'Other', 'label': 'Other'},
+    ];
+
+    final List<Map<String, String>> healthStatusOptions = [
+      {'value': 'Healthy', 'label': l.healthy},
+      {'value': 'Needs Attention', 'label': l.needsAttention},
+      {'value': 'Critical', 'label': l.critical},
+      {'value': 'Recovering', 'label': l.recoveringStatus},
     ];
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -347,59 +369,88 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     const SizedBox(height: 20),
 
                     // Category
-                    Text(l.category, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                    InkWell(
+                      onTap: () => _showOptionsPicker(
+                        context,
+                        _selectedCategory,
+                        categories,
+                        (val) => setState(() => _selectedCategory = val),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedCategory,
-                          isExpanded: true,
-                          icon: const Icon(Icons.keyboard_arrow_down),
-                          items: categories.map((cat) => DropdownMenuItem<String>(
-                            value: cat['value'],
-                            child: Text(cat['label']!),
-                          )).toList(),
-                          onChanged: (newValue) {
-                            setState(() { if (newValue != null) _selectedCategory = newValue; });
-                          },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                l.category,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              categories.firstWhere((c) => c['value'] == _selectedCategory, orElse: () => categories.first)['label']!,
+                              style: TextStyle(
+                                color: isDark ? AppColors.forest400 : AppColors.forest700,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(CupertinoIcons.chevron_forward, color: isDark ? AppColors.forest400 : AppColors.forest700, size: 18),
+                          ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 20),
 
                     // Health Status
-                    Text(
-                      l.healthStatus,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                    InkWell(
+                      onTap: () => _showOptionsPicker(
+                        context,
+                        _selectedHealthStatus,
+                        healthStatusOptions,
+                        (val) => setState(() => _selectedHealthStatus = val),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedHealthStatus,
-                          isExpanded: true,
-                          icon: const Icon(Icons.keyboard_arrow_down),
-                          items: [
-                            DropdownMenuItem(value: 'Healthy',         child: Text(l.healthy)),
-                            DropdownMenuItem(value: 'Needs Attention', child: Text(l.needsAttention)),
-                            DropdownMenuItem(value: 'Critical',        child: Text(l.critical)),
-                            DropdownMenuItem(value: 'Recovering',      child: Text(l.recoveringStatus)),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                l.healthStatus,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              healthStatusOptions.firstWhere((c) => c['value'] == _selectedHealthStatus, orElse: () => healthStatusOptions.first)['label']!,
+                              style: TextStyle(
+                                color: isDark ? AppColors.forest400 : AppColors.forest700,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(CupertinoIcons.chevron_forward, color: isDark ? AppColors.forest400 : AppColors.forest700, size: 18),
                           ],
-                          onChanged: (newValue) {
-                            setState(() { if (newValue != null) _selectedHealthStatus = newValue; });
-                          },
                         ),
                       ),
                     ),
@@ -545,11 +596,24 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                         Navigator.pop(context);
                         Navigator.push(context, MaterialPageRoute(builder: (_) => VerdoroScreen(conversationId: conversationId)));
                       },
-                      icon: const Icon(Icons.psychology, color: AppColors.forest900),
-                      label: Text(l.askVerdoroForAdvice, style: const TextStyle(color: AppColors.forest900, fontWeight: FontWeight.bold)),
+                      icon: Icon(
+                        Icons.psychology, 
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.forest400 : AppColors.forest900,
+                      ),
+                      label: Text(
+                        l.askVerdoroForAdvice, 
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.forest400 : AppColors.forest900, 
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: AppColors.forest900),
+                        side: BorderSide(
+                          color: Theme.of(context).brightness == Brightness.dark 
+                              ? AppColors.forest400.withValues(alpha: 0.4) 
+                              : AppColors.forest900,
+                        ),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
@@ -601,6 +665,63 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
       case 'Skip':         return l.skip;
       default:             return opt;
     }
+  }
+
+  void _showOptionsPicker(
+    BuildContext sheetContext,
+    String currentValue,
+    List<Map<String, String>> options,
+    ValueChanged<String> onPicked,
+  ) {
+    final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
+    showModalBottomSheet<void>(
+      context: sheetContext,
+      backgroundColor: isDark ? AppColors.darkSurfaceElevated : AppColors.bone50,
+      barrierColor: Colors.black54,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (pickerCtx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Theme.of(pickerCtx).colorScheme.surfaceContainerHighest : AppColors.bone300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...options.map((opt) {
+                final val = opt['value']!;
+                final label = opt['label']!;
+                final isSelected = val == currentValue;
+                return ListTile(
+                  title: Text(
+                    label,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected ? (isDark ? AppColors.forest400 : AppColors.forest700) : null,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? Icon(CupertinoIcons.checkmark, color: isDark ? AppColors.forest400 : AppColors.forest700, size: 18)
+                      : null,
+                  onTap: () {
+                    Navigator.pop(pickerCtx);
+                    onPicked(val);
+                  },
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   /// Shows a custom bottom-sheet picker for frequency options.

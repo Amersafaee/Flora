@@ -1104,7 +1104,11 @@ class _VerdoroScreenState extends State<VerdoroScreen> with SingleTickerProvider
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurfaceElevated : const Color(0xFFFFFFFF),
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSlateBlueTint : AppColors.slateBlue500.withValues(alpha: 0.10),
+                  border: Border.all(
+                    color: AppColors.slateBlue500.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
                   boxShadow: Theme.of(context).brightness == Brightness.dark
                       ? null
                       : const [
@@ -1149,7 +1153,7 @@ class _VerdoroScreenState extends State<VerdoroScreen> with SingleTickerProvider
                         _buildAnalysisContent(text)
                       else
                         MarkdownBody(
-                          data: text,
+                          data: text.replaceAllMapped(RegExp(r'\n+'), (match) => match.group(0)!.length == 1 ? '\n\n' : match.group(0)!),
                           styleSheet: MarkdownStyleSheet(
                             p: TextStyle(
                               color: Theme.of(context).brightness == Brightness.dark
@@ -1251,7 +1255,11 @@ class _VerdoroScreenState extends State<VerdoroScreen> with SingleTickerProvider
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1A2535) : const Color(0xFFEDF3FA),
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSlateBlueTint : AppColors.slateBlue500.withValues(alpha: 0.10),
+            border: Border.all(
+              color: AppColors.slateBlue500.withValues(alpha: 0.2),
+              width: 1,
+            ),
             boxShadow: Theme.of(context).brightness == Brightness.dark
                 ? null
                 : const [

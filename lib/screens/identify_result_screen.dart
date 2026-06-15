@@ -120,7 +120,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
         return cat;
       }
     }
-    return 'Other';
+    return 'Tropical';
   }
 
   String _extractHealthStatus() {
@@ -155,6 +155,19 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
       }
     }
     return '7';
+  }
+
+  int? _extractHealthScore() {
+    final pattern = RegExp(
+      r'(?:health\s+score[:\s]+|score[:\s]+)?(\d{1,3})\s*(?:\/\s*100|out\s+of\s+100)',
+      caseSensitive: false,
+    );
+    final match = pattern.firstMatch(widget.analysisResult);
+    if (match != null) {
+      final value = int.tryParse(match.group(1) ?? '');
+      if (value != null && value >= 0 && value <= 100) return value;
+    }
+    return null;
   }
 
   Future<void> _openVerdoroWithPlantContext() async {
@@ -194,14 +207,14 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
       });
 
       final snippet = widget.analysisResult.length > 600
-          ? '${widget.analysisResult.substring(0, 597)}�'
+          ? '${widget.analysisResult.substring(0, 597)}...'
           : widget.analysisResult;
 
       final verdoroIntro =
-          'Great news � I have already analyzed your photo! ??\n\n'
+          'Great news — I have already analyzed your photo! 🌿\n\n'
           'Here is what I found:\n\n'
           '$snippet\n\n'
-          'Feel free to ask me anything else about $plantName � '
+          'Feel free to ask me anything else about $plantName 🌱 '
           'care tips, watering schedules, common issues, or anything you are curious about!';
 
       await messagesRef.add({
@@ -240,6 +253,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
     final commonName = _extractCommonName();
     final scientificName = _extractScientificName();
     final healthStatus = _extractHealthStatus();
+    final healthScore = _extractHealthScore();
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.bone50,
@@ -396,6 +410,7 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                                 initialScientificName: scientificName,
                                 initialCategory: category,
                                 initialHealthStatus: healthStatus,
+                                initialHealthScore: healthScore,
                                 initialImageFile: widget.imageFile,
                                 initialWateringDays: wateringDays,
                                 analysisResult: widget.analysisResult,
@@ -404,12 +419,20 @@ class _IdentifyResultScreenState extends State<IdentifyResultScreen> {
                           );
                         },
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.forest700),
+                          side: BorderSide(
+                            color: isDark 
+                                ? AppColors.forest400.withValues(alpha: 0.4) 
+                                : AppColors.forest700,
+                          ),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                         child: Text(
                           'Add to my garden',
-                          style: GoogleFonts.outfit(color: AppColors.forest700, fontSize: 15, fontWeight: FontWeight.w600),
+                          style: GoogleFonts.outfit(
+                            color: isDark ? AppColors.forest400 : AppColors.forest700, 
+                            fontSize: 15, 
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),

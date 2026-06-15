@@ -394,27 +394,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
                               fontSize: 13,
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: isExpired
-                                // FIX 4: Expired state — show appropriate label
-                                ? ElevatedButton(
-                                    onPressed: null,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.3),
-                                      foregroundColor: isDark ? AppColors.darkTextTertiary : Colors.white,
-                                      disabledBackgroundColor: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.3),
-                                      disabledForegroundColor: isDark ? AppColors.darkTextTertiary : Colors.white70,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      elevation: 0,
-                                    ),
-                                    child: Text(
-                                      isJoined ? 'Challenge complete 🏆' : 'Challenge ended',
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                  )
-                                : isJoined
+                          if (!isExpired) ...[
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: isJoined
                                     // FIX 3: Already joined — show "Joined ✓" disabled button
                                     ? ElevatedButton(
                                         onPressed: null,
@@ -449,7 +433,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                         ),
                                         child: Text(AppLocalizations.of(context).joinChallenge, style: const TextStyle(fontWeight: FontWeight.bold)),
                                       ),
-                          ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

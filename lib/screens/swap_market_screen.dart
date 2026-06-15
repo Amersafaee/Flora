@@ -50,10 +50,11 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(CupertinoIcons.chevron_back, color: AppColors.forest700),
-                      onPressed: () => Navigator.pop(context),
-                    ),
+                    if (Navigator.of(context).canPop())
+                      IconButton(
+                        icon: Icon(CupertinoIcons.chevron_back, color: isDark ? AppColors.forest400 : AppColors.forest700),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                     Expanded(
                       child: Text(
                         l.swapMarket,
@@ -68,7 +69,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.map_outlined, color: primaryColor),
+                      icon: Icon(Icons.map_outlined, color: isDark ? AppColors.forest400 : primaryColor),
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
@@ -140,7 +141,7 @@ class _SwapMarketScreenState extends State<SwapMarketScreen> {
                       },
                     ),
                     IconButton(
-                      icon: Icon(Icons.chat_bubble_outline, color: primaryColor),
+                      icon: Icon(Icons.chat_bubble_outline, color: isDark ? AppColors.forest400 : primaryColor),
                       onPressed: () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapConversationsScreen()));
                       },

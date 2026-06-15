@@ -166,7 +166,7 @@ class WeeklyReportScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Your home averaged ${(reportData['avgTemperature'] as double).toStringAsFixed(1)}� and ${(reportData['avgHumidity'] as double).toStringAsFixed(0)}% humidity this week',
+                          'Your home averaged ${(reportData['avgTemperature'] as double).toStringAsFixed(1)}° and ${(reportData['avgHumidity'] as double).toStringAsFixed(0)}% humidity this week',
                           style: const TextStyle(color: AppColors.bone500, fontSize: 13),
                         ),
                       ),

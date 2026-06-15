@@ -227,10 +227,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('$tempC�C', style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              Text('$tempC°C', style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               )),
-              Text('?? $humidity%', style: Theme.of(context).textTheme.bodySmall),
+              Text('💧 $humidity%', style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ],
